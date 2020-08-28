@@ -1,0 +1,173 @@
+; ===============================================
+; KiddieOS - Macros Interface Library
+; Created by Francis
+; Version 1.1.0
+; ===============================================
+
+%IFNDEF _WIN16_LIB
+%DEFINE _WIN16_LIB
+
+%DEFINE WIN_SEGMENT 0800h
+%DEFINE WIN_OFFSET  0F00h
+%DEFINE WIN_SECTOR  8
+
+%DEFINE WindowAddress  0F00h
+
+
+%DEFINE Window_Bar	          3000h
+%DEFINE Window_Width          3001h
+%DEFINE Window_Height         3003h
+%DEFINE Window_PositionX      3005h
+%DEFINE Window_PositionY      3007h
+%DEFINE Window_Bar_Color      3009h
+%DEFINE Window_Border_Color   300Ah
+%DEFINE Window_Back_Color     300Bh
+%DEFINE ButtonClose           300Ch
+%DEFINE ButtonMaximize        300Dh
+%DEFINE ButtonMinimize        300Eh
+%DEFINE Window_Border         300Fh
+%DEFINE Window_Border_Right   3010h
+%DEFINE Window_Border_Left    3011h
+%DEFINE Window_Border_Up      3012h
+%DEFINE Window_Border_Down    3013h
+
+
+%DEFINE Window_Exist          3014h    
+%DEFINE Field_Exist           3015h
+%DEFINE Button_Exist          3016h
+
+
+BackInitialPositionX    dw 0000h  
+BackInitialPositionY    dw 0000h  
+
+StateWindowBar        dw 0000h
+SavePositionX         dw 0000h
+SavePositionY         dw 0000h
+SaveWidth             dw 0000h
+SaveHeight            dw 0000h
+
+%DEFINE QUANT_FIELD1   301Dh ;start
+%DEFINE LIMIT_COLW1    301Fh
+%DEFINE LIMIT_COLX1    3021h
+%DEFINE BS_COLOR1      3023h
+%DEFINE POSITIONS1     3024h
+CountPositions dw 0000h ;end
+
+; Carregar o window.bin na memória
+; ___________________________________________
+
+%MACRO __LoadInterface 0
+	mov byte[Sector], WIN_SECTOR
+	mov byte[Drive], 80h
+	mov byte[NumSectors], 2
+	mov word[SegmentAddr], WIN_SEGMENT
+	mov word[OffsetAddr], WIN_OFFSET
+	call ReadDisk
+%ENDMACRO
+; ___________________________________________
+
+; Construção de janelas
+; ___________________________________________
+
+%MACRO __CreateWindow 11
+	mov byte[Window_Bar], %1
+	mov byte[ButtonClose], %2
+	mov byte[ButtonMaximize], %3
+	mov byte[ButtonMinimize], %4
+	mov byte[Window_Bar_Color], %5
+	mov byte[Window_Border_Color], %6
+	mov byte[Window_Back_Color], %7
+	mov word[Window_PositionX], %8
+	mov word[Window_PositionY], %9
+	mov word[Window_Width], %10
+	mov word[Window_Height], %11
+%ENDMACRO
+
+%MACRO __ShowWindow 1
+	mov byte[Window_Exist], %1
+	call WindowAddress
+	mov byte[Window_Border], 0
+%ENDMACRO
+
+; ___________________________________________
+
+; Definição de bordas individuais
+; ___________________________________________
+
+%MACRO __CreateBorder 4
+	mov byte[Window_Border], 1
+	mov byte[Window_Border_Up], %1
+	mov byte[Window_Border_Right], %2
+	mov byte[Window_Border_Down], %3
+	mov byte[Window_Border_Left], %4
+%ENDMACRO
+; ___________________________________________
+
+
+; Construção de campos de textos
+; ___________________________________________
+%MACRO __CreateField 8
+	__CreateWindow 0,0,0,0,0, %3, %4, %5, %6, %7, %8
+	mov byte[BS_COLOR1], %4
+	call SavePositions
+	jmp JmpValue%1
+	%1 db %2
+JmpValue%1:
+%ENDMACRO
+
+%MACRO __ShowField 1
+	mov byte[Field_Exist], %1
+	call WindowAddress
+	mov byte[Window_Border], 0
+%ENDMACRO
+; ___________________________________________
+
+; Construção de botões
+; ___________________________________________
+
+%MACRO __CreateButton 8
+	__CreateWindow 0,0,0,0,0, %3, %4, %5, %6, %7, %8
+	jmp JmpValue%1
+	%1 db %2
+JmpValue%1:
+%ENDMACRO
+
+%MACRO __ShowButton 1
+	mov byte[Button_Exist], %1
+	call WindowAddress
+	mov byte[Window_Border], 0
+%ENDMACRO
+
+SavePositions:
+	push bx
+	push cx
+	mov cx, bx ;%6
+	xor bx, bx
+	mov bx, word[CountPositions]
+	mov word[POSITIONS1 + bx], ax ;%5
+	sub word[POSITIONS1 + bx], 4
+	add word[CountPositions], 2
+	mov bx, word[CountPositions]
+	mov word[POSITIONS1 + bx], cx
+	add word[CountPositions], 2
+	pop cx
+	push cx
+	mov word[LIMIT_COLW1], ax ;%5
+	add word[LIMIT_COLW1], cx
+	sub word[LIMIT_COLW1], 4
+	mov cx, word[LIMIT_COLW1]
+	mov bx, word[CountPositions]
+	mov word[POSITIONS1 + bx], cx
+	add word[CountPositions], 2
+	mov word[LIMIT_COLX1], ax ;%5
+	mov cx, word[LIMIT_COLX1]
+	mov bx, word[CountPositions]
+	mov word[POSITIONS1 + bx], cx
+	add word[CountPositions], 2
+	inc byte[QUANT_FIELD1]
+	pop cx
+	pop bx
+ret
+; ___________________________________________
+
+%ENDIF

@@ -1,0 +1,827 @@
+; ====================================================================
+; KiddieOS - 3D Graphical Window Library - Operating System          ;
+; Author:  Francis (BFT Corporations)                                ;
+; Version: 1.1.0                                                     ;
+; Material do Curso D.S.O.S, acesse o link abaixo para acompanhar:   ;
+; https://bityli.com/jaYPL  ==========================================
+
+; ------------- FUNCIONALIDADE & RECURSOS DA JANELA 3D ---------------
+;                                                                    ;
+; Tamanho mínimo aceitável = 50x45 (Comprimento x Altura)            ;
+; Teclas De Movimento: ARROW_UP, ARROW_DOWN, ARROW_RIGHT, ARROW_LEFT ;
+; Teclas De Redimensionamento: CTRL_W, CTRL_A, CTRL_S, CTRL_D        ;
+;                                                                    ;
+; Estilos pra Definir Em 'COLOR_WINDOW','WALLCOLOR' ou 'IRONCOLOR':  ;
+; METAL (padrão), ICE, NATURE, WATER, SALMON, NATURE2, SKY, PINK,    ;
+; PURPLELILAC, DARKPASSION, WOOD, DARK                               ;
+;                                                                    ;
+; Rotina de Funcionalidade das teclas: VerifyKey                     ;
+; Rotina de redimensionamento de janela: ResizeWindow                ;
+; Rotina de movimentação da janela: WindowMoviment                   ;
+; Rotinas de reajustes de elementos visuais: Resizing1... Resizing8  ;
+; Rotina que cria a janela 3D e seus elementos: WindowCreate         ;
+; BÔNUS: Papeis de parede WALL e IRON para o KiddieOS                ;
+; --------------------------------------------------------------------
+
+; --------- PARÂMETROS DE CHAMADA DA JANELA 3D NO KERNEL.ASM ---------
+;                                                                    ;
+;   	Window3D  N, X, Y, W, H                                      ;
+;                                                                    ;
+;      Onde N pode ser MOVABLE ou IMMOVABLE (1 ou 0),                ;
+;      X pode ser um valor de 0 a 320 da Posição X,                  ;
+;      Y pode ser um valor de 0 a 200 da Posição Y,                  ;
+;      W pode ser um valor de 50 a 320 da Largura e                  ;
+;      H pode ser um valor de 45 a 200 da Altura.                    ;
+;      Exemplos:                                                     ;
+;           Window3D MOVABLE, 10, 10, 100, 100                       ;
+; --------------------------------------------------------------------
+
+; ------------- CHAMADA DE PAPEL DE PAREDE NO KERNEL.ASM -------------
+;                                                                    ;
+;   	WallPaper WALL, SCREEN_WIDTH, SCREEN_HEIGHT, 30, 20          ;
+;       WallPaper IRON, SCREEN_WIDTH, SCREEN_HEIGHT, 50, 50          ;
+;                                                                    ;
+;      O 1ª parâmetro pode ser WALL ou IRON (Parede ou Metal),       ;
+;      O 2ª SCREEN_WIDTH é uma constante da largura da tela(320),    ;
+;      O 3ª SCREEN_HEIGHT é uma constante da altura da tela(200),    ;
+;      O 4ª é a largura de cada tijolo se for WALL, se for IRON,     ;
+;        seria a largura de cada bloco de metal.                     ;
+;      O 5ª é a altura de cada tijolo se for WALL, se for IRON,      ;
+;        seria a altura de cada bloco de metal                       ;
+; 																     ;
+;   DETALHES: Só é possível criar 1 janela e 1 papel de parede,      ;
+;   portanto teste larguras diferentes, com cores diferentes,        ;
+;   explore outros estilos e crie mais, aproveite a LIB!             ;
+; --------------------------------------------------------------------
+; ====================================================================
+
+%IFNDEF __WIN_EFFS_LIB__
+%DEFINE __WIN_EFFS_LIB__
+
+; Defina o estilo/cor da janela aqui ----------------------
+
+%DEFINE COLOR_WINDOW	METAL    ; veja a linha 102
+; ---------------------------------------------------------
+
+; Defina o estilo/cor de papéis de parede aqui ------------
+
+%DEFINE WALLCOLOR   DARKPASSION  ;Cor dos blocos de tijolos
+%DEFINE IRONCOLOR   METAL        ;Cor dos blocos de metal
+; ---------------------------------------------------------
+
+
+; Preferível não DIMINUIR esses valores mínimos (Apenas AUMENTE se optar)
+;_________________________________________________________________________
+%DEFINE MIN_WIDTH_SIZE   	50
+%DEFINE MIN_HEIGHT_SIZE  	45
+
+; Os valores abaixo são referências mínimas dos blocos em papéis de parede
+; Crie suas rotinas para alterar os tamanhos de janelas caso forem menores   
+%DEFINE WIDTH_MIN_BLOCK     6
+%DEFINE HEIGHT_MIN_BLOCK    5
+;_________________________________________________________________________
+
+
+; Códigos de teclas
+;_________________________________________________________________________
+%DEFINE ARROW_UP     0x48
+%DEFINE ARROW_DOWN   0x50
+%DEFINE ARROW_RIGHT  0x4D
+%DEFINE ARROW_LEFT   0x4B
+%DEFINE CTRL_W       0x17
+%DEFINE CTRL_A       0x01
+%DEFINE CTRL_S       0x13
+%DEFINE CTRL_D       0x04
+%DEFINE CTRL_Z       0x1A 
+%DEFINE CTRL_X       0x18 
+;
+; ADICIONE MAIS TECLAS AQUI ...
+;_________________________________________________________________________
+
+
+; Definições de cores & estilos
+;_________________________________________________________________________
+%DEFINE METAL          0x1A
+%DEFINE ICE            0x1E
+%DEFINE NATURE         0x31
+%DEFINE WATER          0x36
+%DEFINE SALMON         0x42
+%DEFINE NATURE2	       0x48
+%DEFINE SKY	       0x4E
+%DEFINE PINK           0x57
+%DEFINE PURPLELILAC    0x6A
+%DEFINE DARKPASSION    0x6F
+%DEFINE WOOD           0x73
+%DEFINE DARK           0xFF
+;
+; ADICIONE MAIS CORES/ESTILOS AQUI ...
+;_________________________________________________________________________
+
+
+; Controla se a janela será: 
+; móvel ou imóvel e redimensionável ou irredimensionável
+;_________________________________________________________________________
+%DEFINE MOVABLE  	1
+%DEFINE IMMOVABLE   0
+
+; -- Endereços para armazenamento de pixels ------------------------------
+;
+%DEFINE BACK        0x850
+%DEFINE WIND        0x900
+%DEFINE ERASE       0x4000
+%DEFINE REPAINT     0x9000
+; ------------------------------------------------------------------------
+
+; -- Resolução da tela (Útil para os papéis de parede) -------------------
+;
+%DEFINE SCREEN_WIDTH 	0x140
+%DEFINE SCREEN_HEIGHT   0xC8
+; ------------------------------------------------------------------------
+
+;_________________________________________________________________________
+
+
+
+; Macros de parametrização da janela 3D e Sobreposição de pixels
+;_________________________________________________________________________
+%MACRO ResizingWindow 4  ; Armazena parâmetros nos registradores e os salva
+	mov ax, %1
+	mov bx, %2
+	mov cx, %3
+	mov dx, %4
+	call SaveValues
+%ENDMACRO
+
+%MACRO Window3D 5        ; Chamada principal da janela 3D
+	ResizingWindow %2, %3, %4, %5
+	mov byte[IsMovable], %1
+	call Window
+	call WindowMoviment
+%ENDMACRO
+
+%MACRO SaveInMemory 3    ; Salva na memória os pixels de fundo e da janela
+	push ax
+	push bx
+	push cx
+	push dx
+	mov di, %1
+	mov bx, %2
+	mov al, %3
+	call SaveColorWindow
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+%ENDMACRO
+
+%MACRO GetInMemory 2     ; Pega da memória os pixels e os redesenha
+	mov di, %1
+	mov bx, %2
+	call RepaintWindow
+%ENDMACRO
+;_________________________________________________________________________
+
+
+
+; Macro com 2 rotinas de papéis de parede: (Uso Opcional)
+; Rotinas: _WALL e _IRON
+; ________________________________________________________________________
+
+%MACRO WallPaper 5    ; chamada principal de algum papel de parede
+
+; ------- Configurações iniciais para ambas as rotinas -------
+	push cx    
+	xor ax, ax
+	xor dx, dx
+	xor cx, cx
+	mov ax, %2
+	push ax
+	mov cx, %4
+	div cx
+	mov word[obj_quantX], ax
+	mul cx
+	mov cx, ax
+	pop ax
+	sub ax, cx
+	cmp ax, 0
+	je NotMore1
+	mov word[LastBlockSaveX], ax
+	mov byte[StateBlockX], 1
+NotMore1:
+	xor ax, ax
+	xor cx, cx
+	xor dx, dx
+	mov ax, %3
+	push ax
+	mov cx, %5
+	div cx
+	mov word[obj_quantY], ax
+	mul cx
+	mov cx, ax
+	pop ax
+	sub ax, cx
+	cmp ax, 0
+	je NotMore2
+	mov word[LastBlockSaveY], ax
+	mov byte[StateBlockY], 1
+NotMore2:
+	mov bx, %4
+	mov ax, %5
+	pop cx   
+	jmp %1  
+	
+; ----------------------------------------------------------
+
+; ----- Primeiro papel de parede em formato de tijolos -----
+
+_WALL:
+	xor dx, dx
+	xor cx, cx
+WALL:
+	__CreateWindow 0,0,0,0,0,0,WALLCOLOR,cx,dx, %4, %5
+	__ShowWindow 1
+	inc word[CountWallX]
+	mov bx, word[CountWallX]
+	add cx, %4
+	cmp bx, word[obj_quantX]
+	jne WALL
+	mov word[CountWallX], 0000h
+	mov bx, %5
+	cmp byte[StateBlockX], 1
+	je LastBlockX
+IgnoreLastBlock:
+	xor cx, cx
+	call NextWall
+	xor bx, bx
+	inc word[CountWallY]
+	mov ax, word[CountWallY]
+	add dx, %5
+	cmp ax, word[obj_quantY]
+	jnae WALL
+	xor bx, bx
+	cmp byte[StateBlockY], 1
+	je LastBlockY
+	jmp FinalPaper
+LastBlockX:
+	mov ax, word[LastBlockSaveX]
+	cmp byte[StateObj], 0
+	je Last
+	__CreateBorder 0,0,0,WALLCOLOR
+Last:
+	__CreateWindow 0,0,0,0,0,0,WALLCOLOR,cx,dx,ax,bx
+	__ShowWindow 1
+	jmp IgnoreLastBlock
+LastBlockY:
+	mov ax, word[LastBlockSaveY]
+	__CreateWindow 0,0,0,0,0,0,WALLCOLOR,cx,dx, %4, ax
+	__ShowWindow 1
+	inc bx
+	add cx, %4
+	cmp bx, word[obj_quantX]
+	jne LastBlockY
+	mov bx, ax
+	mov byte[StateBlockY], 0
+	cmp byte[StateBlockX], 1
+	mov byte[StateBlockX], 0
+	je LastBlockX
+	jmp FinalPaper
+	
+NextWall:
+	cmp byte[StateObj], 0
+	jne ChangeState
+	push ax
+	push dx
+	xor ax, ax
+	xor dx, dx
+	xor cx, cx
+	mov ax, %4
+	mov cx, 2
+	div cx
+	mov cx, ax
+	mov byte[StateObj], 1
+	pop dx
+	pop ax
+	jmp RetNext
+ChangeState:
+	mov byte[StateObj], 0
+RetNext:
+	ret
+	
+; ----------------------------------------------------------
+
+; ------- Segundo papel de parede em formato de metal ------
+
+_IRON:
+	xor dx, dx
+	xor cx, cx
+	mov byte[StateBlockX], 1
+	mov byte[StateBlockY], 0
+IRON:
+	cmp byte[StateBlockY], 1
+	je IgnoreOldHeight
+	mov ax, %5
+IgnoreOldHeight:
+	__CreateBorder 28,18,18,28
+	__CreateWindow 0,0,0,0,0,0,IRONCOLOR-1,cx,dx,bx,ax
+	__ShowWindow 1
+	inc word[CountWallX]
+	mov bx, word[CountWallX]
+	add cx, %4
+	inc cx  
+	mov word[LastBlockSaveX], cx
+	add word[LastBlockSaveX], %4
+	cmp word[LastBlockSaveX], SCREEN_WIDTH
+	ja LastIronX
+	cmp bx, word[obj_quantX]
+	mov bx, %4
+	jne IRON
+	jmp Continue
+LastIronX:
+	cmp byte[StateBlockX], 1
+	jne Continue
+	mov bx, SCREEN_WIDTH
+	sub bx, cx
+	dec bx
+	cmp bx, 1
+	jne NotIncWid
+	inc bx
+	jmp NotAddWid
+NotIncWid:
+	cmp bx, 0
+	jne NotAddWid
+	add bx, 2
+NotAddWid:
+	mov byte[StateBlockX], 0
+	jmp IRON
+LastIronY:
+	cmp byte[StateBlockY], 0
+	jne FinalPaper
+	mov bx, %4
+	mov ax, SCREEN_HEIGHT
+	sub ax, dx
+	cmp ax, 1
+	jne NotIncHei
+	inc ax
+	jmp NotAddHei
+NotIncHei:
+	cmp ax, 0
+	jne NotAddHei
+	add ax, 2
+NotAddHei:
+	mov byte[StateBlockY], 1
+	jmp IRON
+Continue:
+	mov word[CountWallX], 0000h
+	xor cx, cx
+	inc word[CountWallY]
+	mov ax, word[CountWallY]
+	add dx, %5
+	inc dx 
+	mov byte[StateBlockX], 1
+	mov word[LastBlockSaveY], dx
+	add word[LastBlockSaveY], %5
+	cmp word[LastBlockSaveY], SCREEN_HEIGHT
+	ja LastIronY
+	mov bx, %4
+	cmp ax, word[obj_quantY]
+	jne IRON
+	xor ax, ax
+	jmp FinalPaper
+
+; ----------------------------------------------------------
+
+
+; ----------------------------------------------------------
+;
+; ADICIONE AQUI MAIS PAPÉIS DE PAREDE DE SUA ESCOLHA...
+; OBS.: dependendo do que for fazer aqui, as "configurações
+; iniciais" podem ser descartadas!
+;
+; ----------------------------------------------------------	
+
+
+; ----------- Finalização dos papéis de parede -------------
+FinalPaper:
+	mov byte[StateObj], 0
+	mov byte[CountWallX], 0
+	mov byte[CountWallY], 0
+	mov word[LastBlockSaveX], 0000h
+	mov word[LastBlockSaveY], 0000h
+	mov byte[StateBlockX], 0
+	mov byte[StateBlockY], 0
+	;mov ah, 00h  ;-> Se optar por uma "pausa" após a pintura de um   ;uncomment
+	;int 16h      	 papel de parede, descomente essas 2 linhas.      ;uncomment
+	xor ax, ax
+	xor bx, bx
+	xor cx, cx
+	xor dx, dx	
+; ----------------------------------------------------------
+	
+%ENDMACRO
+; ________________________________________________________________________
+
+
+
+; Rotina que cria janela 3D com elementos visuais
+;_________________________________________________________________________
+Window:
+	SaveInMemory ERASE, BACK, 1
+	call Resizing1
+	__CreateWindow 0,0,0,0,0,0,0,ax,bx,cx,dx   				; Sombra da janela
+	__ShowWindow 1                                  		; Window´s Shadow
+	call Resizing2
+	__CreateBorder 28,18,18,28
+	__CreateWindow 1,1,1,0,16,18,COLOR_WINDOW,ax,bx,cx,dx   ; Janela principal
+	__ShowWindow 1                               		 	; Main Window
+	call Resizing3
+	__CreateBorder 18,28,28,18
+	__CreateWindow 0,0,0,0,0,0,COLOR_WINDOW-1,ax,bx,cx,dx   ; Janela Interior - "Bordas Maiores"
+	__ShowWindow 1                                          ; Intern Window - "Longers Borders"
+	call Resizing4
+	__CreateBorder 28,18,18,28
+	__CreateWindow 0,0,0,0,0,0,COLOR_WINDOW,ax,bx,cx,dx     ; Janela do centro - "FieldSet"
+	__ShowWindow 1                                          ; Center´s Window - "FieldSet"
+	call Resizing5
+	__CreateBorder 18,28,28,18
+	__CreateField Text1,0,0,31,ax,bx,cx,8                   ; 1ª campo de texto
+	__ShowField 1                                           ; 1st Text Field
+	call Resizing6
+	__CreateBorder 18,28,28,18
+	__CreateField Text2,0,0,31,ax,bx,cx,8                   ; 2ª campo de texto
+	__ShowField 1                                           ; 2st Text Field
+	call Resizing7
+	__CreateBorder 28,18,18,28
+	__CreateButton Button1,0,0,COLOR_WINDOW-2,ax,bx,cx,10   ; 1ª Botão
+	__ShowButton 1                                          ; 1st Button
+	call Resizing8
+	__CreateBorder 28,18,18,28
+	__CreateButton Button2,0,0,COLOR_WINDOW-2,ax,bx,cx,10   ; 2ª Botão
+	__ShowButton 1                                          ; 2st Button
+	
+	; ADICIONE MAIS ELEMENTOS VISUAIS AQUI ...
+	; EM CASO DE NOVOS ELEMENTOS ENSIRA NOVOS REAJUSTES
+ret
+;_________________________________________________________________________
+
+
+; Executa a chamada de Movimento da janela com sobreposições de pixels
+;_________________________________________________________________________
+
+WindowMoviment:
+	SaveInMemory REPAINT, WIND, 0
+	cmp byte[IsMovable], MOVABLE
+	ja RetMovement
+	jb WaitToEnd 
+	LoopMoviment:
+		mov ah, 00h
+		int 16h
+		cmp al, 27
+		je RetMovement  
+		call VerifyKey
+		cmp al, 0
+		je LoopMoviment
+		cmp al, 2
+		je RetMovement
+		GetInMemory REPAINT, WIND
+		jmp LoopMoviment
+WaitToEnd:
+	mov ah, 00h
+	int 16h
+	cmp al, 27
+	je RetMovement 
+	jmp WaitToEnd
+RetMovement:
+	ret
+;_________________________________________________________________________
+
+
+; Cálculos de reajustes dos elementos visuais
+;_________________________________________________________________________
+Resizing1:         ; Reajuste para sombra da janela
+	add ax, 2
+	add bx, 2
+	add dx, 9
+ret
+
+Resizing2:         ; Reajuste para janela principal
+	sub ax, 2
+	sub bx, 2
+	sub dx, 9
+ret
+
+Resizing3:         ; Reajuste para janela interior
+	add ax, 3
+	add bx, 12
+	sub cx, 6
+	sub dx, 6
+ret
+
+Resizing4:         ; Reajuste para janela do centro
+	add ax, 6
+	add bx, 6
+	sub cx, 12
+	sub dx, 12
+ret
+
+Resizing5:         ; Reajuste para 1ª campo de texto
+	add ax, 6
+	add bx, dx
+	push ax
+	xor ax, ax
+	mov ax, bx
+	xor bx, bx
+	mov bx, 2
+	xor dx, dx
+	div bx
+	mov bx, ax
+	push cx
+	xor ax, ax
+	mov ax, word[PositionY]
+	xor cx, cx
+	mov cx, 2
+	xor dx, dx
+	div cx
+	mov cx, ax
+	sub cx, 4
+	sub bx, 4
+	add bx, cx
+	pop cx
+	pop ax
+	sub cx, 12
+ret
+
+Resizing6:         ; Reajuste para 2ª campo de texto
+	add bx, 12
+ret
+
+Resizing7:         ; Reajuste do 1ª botão
+	push ax
+	add ax, cx
+	mov dx, ax
+	push dx
+	xor ax, ax
+	mov ax, cx
+	xor cx, cx
+	xor dx, dx
+	mov cx, 2
+	div cx
+	mov cx, ax
+	sub cx, 6
+	xor dx, dx
+	pop dx
+	pop ax
+	add bx, 14
+ret
+
+Resizing8:         ; Reajuste do 2ª botão
+	add ax, cx
+	add ax, 12
+	push ax
+	add ax, cx
+	cmp dx, ax
+	ja Resize
+	pop ax
+	jmp RetResizing8
+Resize:
+	pop ax
+	inc ax
+RetResizing8:
+	ret
+
+; EM CASO DE NOVOS ELEMENTOS, 
+; ADICIONE MAIS ROTINAS DE REAJUSTES AQUI ...
+;_________________________________________________________________________
+
+
+; Rotina que salva valores dos parâmetros: X, Y, W, H
+;_________________________________________________________________________
+SaveValues:
+	cmp cx, MIN_WIDTH_SIZE
+	jb ChangeWidth
+Cond2:
+	cmp dx, MIN_HEIGHT_SIZE
+	jb ChangeHeight
+	SaveNow:
+		mov word[PositionX], ax
+		mov word[PositionY], bx
+		mov word[WidthWindow], cx
+		mov word[HeightWindow], dx
+		mov word[W_Width], cx
+		mov word[W_Height], dx
+		add word[WidthWindow], 3
+		add word[HeightWindow], 12
+		jmp RetSaveValues
+	ChangeWidth:
+		mov cx, 50
+		jmp Cond2
+	ChangeHeight:
+		mov dx, 45
+		jmp SaveNow
+RetSaveValues:
+	ret
+;_________________________________________________________________________
+
+
+; Rotinas de armazenamento de pixels na memória chamadas pelas Macros:
+; SaveInMemory & GetInMemory. 
+; Ambas as rotinas para sobreposição de pixels
+;_________________________________________________________________________
+
+
+; Captura e armazena pixels do fundo ou da janela atual
+;_________________________________________________________________________
+SaveColorWindow:
+	mov ah, 0Dh
+	mov cx, word[PositionX]
+	mov dx, word[PositionY]
+	call AddSize
+	mov es, bx 
+	xor bx, bx
+	GetColor:
+		int 10h
+		mov byte[es:di + bx], al
+		inc cx
+		inc bx
+		cmp cx, word[WidthWindow]
+		jne GetColor
+		mov cx, word[PositionX]
+		inc dx
+		cmp dx, word[HeightWindow]
+		jne GetColor
+ret
+
+AddSize:
+	cmp al, 1
+	jne RetAdd
+	add word[WidthWindow], cx
+	add word[HeightWindow], dx
+RetAdd:
+	ret
+;_________________________________________________________________________
+
+
+; Apaga e redesenha janela com pixels salvos por SaveColorWindow
+;_________________________________________________________________________
+RepaintWindow:
+	mov ah, 0Ch
+	mov cx, word[PositionX]
+	mov dx, word[PositionY]
+	mov es, bx  
+	xor bx, bx
+	Repaint1:
+		mov al, byte[es:di + bx]
+		int 10h
+		inc cx
+		inc bx
+		cmp cx, word[WidthWindow]
+		jne Repaint1
+		mov cx, word[PositionX]
+		inc dx
+		cmp dx, word[HeightWindow]
+		jne Repaint1
+ret
+;_________________________________________________________________________
+
+
+; Rotina de verificação de teclas
+; Aqui é controlado as funcionalidades de movimentação e
+; redimensionamento da janela através de teclas definidas
+; ________________________________________________________________________
+VerifyKey:
+	cmp ah, ARROW_RIGHT
+	je IncRight
+	cmp ah, ARROW_LEFT
+	je DecLeft
+	cmp ah, ARROW_DOWN
+	je IncDown
+	cmp ah, ARROW_UP
+	je DecUp
+	cmp al, CTRL_D
+	je ResizeRight
+	cmp al, CTRL_A
+	je ResizeLeft
+	cmp al, CTRL_S
+	je ResizeDown
+	cmp al, CTRL_W
+	je ResizeUp
+	cmp al, CTRL_Z      
+	je ChangeToWall
+	cmp al, CTRL_X 
+	je ChangeToIron
+	;cmp al, OUTRA_TECLA   -> Descomente para adicionar outras teclas
+	;je AlgumaRotina          de controle para outra rotina
+	mov al, 0
+	jmp RetVerifyKey
+IncRight:
+	GetInMemory ERASE, BACK
+	add word[PositionX], 2
+	add word[WidthWindow], 2
+	mov al, 1
+	SaveInMemory ERASE, BACK, 0
+	jmp RetVerifyKey
+DecLeft:
+	GetInMemory ERASE, BACK
+	sub word[PositionX], 2
+	sub word[WidthWindow], 2
+	mov al, 1
+	SaveInMemory ERASE, BACK, 0
+	jmp RetVerifyKey
+IncDown:
+	GetInMemory ERASE, BACK
+	add word[PositionY], 2
+	add word[HeightWindow], 2
+	mov al, 1
+	SaveInMemory ERASE, BACK, 0
+	jmp RetVerifyKey
+DecUp:
+	GetInMemory ERASE, BACK
+	sub word[PositionY], 2
+	sub word[HeightWindow], 2
+	mov al, 1
+	SaveInMemory ERASE, BACK, 0
+	jmp RetVerifyKey
+ResizeRight:
+	GetInMemory ERASE, BACK
+	inc word[W_Width]
+	jmp ResizeWindow  ;jmp ResizeWindow
+ResizeLeft:
+	GetInMemory ERASE, BACK
+	dec word[W_Width]
+	jmp ResizeWindow
+ResizeDown:
+	GetInMemory ERASE, BACK
+	inc word[W_Height]
+	jmp ResizeWindow
+ResizeUp:
+	GetInMemory ERASE, BACK
+	dec word[W_Height]
+	jmp ResizeWindow
+ChangeToWall:
+	mov al, 2
+	mov cx, _WALL
+ret
+ChangeToIron:
+	mov al, 2
+	mov cx, _IRON
+ret
+; __________________________________________________________________________________
+;
+; ADICIONE AQUI OUTRAS ROTINAS DE FUNCIONALIDADE PELAS TECLAS...
+; Exemplo -> AlgumaRotina:
+;				Códigos...
+;			 jmp RetVerifyKey
+; __________________________________________________________________________________
+
+RetVerifyKey:
+	mov cx, word[PositionX]
+	mov dx, word[PositionY]
+ret
+
+
+; Rotina de redimensionamento de janela que captura valores
+; pré-alterados pelas rotinas anteriores, Dependendo da tecla
+; uma rotina diferente é executada, chamando como última a esta.
+; __________________________________________________________________________________
+ResizeWindow:
+	Window3D MOVABLE+1, word[PositionX],word[PositionY],word[W_Width],word[W_Height]
+	mov al, 0
+ret
+	
+; __________________________________________________________________________________
+
+
+
+
+; Referências de memória base para manipular e guardar 
+; valores utilizados na movimentação e redimensionamento
+; de janelas
+; __________________________________________________________________________________
+
+PositionX 	  dw 0000h
+PositionY 	  dw 0000h
+WidthWindow   dw 0000h
+HeightWindow  dw 0000h
+W_Width       dw 0000h
+W_Height      dw 0000h
+IsMovable     db 1
+
+; __________________________________________________________________________________
+
+
+; Referências de memória para armazenar e manipular valores durante
+; o processo de desenho dos papéis de parede
+; __________________________________________________________________________________
+
+obj_quantX     dw 0000h
+obj_quantY     dw 0000h
+CountWallX     dw 0000h
+CountWallY     dw 0000h
+LastBlockSaveX dw 0000h
+LastBlockSaveY dw 0000h
+StateObj       db 0
+StateBlockX    db 0
+StateBlockY    db 0
+
+; __________________________________________________________________________________
+
+%ENDIF

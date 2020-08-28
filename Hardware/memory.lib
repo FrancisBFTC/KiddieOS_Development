@@ -1,0 +1,26 @@
+; ===============================================
+; KiddieOS - Memory Library Routines
+; Created by Francis
+; Version 1.0.0
+; ===============================================
+
+
+
+%IFNDEF __WMEMORY_LIB__
+%DEFINE __WMEMORY_LIB__
+
+; Memory Window Configurations ____________________
+; _________________________________________________
+
+%DEFINE SYSTEM 16
+%DEFINE BOOTLOADER 0x7C00
+%DEFINE KERNEL 0x0000
+%DEFINE WINDOWS 0x0F00
+%DEFINE KEYBOARD 0x1400
+
+
+
+; _________________________________________________
+
+
+%ENDIF

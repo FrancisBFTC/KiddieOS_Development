@@ -1,0 +1,60 @@
+; ===============================================
+; KiddieOS - Disk/Memory Library Routines
+; Created by Francis
+; Version 1.0.0
+; ===============================================
+
+%IFNDEF __DISK_LIB__
+%DEFINE __DISK_LIB__
+
+; Disk & Memory Configurations __________________
+; _______________________________________________
+
+
+
+SegmentAddr   dw 0000h
+OffsetAddr    dw 0000h
+Sector        db 0
+Track         db 0
+Head          db 0
+Drive         db 0
+NumSectors    db 0
+
+Reader        db 02h
+Writer        db 03h
+
+SectorPerTrack    db 0
+TrackPerHead      db 0
+; _______________________________________________
+
+
+
+
+; Routine Library _______________________________
+; _______________________________________________
+
+ReadDisk:
+    mov ah, byte[Reader]
+	call DiskOperations
+ret
+
+WriteDisk:
+    mov ah, byte[Writer]
+	call DiskOperations
+ret
+	
+DiskOperations:
+	mov al, byte[NumSectors]
+	mov ch, byte[Track]
+	mov cl, byte[Sector]
+	mov dh, byte[Head]
+	mov dl, byte[Drive]
+	mov bx, word[SegmentAddr]    ; ES:BX
+	mov es, bx
+	mov bx, word[OffsetAddr]
+	int 13h
+ret
+
+; _______________________________________________
+
+%ENDIF

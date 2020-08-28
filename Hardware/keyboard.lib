@@ -1,0 +1,33 @@
+; ===================================================
+; KiddieOS - Keyboard Driver Library
+; Created by Francis
+; Version 1.0.0
+; ===================================================
+
+%IFNDEF _KEYBOARD_LIB_
+%DEFINE _KEYBOARD_LIB_
+
+%DEFINE KEYBOARD_INSTALL KEYBOARD
+%DEFINE KEYBOARD_HANDLER KEYBOARD+2
+
+%DEFINE KEYBOARD_SECTOR  10
+%DEFINE KEYBOARD_STATUS  0x64 
+%DEFINE KEYBOARD_DATA    0x60
+
+%DEFINE KEYCODE  	3017h
+%DEFINE BEGIN_CHAR  1
+%DEFINE FINAL_CHAR  58
+
+%MACRO __Keyboard_Driver_Load 2
+	mov BYTE[Sector], KEYBOARD_SECTOR
+	mov BYTE[Drive], 80h
+	mov BYTE[NumSectors], 1
+	mov WORD[SegmentAddr], %1
+	mov WORD[OffsetAddr], %2	
+	call ReadDisk
+%ENDMACRO
+
+DriverCommands db 0xF4, 0xED, '$'
+CountKey       dw 0000h
+
+%ENDIF
