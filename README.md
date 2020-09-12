@@ -4,3 +4,12 @@ O KiddieOS é um sistema operacional open-source básico em desenvolvimento pelo
 [Clique aqui e aprenda a criar SOs no Curso D.S.O.S](https://www.youtube.com/playlist?list=PLsoiO2Be-2z8BfsSkspJfDiuKeC9-LSca)
 
 Veja as atualizações e o progresso do projeto logo abaixo:
+
+## KiddieOS Versão 1.1.0
+[Etapa 1](https://github.com/FrancisBFTC/KiddieOS_Development)
+Esta etapa é relacionada ao desenvolvimento da Interface gráfica com efeito 3D e algumas atualizações na lib da interface móvel e redimensionável.
+
+[Etapa 2]()
+Criação do Driver de teclado, arquivo de fontes nativas de texto do KiddieOS e Início do desenvolvimento do sistema de escrita de textos.
+
+## KiddieOS Versão 1.2.0
