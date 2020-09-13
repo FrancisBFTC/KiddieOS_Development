@@ -26,8 +26,7 @@ OSMain:
 	call VGA.SetVideoMode
 	call DrawBackground
 	call EffectInit
-	call DriversInstall ;alt
-	;jmp GraficInterface
+	call DriversInstall
 	jmp SystemKernel
 
 	
@@ -39,10 +38,8 @@ OSMain:
 ; _____________________________________________
 ; Kernel Functions ____________________________
 
-SystemKernel: ;alt
+SystemKernel:
 	call KEYBOARD_HANDLER
-	cmp al, 0x3B
-	je END
 jmp SystemKernel
 
 DriversInstall:
