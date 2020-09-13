@@ -9,7 +9,7 @@ Veja as atualizações e o progresso do projeto logo abaixo:
 [Etapa 1 =>](https://github.com/FrancisBFTC/KiddieOS_Development)
  Esta etapa é relacionada ao desenvolvimento da Interface gráfica com efeito 3D e algumas atualizações na lib da interface móvel e redimensionável. Inclue também o otimizador de testes do desenvolvimento.
 
-[Etapa 2 =>]()
+[Etapa 2 =>](https://github.com/FrancisBFTC/KiddieOS_Development/tree/Version_1-1-0_Step_2)
  Criação do Driver de teclado, arquivo de fontes nativas de texto do KiddieOS e Início do desenvolvimento do sistema de escrita de textos.
 
 ## KiddieOS Versão 1.2.0
