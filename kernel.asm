@@ -12,6 +12,7 @@ jmp OSMain
 %INCLUDE "Hardware/win16.lib"
 %INCLUDE "Hardware/win3dmov.lib"
 %INCLUDE "Hardware/keyboard.lib"
+%INCLUDE "Hardware/fontswriter.lib"
 
 ; _____________________________________________
 
@@ -45,9 +46,9 @@ SystemKernel: ;alt
 jmp SystemKernel
 
 DriversInstall:
-	__Keyboard_Driver_Load 0x0800, 0x1400
+	__Keyboard_Driver_Load
 	call KEYBOARD_INSTALL
-;	__Fonts_Writer_Load 0x0800, 0x1600
+ 	__Fonts_Writer_Load
 ret
 
 GraficInterface:

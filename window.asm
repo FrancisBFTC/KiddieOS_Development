@@ -1,6 +1,6 @@
 %INCLUDE "Hardware/memory.lib"
 [BITS SYSTEM]
-[ORG WINDOWS]
+[ORG WINDOW]
 
 
 

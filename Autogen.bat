@@ -3,23 +3,25 @@ cls
 
 setlocal enabledelayedexpansion
 
-set QuantFile=4
+set QuantFile=5
 
-set Drive=6
+set Drive=5
 
 set file1=bootloader
 set file2=kernel
 set file3=window
 set file4=keyboard
+set file5=fontswriter
 
 set filebin1=Binary\%file1%.bin
 set filebin2=Binary\%file2%.bin
 set filebin3=Binary\%file3%.bin
 set filebin4=Driver\%file4%.sys
+set filebin5=Binary\%file5%.bin
 
 set IMG=KiddieOS
 set Local=C:\Users\BFTC\Desktop\KiddieOS
-set LibFile=Hardware\memorys.lib
+set LibFile=Hardware\memory.lib
 set ImageFile=DiskImage\%IMG%.img
 
 

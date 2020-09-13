@@ -7,6 +7,7 @@ jmp Keyboard_Handler_Main
 
 %INCLUDE "Hardware/keyboard.lib"
 %INCLUDE "Hardware/iodevice.lib"
+%INCLUDE "Hardware/fontswriter.lib"
 
 Keyboard_Initialize:
   mov si, DriverCommands
