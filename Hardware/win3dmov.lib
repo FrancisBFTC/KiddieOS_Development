@@ -155,7 +155,7 @@
 %MACRO Window3D 5        ; Chamada principal da janela 3D
 	ResizingWindow %2, %3, %4, %5
 	mov byte[IsMovable], %1
-	call Window
+	call WindowCreate
 	call WindowMoviment
 %ENDMACRO
 
@@ -424,7 +424,7 @@ FinalPaper:
 
 ; Rotina que cria janela 3D com elementos visuais
 ;_________________________________________________________________________
-Window:
+WindowCreate:
 	SaveInMemory ERASE, BACK, 1
 	call Resizing1
 	__CreateWindow 0,0,0,0,0,0,0,ax,bx,cx,dx   				; Sombra da janela

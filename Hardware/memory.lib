@@ -1,26 +1,31 @@
-; ===============================================
-; KiddieOS - Memory Library Routines
-; Created by Francis
-; Version 1.0.0
-; ===============================================
-
-
-
-%IFNDEF __WMEMORY_LIB__
-%DEFINE __WMEMORY_LIB__
-
-; Memory Window Configurations ____________________
-; _________________________________________________
-
-%DEFINE SYSTEM 16
-%DEFINE BOOTLOADER 0x7C00
-%DEFINE KERNEL 0x0000
-%DEFINE WINDOWS 0x0F00
-%DEFINE KEYBOARD 0x1400
-
-
-
-; _________________________________________________
-
-
-%ENDIF
+; =============================================== 
+; AUTO GENERATED FILE - NOT CHANGE 
+; 
+; KiddieOS - Memory Library Routines 
+; Created by Autogen 
+; Version 1.0.0 
+; =============================================== 
+ 
+%IFNDEF _MEMORY_LIB_ 
+%DEFINE _MEMORY_LIB_ 
+ 
+%DEFINE SYSTEM 16 
+ 
+%DEFINE BOOTLOADER             0x7C00 
+%DEFINE BOOTLOADER_SECTOR      1 
+%DEFINE BOOTLOADER_NUM_SECTORS 1 
+%DEFINE KERNEL             0x0000 
+%DEFINE KERNEL_SECTOR      2 
+%DEFINE KERNEL_NUM_SECTORS 6 
+%DEFINE WINDOW             0x0B6D 
+%DEFINE WINDOW_SECTOR      8 
+%DEFINE WINDOW_NUM_SECTORS 2 
+%DEFINE KEYBOARD             0x0E12 
+%DEFINE KEYBOARD_SECTOR      10 
+%DEFINE KEYBOARD_NUM_SECTORS 1 
+%DEFINE FONTSWRITER             0x0EAC 
+%DEFINE FONTSWRITER_SECTOR      11 
+%DEFINE FONTSWRITER_NUM_SECTORS 4 
+ 
+%ENDIF 
+ 

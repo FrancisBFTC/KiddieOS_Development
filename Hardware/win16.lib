@@ -8,10 +8,10 @@
 %DEFINE _WIN16_LIB
 
 %DEFINE WIN_SEGMENT 0800h
-%DEFINE WIN_OFFSET  0F00h
-%DEFINE WIN_SECTOR  8
+%DEFINE WIN_OFFSET  WINDOW
+%DEFINE WIN_SECTOR  WINDOW_SECTOR
 
-%DEFINE WindowAddress  0F00h
+%DEFINE WindowAddress  WINDOW
 
 
 %DEFINE Window_Bar	          3000h
@@ -59,7 +59,7 @@ CountPositions dw 0000h ;end
 %MACRO __LoadInterface 0
 	mov byte[Sector], WIN_SECTOR
 	mov byte[Drive], 80h
-	mov byte[NumSectors], 2
+	mov byte[NumSectors], WINDOW_NUM_SECTORS
 	mov word[SegmentAddr], WIN_SEGMENT
 	mov word[OffsetAddr], WIN_OFFSET
 	call ReadDisk
