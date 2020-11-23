@@ -11,5 +11,9 @@ Veja as atualizações e o progresso do projeto logo abaixo:
 
 [Etapa 2 =>](https://github.com/FrancisBFTC/KiddieOS_Development/tree/Version_1-1-0_Step_2)
  Criação do Driver de teclado, arquivo de fontes nativas de texto do KiddieOS e Início do desenvolvimento do sistema de escrita de textos.
+ 
+ [Etapa 3 =>](https://github.com/FrancisBFTC/KiddieOS_Development/tree/Version_1-1-0_Step_3)
+ Atualização do win3dmov.lib com a chamada driver de teclado e rotinas de atualização das posições interativas, finalização do desenvolvimento 
+ do sistema de escrita e implementação do cursor piscante nos elementos de texto. 
 
 ## KiddieOS Versão 1.2.0
