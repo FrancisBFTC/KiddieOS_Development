@@ -1,6 +1,6 @@
 %INCLUDE "Hardware/memory.lib"
 [BITS SYSTEM]
-[ORG WINDOWS]
+[ORG WINDOW]
 
 
 
@@ -12,6 +12,7 @@ popa
 ; =====================================
 ; Inclusion Files
 
+%INCLUDE "Hardware/fontswriter.lib"
 %INCLUDE "Hardware/win16.lib"
 
 ; =====================================
