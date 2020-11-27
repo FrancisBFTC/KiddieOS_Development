@@ -16,6 +16,8 @@ ProcChars:
 	je TextPositions
 	cmp al, K_ESC
 	je ChangeCursor
+	cmp al, K_CAPSLOCK  ;up
+	je ChangeCapsLock   ;up
 	cmp byte[CursorFocus], 1
 	jne Return
 	cmp byte[CursorTab], 1
@@ -30,12 +32,10 @@ ProcChars:
 	je Return
 	cmp al, K_ALTLEFT
 	je Return
-	cmp al, K_CAPSLOCK
-	je Return
 	xor ah, ah
 	xor dx, dx
 	push ax
-	mov si, Chars
+	call VerifyFontCase  ;Up
 	xor bx, bx
 	mov bx, 26   ;5 x 5 + 1
 	mul bx
@@ -54,22 +54,49 @@ Erase:
 	call EraseChar
 	jmp Return
 	
+; _____________________________________
+AsciiConversor: ;Up
+	xor bx, bx
+	mov bl, al
+	mov al, byte[ds:di + bx]
+ret
+
+VerifyFontCase:  ;up
+	mov si, FontLower
+	mov di, LowerChars
+	cmp byte[CapsLockStatus], 0
+	jz ReturnCase
+	mov si, FontUpper
+	mov di, UpperChars
+ReturnCase:
+	ret
+	
+ChangeCapsLock:   ;up
+	cmp byte[CapsLockStatus], 1
+	je ChgCaps
+	mov byte[CapsLockStatus], 1
+ret
+ChgCaps:
+	mov byte[CapsLockStatus], 0
+ret
+; _____________________________________
+
 ChangeCursor:
-	;call CURSOR_HANDLER
+	call CURSOR_HANDLER
 	cmp byte[CursorFocus], 1
 	je Change
 	mov byte[CursorFocus], 1
-	jmp Return
+ret
 Change:
 	mov byte[CursorFocus], 0
-	jmp Return
+ret
 
 TextPositions:
 	cmp byte[Window_Exist], 1
 	jne Return
 	cmp byte[Field_Exist], 1
 	jne Return
-	;call CURSOR_HANDLER
+	call CURSOR_HANDLER
 	inc byte[QuantTab]
 	mov bl, byte[QuantTab]
 	mov al, byte[QUANT_FIELD]
@@ -115,7 +142,7 @@ ProcPositions:
 	
 PrintChar:
 	push ax
-	;call CURSOR_HANDLER
+	call CURSOR_HANDLER
 	pop ax
 	mov cx, word[POSITION_X]
 	mov dx, word[POSITION_Y]
@@ -138,6 +165,7 @@ PrintChar:
 	
 	pop ax
 	push bx
+	call AsciiConversor ;Up
 	mov bx, word[QUANT_KEY]
 	mov di, word[C_ADDR]
 	mov byte[ds:di + bx], al
@@ -156,7 +184,7 @@ RetPrintChar:
 	ret
 	
 EraseChar:
-	;call CURSOR_HANDLER
+	call CURSOR_HANDLER
 	mov cx, word[POSITION_X]
 	mov dx, word[POSITION_Y]
 	call VerifyLimitColX
