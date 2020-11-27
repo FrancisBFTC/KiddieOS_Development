@@ -1,7 +1,7 @@
 ; ===================================================
 ; KiddieOS - Keyboard Driver Library
 ; Created by Francis
-; Version 1.0.0
+; Version 1.2.0
 ; ===================================================
 
 %IFNDEF _KEYBOARD_LIB_
@@ -9,6 +9,7 @@
 
 %DEFINE KEYBOARD_INSTALL KEYBOARD
 %DEFINE KEYBOARD_HANDLER KEYBOARD+2
+%DEFINE CURSOR_HANDLER   KEYBOARD+4
 
 %DEFINE KEYBOARD_STATUS  0x64 
 %DEFINE KEYBOARD_DATA    0x60
@@ -106,7 +107,7 @@
 %DEFINE K_F12          0x58
 
 
-
+CapsLockStatus db 0 ;Up
 
 
 ; ____________________________________________
