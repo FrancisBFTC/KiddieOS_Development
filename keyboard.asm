@@ -7,6 +7,7 @@ jmp Keyboard_Handler_Main
 
 %INCLUDE "Hardware/keyboard.lib"
 %INCLUDE "Hardware/iodevice.lib"
+%INCLUDE "Hardware/fontswriter.lib"
 
 Keyboard_Initialize:
   mov si, DriverCommands
@@ -33,34 +34,29 @@ EndInitialize:
 	
 Keyboard_Handler_Main:
 	__ReadPort KEYBOARD_DATA
-	cmp al, [KEYCODE]
+	cmp al, byte[KEYCODE]
 	je TillPress
-	mov word[CountKey], 0000h
+	mov WORD[CountKey], 0000h
 VerifyKeys:
 	mov byte[KEYCODE], al
 	cmp al, BEGIN_CHAR
 	jnb Final
 	jmp Return
 Final:
-	cmp al, FINAL_CHAR
-	jnbe Return
-	mov ah, 0Eh
-	int 10h
+	__FontsWriter KEY
 	jmp Return
 TillPress:
 	cmp WORD[CountKey], 200
 	je WaitTime
-	cmp WORD[CountKey], 210
-	je VerifyKeys
 	inc WORD[CountKey]
 	jmp Return
 WaitTime:
-	mov WORD[CountKey], 210
 	call DelayPress
 	jmp VerifyKeys
-Return:	
+Return:
+	;call CursorHandler
 	call DelayIntervals
-	ret
+ret
 	
 DelayPress:
 	mov ah, 86h

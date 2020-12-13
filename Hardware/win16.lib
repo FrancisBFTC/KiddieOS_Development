@@ -1,18 +1,17 @@
 ; ===============================================
-; KiddieOS - Macros Interface Library
+; KiddieOS - Window Interface Library
 ; Created by Francis
-; Version 1.1.0
+; Version 1.2.0
 ; ===============================================
 
 %IFNDEF _WIN16_LIB
 %DEFINE _WIN16_LIB
 
 %DEFINE WIN_SEGMENT 0800h
-%DEFINE WIN_OFFSET  0F00h
-%DEFINE WIN_SECTOR  8
+%DEFINE WIN_OFFSET  WINDOW
+%DEFINE WIN_SECTOR  WINDOW_SECTOR
 
-%DEFINE WindowAddress  0F00h
-
+%DEFINE WindowAddress  WINDOW
 
 %DEFINE Window_Bar	          3000h
 %DEFINE Window_Width          3001h
@@ -31,11 +30,9 @@
 %DEFINE Window_Border_Up      3012h
 %DEFINE Window_Border_Down    3013h
 
-
 %DEFINE Window_Exist          3014h    
 %DEFINE Field_Exist           3015h
 %DEFINE Button_Exist          3016h
-
 
 BackInitialPositionX    dw 0000h  
 BackInitialPositionY    dw 0000h  
@@ -46,11 +43,6 @@ SavePositionY         dw 0000h
 SaveWidth             dw 0000h
 SaveHeight            dw 0000h
 
-%DEFINE QUANT_FIELD1   301Dh ;start
-%DEFINE LIMIT_COLW1    301Fh
-%DEFINE LIMIT_COLX1    3021h
-%DEFINE BS_COLOR1      3023h
-%DEFINE POSITIONS1     3024h
 CountPositions dw 0000h ;end
 
 ; Carregar o window.bin na memória
@@ -59,7 +51,7 @@ CountPositions dw 0000h ;end
 %MACRO __LoadInterface 0
 	mov byte[Sector], WIN_SECTOR
 	mov byte[Drive], 80h
-	mov byte[NumSectors], 2
+	mov byte[NumSectors], WINDOW_NUM_SECTORS
 	mov word[SegmentAddr], WIN_SEGMENT
 	mov word[OffsetAddr], WIN_OFFSET
 	call ReadDisk
@@ -108,10 +100,13 @@ CountPositions dw 0000h ;end
 ; ___________________________________________
 %MACRO __CreateField 8
 	__CreateWindow 0,0,0,0,0, %3, %4, %5, %6, %7, %8
-	mov byte[BS_COLOR1], %4
+	mov byte[BS_COLOR], %4
+	mov si, QuantKey_%1 ;analise
+	mov di, C_%1
 	call SavePositions
 	jmp JmpValue%1
-	%1 db %2
+	QuantKey_%1 dw 0000h
+	C_%1 times 50 db 0;analise
 JmpValue%1:
 %ENDMACRO
 
@@ -144,27 +139,33 @@ SavePositions:
 	mov cx, bx ;%6
 	xor bx, bx
 	mov bx, word[CountPositions]
-	mov word[POSITIONS1 + bx], ax ;%5
-	sub word[POSITIONS1 + bx], 4
+	mov word[POSITIONS + bx], ax ;%5
+	sub word[POSITIONS + bx], 4
 	add word[CountPositions], 2
 	mov bx, word[CountPositions]
-	mov word[POSITIONS1 + bx], cx
+	mov word[POSITIONS + bx], cx
 	add word[CountPositions], 2
 	pop cx
 	push cx
-	mov word[LIMIT_COLW1], ax ;%5
-	add word[LIMIT_COLW1], cx
-	sub word[LIMIT_COLW1], 4
-	mov cx, word[LIMIT_COLW1]
+	mov word[LIMIT_COLW], ax ;%5
+	add word[LIMIT_COLW], cx
+	sub word[LIMIT_COLW], 4
+	mov cx, word[LIMIT_COLW]
 	mov bx, word[CountPositions]
-	mov word[POSITIONS1 + bx], cx
+	mov word[POSITIONS + bx], cx
 	add word[CountPositions], 2
-	mov word[LIMIT_COLX1], ax ;%5
-	mov cx, word[LIMIT_COLX1]
+	mov word[LIMIT_COLX], ax ;%5
+	mov cx, word[LIMIT_COLX]
 	mov bx, word[CountPositions]
-	mov word[POSITIONS1 + bx], cx
+	mov word[POSITIONS + bx], cx
 	add word[CountPositions], 2
-	inc byte[QUANT_FIELD1]
+	mov bx, word[CountPositions]
+	mov word[POSITIONS + bx], si
+	add word[CountPositions], 2
+	mov bx, word[CountPositions]
+	mov word[POSITIONS + bx], di
+	add word[CountPositions], 2
+	inc byte[QUANT_FIELD]
 	pop cx
 	pop bx
 ret

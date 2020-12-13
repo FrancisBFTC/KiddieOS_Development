@@ -4,18 +4,18 @@
 
 	
 call LoadSystem
-jmp 0800h:0000h
+jmp 0800h:KERNEL
 
 LoadSystem:
 	mov ah, 02h
-	mov al, 6
+	mov al, KERNEL_NUM_SECTORS ;6
 	mov ch, 0
-	mov cl, 2
+	mov cl, KERNEL_SECTOR
 	mov dh, 0
 	mov dl, 80h
 	mov bx, 0800h
 	mov es, bx
-	mov bx, 0000h
+	mov bx, KERNEL
 	int 13h
 ret
 
