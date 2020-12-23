@@ -20,3 +20,6 @@ Veja as atualizações e o progresso do projeto logo abaixo:
   Implementação do cursor piscante nos elementos de texto, Controle do Capslock para exibição de caracteres LowerCase/UpperCase, Atualização do arquivo de fontes (LowerCase, UpperCase & AsciiCode) e rotina de conversão para ascii code durante o armazenamento de caracteres nos campos de textos.
  
 ## KiddieOS Versão 1.2.0
+
+[Etapa 1 =>](https://github.com/FrancisBFTC/KiddieOS_Development/tree/Version_1-1-0_Step_4-1)
+  Atualização teste com FAT32 no boot record - ainda não funcional.
