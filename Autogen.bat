@@ -3,24 +3,27 @@ cls
 
 setlocal enabledelayedexpansion
 
-set QuantFile=5
+set QuantFile=7
 
-set Drive=5
+set Drive=1
 
 set file1=bootloader
-set file2=kernel
-set file3=window
-set file4=keyboard
-set file5=fontswriter
+set file2=fsinfostruct
+set file3=grub
+set file4=kernel
+set file5=window
+set file6=keyboard
+set file7=fontswriter
 
 set filebin1=Binary\%file1%.bin
 set filebin2=Binary\%file2%.bin
 set filebin3=Binary\%file3%.bin
-set filebin4=Driver\%file4%.sys
+set filebin4=Binary\%file4%.bin
 set filebin5=Binary\%file5%.bin
+set filebin6=Driver\%file6%.sys
+set filebin7=Binary\%file7%.bin
 
 set IMG=KiddieOS
-set Local=C:\Users\BFTC\Desktop\KiddieOS
 set LibFile=Hardware\memory.lib
 set ImageFile=DiskImage\%IMG%.img
 
@@ -62,19 +65,17 @@ set SizeSector=512
 
 	set /A Counter=1
 	set /A NumSectors=1
-	::set /A Bytes=1
-::loop
+
 	for /l %%g in (1, 1, %size%) do (
 
-::set /A Bytes+=1
 		if !Counter! == 512 ( 
 			set /A Counter=1
-			if %i% NEQ 1 set /A NumSectors+=1
+			if %i% GTR 2 set /A NumSectors+=1
 			cecho {0A}.
 		)
 		set /A Counter=Counter+1
 	)
-::if %Bytes% NEQ %size% goto loop
+
 set /A "W=0"
 	echo.
 	
