@@ -1,32 +1,50 @@
 ECHO OFF
 cls
 
+cd /
+cd Users\CIDA\Desktop\KiddieOS
+
 setlocal enabledelayedexpansion
 
-set QuantFile=5
+set QuantFile=7
 
-set Drive=5
+set Drive=1
 
-set file1=bootloader
-set file2=kernel
+set file1=kernel
+set file2=fwriter
 set file3=window
-set file4=keyboard
-set file5=fontswriter
+set file4=fat16
+set file5=shell16
+set file6=wmanager
+set file7=keyboard
 
 set filebin1=Binary\%file1%.bin
 set filebin2=Binary\%file2%.bin
 set filebin3=Binary\%file3%.bin
-set filebin4=Driver\%file4%.sys
+set filebin4=Binary\%file4%.bin
 set filebin5=Binary\%file5%.bin
+set filebin6=Binary\%file6%.bin
+set filebin7=Driver\%file7%.sys
 
-set IMG=KiddieOS
-set Local=C:\Users\BFTC\Desktop\KiddieOS
+set VHD=KiddieOS
 set LibFile=Hardware\memory.lib
-set ImageFile=DiskImage\%IMG%.img
+set ImageFile=DiskImage\%VHD%.vhd
+set OffsetPartition=0
+::set OffsetPartition=61173
+
+del %ImageFile%
 
 
 set /A nasm=0
 set SizeSector=512
+
+	set /p Choose="Do you want to reassemble the FAT16 and MBR?(S\N)"
+	if %Choose% EQU S CALL :ReassembleFAT
+	if %Choose% EQU s CALL :ReassembleFAT
+	
+	call ::SendFatToVHD
+	
+cecho {\n}
 
 :Assembler
 	set /a i=i+1
@@ -36,7 +54,7 @@ set SizeSector=512
 	call set MyFile=%%%NameVar1%%%
 	cecho {0C}
 	if NOT EXIST %MyFile%.asm goto NoExistFile 
-	nasm -f bin %MyFile%.asm -o %FileOut%
+	nasm -O0 -f bin %MyFile%.asm -o %FileOut%
 	if %ERRORLEVEL% EQU 1 goto BugCode
 	cecho {#}
 	if %nasm% NEQ 1 (cecho {0B}"%MyFile%" file Mounted successfully!{\n}) else ( cecho {0B}.)
@@ -44,7 +62,7 @@ set SizeSector=512
 	if %nasm% NEQ 0 GOTO:EOF
 	
 	set i=0
-	set Sector=1
+	set Sector=591
 	set Segment=0x0800   rem Segmento do kernel
 	set Boot=0x7C00      rem Offset do Inicial Bootloader
 	set Kernel=0x0000    rem Offset Inicial Do Kernel
@@ -62,25 +80,22 @@ set SizeSector=512
 
 	set /A Counter=1
 	set /A NumSectors=1
-	::set /A Bytes=1
-::loop
+
 	for /l %%g in (1, 1, %size%) do (
 
-::set /A Bytes+=1
 		if !Counter! == 512 ( 
 			set /A Counter=1
-			if %i% NEQ 1 set /A NumSectors+=1
+			set /A NumSectors+=1
 			cecho {0A}.
 		)
 		set /A Counter=Counter+1
 	)
-::if %Bytes% NEQ %size% goto loop
+
 set /A "W=0"
 	echo.
 	
-	if %i% == 1 set /A StartAddr=Boot
-	if %i% == 2 set /A StartAddr=Kernel
-	if %i% GEQ 3 set /A StartAddr=FinalAddr+2
+	if %i% == 1 set /A StartAddr=Kernel
+	if %i% GEQ 2 set /A StartAddr=FinalAddr+2
 	set /A FinalAddr=StartAddr+size
 	call :ToHex
 	call :WriteDefLib
@@ -92,19 +107,24 @@ set /A "W=0"
 	cecho {0F} FINAL ADDRESS  = {0D}%FinalAddr%{#}{\n}
 	
 	set /A Sector+=NumSectors
-	set /A "seek%i%=Sector-1"
 	
 	if %i% NEQ %QuantFile% goto ReadFile
 	
 	call :WriteEndDef
 	call :ReAssembler
-	call :ImgCreate
+	call :VHDCreate
 	call :BootFlashDrive
 	
 	cecho {\n}
-	set /p Choose="Do you want to run the VirtualBox?(S\N)"
-	if %Choose% EQU S VirtualBox\%IMG%.lnk
-	if %Choose% EQU s VirtualBox\%IMG%.lnk
+	echo Which virtual machine do you want to run?
+	echo.
+	echo 1. KiddieOSUSB
+	echo 2. KiddieOSVHD
+	echo 0. Nothing
+	echo.
+	set /p Choose=
+	if %Choose% EQU 1 "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" startvm  --putenv VBOX_GUI_DBG_ENABLED=true KiddieOSUSB
+	if %Choose% EQU 2 "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" startvm  --putenv VBOX_GUI_DBG_ENABLED=true KiddieOSVHD
 	
 	cecho {\n}
 	goto END
@@ -134,6 +154,7 @@ GOTO:EOF
 	echo Fix the Error in the file!
 	cecho {0F}
 	echo.
+	pause
 	goto END
 	
 :NoExistFile
@@ -141,6 +162,7 @@ GOTO:EOF
 	echo The '%MyFile%.asm' File not exist!
 	cecho {0F}
 	echo.
+	pause
 	goto END
 	
 :AutoGenerator
@@ -213,45 +235,59 @@ GOTO:EOF
 	cecho {0F}
 	GOTO:EOF
 
-:ImgCreate
-	cecho {0B}Creating IMG Floppy file{\n}
-	dd if=/dev/zero of=%ImageFile% bs=1024 count=1440
-	
-	
-	::conv=notrunc
-	cecho {0B}Adding '%file1%' to the IMG file{\n}
-	dd if=%filebin1% of=%ImageFile%
-	
+:VHDCreate	
+	cecho {0A}Mounting VHD file...{\n}
+	cecho {0B}
+	imdisk -a -f %ImageFile% -s 32769K -m B:
 	set i=0
-	set /A QuantFile-=1
-	
 	:Creating
 		set /a i=i+1
-		set /a j=i+1
-		set "Var1=filebin%j%"
-		set "Var2=seek%i%"
-		set "Var3=file%j%"
+		set "Var1=filebin%i%"
+		set "Var3=file%i%"
 		call set BinFile=%%%Var1%%%
-		call set Seek=%%%Var2%%%
 		call set Bin=%%%Var3%%%
 		
-		::conv=notrunc
-		cecho {0B}Adding '%Bin%' to the IMG file{\n}
-		dd if=%BinFile% of=%ImageFile% bs=%SizeSector% seek=%Seek%
+		cecho {0B}Adding '%Bin%' to the VHD file{\n}
+		copy %BinFile% B:
 		
 		if %i% NEQ %QuantFile% goto Creating
-		
-		cecho {0A}{\n}The '%IMG%.img' was created successfully!{\n\n}
 
+		xcopy /S /E KiddieOS B:\KiddieOS
+		
+		cecho {0A}Dismounting VHD file...{\n}
+		cecho {0B}
+		imdisk -D -m B:
+		
+		cecho {0A}{\n}The '%VHD%.vhd' was created successfully!{\n\n}
 GOTO:EOF
+
+:ReassembleFAT
+cecho {0B} Assembling FAT16 and MBR...{\n}
+nasm -O0 -f bin -o Binary\bootmbr.bin bootmbr.asm
+nasm -O0 -f bin -o Binary\bootvbr.bin bootvbr.asm
+nasm -O0 -f bin -o FAT.bin FAT.asm
+nasm -O0 -f bin -o Binary\footervhd.bin footervhd.asm
+GOTO:EOF
+
+:SendFatToVHD
+cecho {0B}Sending FAT16 and MBR into VHD...{\n}
+dd count=2 seek=0 bs=512 if=Binary\bootmbr.bin of=%ImageFile%
+dd count=2 seek=63 bs=512 if=Binary\bootvbr.bin of=%ImageFile%
+dd count=2 seek=67 bs=512 if=FAT.bin of=%ImageFile%
+dd count=2 seek=65537 bs=512 if=Binary\footervhd.bin of=%ImageFile%
+cecho {0A}Done!{\n}
+
+cls
+GOTO:EOF
+	
 
 :BootFlashDrive
 	
 	cecho {0B}Writing system in Disk (Drive %Drive%) ...{\n}
-	rmpartusb drive=%Drive% filetousb file="%ImageFile%" filestart=0 length=1.474.560 usbstart=0
+	rmpartusb drive=%Drive% filetousb file="%ImageFile%" filestart=0 length=33.558.528 usbstart=%OffsetPartition%
 	cecho {0A}The System was written successfully{\n\n}
 	cecho {0F}
 GOTO:EOF
 
 :END
-	pause
+	

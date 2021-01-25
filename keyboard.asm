@@ -1,4 +1,5 @@
 %INCLUDE "Hardware/memory.lib"
+%INCLUDE "Hardware/kernel.lib"
 [BITS SYSTEM]
 [ORG KEYBOARD]
 
@@ -35,11 +36,11 @@ EndInitialize:
 	
 Keyboard_Handler_Main:
 	__ReadPort KEYBOARD_DATA
-	cmp al, byte[KEYCODE]
+	cmp al, byte[fs:KEYCODE]
 	je TillPress
 	mov WORD[CountKey], 0000h
 VerifyKeys:
-	mov byte[KEYCODE], al
+	mov byte[fs:KEYCODE], al
 	cmp al, BEGIN_CHAR
 	jnb Final
 	jmp Return
@@ -75,29 +76,29 @@ ret
 
 
 Cursor_Handler_Alt:
-	mov byte[CountCursor], CS_CHANGE-1
-	mov byte[StateCursor], CS_ERASE
+	mov byte[fs:CountCursor], CS_CHANGE-1
+	mov byte[fs:StateCursor], CS_ERASE
 	call CursorHandler
 ret
 
 CursorHandler:
-	cmp byte[CursorFocus], 1
+	cmp byte[fs:CursorFocus], 1
 	jne RetCursor
-	cmp byte[CursorTab], 1
+	cmp byte[fs:CursorTab], 1
 	jne RetCursor
-	inc byte[CountCursor]
-	cmp byte[CountCursor], CS_CHANGE
+	inc byte[fs:CountCursor]
+	cmp byte[fs:CountCursor], CS_CHANGE
 	je ChgStCursor
 	jmp RetCursor
 ChgStCursor:
-	cmp byte[StateCursor], CS_PAINT
+	cmp byte[fs:StateCursor], CS_PAINT
 	je State0
 	jmp State1
 State0:
-	mov byte[StateCursor], CS_ERASE
-	mov byte[CountCursor], 0
-	mov cx, word[POSITION_X]
-	cmp cx, word[LIMIT_COLW]
+	mov byte[fs:StateCursor], CS_ERASE
+	mov byte[fs:CountCursor], 0
+	mov cx, word[fs:POSITION_X]
+	cmp cx, word[fs:LIMIT_COLW]
 	jae RetCursor
 	mov byte[Function], CS_READ
 	call ConfigCursor
@@ -107,10 +108,10 @@ State0:
 	call PaintCursor
 	jmp RetCursor
 State1:
-	mov byte[StateCursor], CS_PAINT
-	mov byte[CountCursor], 0
-	mov cx, word[POSITION_X]
-	cmp cx, word[LIMIT_COLW]
+	mov byte[fs:StateCursor], CS_PAINT
+	mov byte[fs:CountCursor], 0
+	mov cx, word[fs:POSITION_X]
+	cmp cx, word[fs:LIMIT_COLW]
 	jae RetCursor
 	mov byte[Function], CS_WRITE
 	call ConfigCursor
@@ -119,8 +120,8 @@ RetCursor:
 	ret
 	
 ConfigCursor:
-	mov cx, word[POSITION_X]
-	mov dx, word[POSITION_Y]
+	mov cx, word[fs:POSITION_X]
+	mov dx, word[fs:POSITION_Y]
 	mov ah, byte[Function]
 	mov al, 0
 	add cx, FONT_SIZE
