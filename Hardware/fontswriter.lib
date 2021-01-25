@@ -37,18 +37,9 @@
 
 ColorChars db 0
 
-%MACRO __Fonts_Writer_Load 0
-	mov byte[Sector], FONTSWRITER_SECTOR
-	mov byte[Drive], 80h
-	mov byte[NumSectors], FONTSWRITER_NUM_SECTORS
-	mov word[SegmentAddr], 0x800
-	mov word[OffsetAddr], FONTSWRITER
-	call ReadDisk
-%ENDMACRO
-
 %MACRO __FontsWriter 1
 	xor bx, bx
 	mov bx, %1
 	cmp al, FINAL_CHAR
-	jbe FONTSWRITER
+	jbe FWRITER
 %ENDMACRO

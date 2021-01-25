@@ -8,8 +8,8 @@
 %DEFINE _KEYBOARD_LIB_
 
 %DEFINE KEYBOARD_INSTALL KEYBOARD
-%DEFINE KEYBOARD_HANDLER KEYBOARD+2
-%DEFINE CURSOR_HANDLER   KEYBOARD+4
+%DEFINE KEYBOARD_HANDLER KEYBOARD+3
+%DEFINE CURSOR_HANDLER   KEYBOARD+6
 
 %DEFINE KEYBOARD_STATUS  0x64 
 %DEFINE KEYBOARD_DATA    0x60
@@ -106,21 +106,10 @@
 %DEFINE K_F11          0x57
 %DEFINE K_F12          0x58
 
-
-CapsLockStatus db 0 ;Up
-
-
 ; ____________________________________________
 
-%MACRO __Keyboard_Driver_Load 0
-	mov BYTE[Sector], KEYBOARD_SECTOR
-	mov BYTE[Drive], 80h
-	mov BYTE[NumSectors], KEYBOARD_NUM_SECTORS
-	mov WORD[SegmentAddr], 0800h
-	mov WORD[OffsetAddr], KEYBOARD	
-	call ReadDisk
-%ENDMACRO
 
+CapsLockStatus db 0 ;Up
 DriverCommands db 0xF4, 0xED, '$'
 CountKey       dw 0000h
 

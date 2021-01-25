@@ -45,40 +45,29 @@ SaveHeight            dw 0000h
 
 CountPositions dw 0000h ;end
 
-; Carregar o window.bin na memória
-; ___________________________________________
 
-%MACRO __LoadInterface 0
-	mov byte[Sector], WIN_SECTOR
-	mov byte[Drive], 80h
-	mov byte[NumSectors], WINDOW_NUM_SECTORS
-	mov word[SegmentAddr], WIN_SEGMENT
-	mov word[OffsetAddr], WIN_OFFSET
-	call ReadDisk
-%ENDMACRO
-; ___________________________________________
 
 ; Construção de janelas
 ; ___________________________________________
 
 %MACRO __CreateWindow 11
-	mov byte[Window_Bar], %1
-	mov byte[ButtonClose], %2
-	mov byte[ButtonMaximize], %3
-	mov byte[ButtonMinimize], %4
-	mov byte[Window_Bar_Color], %5
-	mov byte[Window_Border_Color], %6
-	mov byte[Window_Back_Color], %7
-	mov word[Window_PositionX], %8
-	mov word[Window_PositionY], %9
-	mov word[Window_Width], %10
-	mov word[Window_Height], %11
+	mov byte[fs:Window_Bar], %1
+	mov byte[fs:ButtonClose], %2
+	mov byte[fs:ButtonMaximize], %3
+	mov byte[fs:ButtonMinimize], %4
+	mov byte[fs:Window_Bar_Color], %5
+	mov byte[fs:Window_Border_Color], %6
+	mov byte[fs:Window_Back_Color], %7
+	mov word[fs:Window_PositionX], %8
+	mov word[fs:Window_PositionY], %9
+	mov word[fs:Window_Width], %10
+	mov word[fs:Window_Height], %11
 %ENDMACRO
 
 %MACRO __ShowWindow 1
-	mov byte[Window_Exist], %1
+	mov byte[fs:Window_Exist], %1
 	call WindowAddress
-	mov byte[Window_Border], 0
+	mov byte[fs:Window_Border], 0
 %ENDMACRO
 
 ; ___________________________________________
@@ -87,11 +76,11 @@ CountPositions dw 0000h ;end
 ; ___________________________________________
 
 %MACRO __CreateBorder 4
-	mov byte[Window_Border], 1
-	mov byte[Window_Border_Up], %1
-	mov byte[Window_Border_Right], %2
-	mov byte[Window_Border_Down], %3
-	mov byte[Window_Border_Left], %4
+	mov byte[fs:Window_Border], 1
+	mov byte[fs:Window_Border_Up], %1
+	mov byte[fs:Window_Border_Right], %2
+	mov byte[fs:Window_Border_Down], %3
+	mov byte[fs:Window_Border_Left], %4
 %ENDMACRO
 ; ___________________________________________
 
@@ -100,7 +89,7 @@ CountPositions dw 0000h ;end
 ; ___________________________________________
 %MACRO __CreateField 8
 	__CreateWindow 0,0,0,0,0, %3, %4, %5, %6, %7, %8
-	mov byte[BS_COLOR], %4
+	mov byte[fs:BS_COLOR], %4
 	mov si, QuantKey_%1 ;analise
 	mov di, C_%1
 	call SavePositions
@@ -111,9 +100,9 @@ JmpValue%1:
 %ENDMACRO
 
 %MACRO __ShowField 1
-	mov byte[Field_Exist], %1
+	mov byte[fs:Field_Exist], %1
 	call WindowAddress
-	mov byte[Window_Border], 0
+	mov byte[fs:Window_Border], 0
 %ENDMACRO
 ; ___________________________________________
 
@@ -128,9 +117,9 @@ JmpValue%1:
 %ENDMACRO
 
 %MACRO __ShowButton 1
-	mov byte[Button_Exist], %1
+	mov byte[fs:Button_Exist], %1
 	call WindowAddress
-	mov byte[Window_Border], 0
+	mov byte[fs:Window_Border], 0
 %ENDMACRO
 
 SavePositions:
@@ -139,33 +128,33 @@ SavePositions:
 	mov cx, bx ;%6
 	xor bx, bx
 	mov bx, word[CountPositions]
-	mov word[POSITIONS + bx], ax ;%5
-	sub word[POSITIONS + bx], 4
+	mov word[fs:POSITIONS + bx], ax ;%5
+	sub word[fs:POSITIONS + bx], 4
 	add word[CountPositions], 2
 	mov bx, word[CountPositions]
-	mov word[POSITIONS + bx], cx
+	mov word[fs:POSITIONS + bx], cx
 	add word[CountPositions], 2
 	pop cx
 	push cx
-	mov word[LIMIT_COLW], ax ;%5
-	add word[LIMIT_COLW], cx
-	sub word[LIMIT_COLW], 4
-	mov cx, word[LIMIT_COLW]
+	mov word[fs:LIMIT_COLW], ax ;%5
+	add word[fs:LIMIT_COLW], cx
+	sub word[fs:LIMIT_COLW], 4
+	mov cx, word[fs:LIMIT_COLW]
 	mov bx, word[CountPositions]
-	mov word[POSITIONS + bx], cx
+	mov word[fs:POSITIONS + bx], cx
 	add word[CountPositions], 2
-	mov word[LIMIT_COLX], ax ;%5
-	mov cx, word[LIMIT_COLX]
+	mov word[fs:LIMIT_COLX], ax ;%5
+	mov cx, word[fs:LIMIT_COLX]
 	mov bx, word[CountPositions]
-	mov word[POSITIONS + bx], cx
-	add word[CountPositions], 2
-	mov bx, word[CountPositions]
-	mov word[POSITIONS + bx], si
+	mov word[fs:POSITIONS + bx], cx
 	add word[CountPositions], 2
 	mov bx, word[CountPositions]
-	mov word[POSITIONS + bx], di
+	mov word[fs:POSITIONS + bx], si
 	add word[CountPositions], 2
-	inc byte[QUANT_FIELD]
+	mov bx, word[CountPositions]
+	mov word[fs:POSITIONS + bx], di
+	add word[CountPositions], 2
+	inc byte[fs:QUANT_FIELD]
 	pop cx
 	pop bx
 ret

@@ -1,0 +1,28 @@
+; ===============================================
+; KiddieOS - Kernel Sub-routines Address
+; Created by Francis
+; Version 1.2.0
+; ===============================================
+
+%IFNDEF __KERNEL_LIB__
+%DEFINE __KERNEL_LIB__
+
+%DEFINE  Kernel_Main            0000h
+%DEFINE  PrintNameFile          0003h
+%DEFINE  Print_Hexa_Value16     0006h
+%DEFINE  Print_String           0009h
+%DEFINE  Break_Line             000Ch
+%DEFINE  Create_Panel           000Fh
+%DEFINE  Clear_Screen           0012h
+%DEFINE  Move_Cursor            0015h
+%DEFINE  Get_Cursor             0018h
+%DEFINE  Show_Cursor		    001Bh
+%DEFINE  Hide_Cursor			001Eh
+%DEFINE  Kernel_Menu			0021h
+%DEFINE  Write_Info 			0024h
+%DEFINE  Print_Name_File        0027h
+%DEFINE  Wmanager_Start         002Ah     
+%DEFINE  Reboot_System          002Dh
+
+
+%ENDIF
