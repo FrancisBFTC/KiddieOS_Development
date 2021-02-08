@@ -6,6 +6,7 @@ O KiddieOS é um sistema operacional open-source básico em desenvolvimento pelo
 Veja as atualizações e o progresso do projeto logo abaixo:
 
 ## KiddieOS Versão 1.1.0
+
 [Etapa 1 =>](https://github.com/FrancisBFTC/KiddieOS_Development)
  Esta etapa é relacionada ao desenvolvimento da Interface gráfica com efeito 3D e algumas atualizações na lib da interface móvel e redimensionável. Inclue também o otimizador de testes do desenvolvimento.
 
@@ -21,5 +22,8 @@ Veja as atualizações e o progresso do projeto logo abaixo:
  
 ## KiddieOS Versão 1.2.0
 
+[Etapa 1 =>](https://github.com/FrancisBFTC/KiddieOS_Development/tree/Version_1-2-0_Step_1)
+ Desenvolvimento do Driver serial, rotinas de manipulação com teclas para comunicação serial e o código serial do arduino.
+ 
 [Etapa 2 =>](https://github.com/FrancisBFTC/KiddieOS_Development/tree/Version_1-2-0_Step_2)
  Nesta segunda etapa da versão 1.2.0 é implementado o sistema de arquivos FAT16 + o interpretador de comandos do Shell com interface personalizada. Aqui pode ser acessado diretórios e arquivos através de comandos no Shell.
