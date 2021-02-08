@@ -12,6 +12,7 @@ jmp Return
 %INCLUDE "Hardware\fonts.lib"
 
 ProcChars:
+	call VerifyFontCase
 	cmp al, K_TAB
 	je TextPositions
 	cmp al, K_ESC
@@ -34,8 +35,7 @@ ProcChars:
 	je Return
 	xor ah, ah
 	xor dx, dx
-	push ax
-	call VerifyFontCase  ;Up
+	push ax 
 	xor bx, bx
 	mov bx, 26   ;5 x 5 + 1
 	mul bx

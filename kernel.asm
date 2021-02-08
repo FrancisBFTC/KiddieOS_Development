@@ -12,6 +12,7 @@ jmp OSMain
 %INCLUDE "Hardware/keyboard.lib"
 %INCLUDE "Hardware/fontswriter.lib"
 %INCLUDE "Hardware/win16.lib"
+%INCLUDE "Hardware/serial.lib"
 %INCLUDE "Hardware/win3dmov.lib"
 
 ; _____________________________________________
@@ -48,6 +49,7 @@ DriversInstall:
 	__Keyboard_Driver_Load
 	call KEYBOARD_INSTALL
 	__Fonts_Writer_Load
+	__Serial_Driver_Load
 ret
 
 GraficInterface:
