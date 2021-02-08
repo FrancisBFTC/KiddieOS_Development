@@ -480,6 +480,7 @@ WindowMoviment:
 		call KEYBOARD_HANDLER
 		cmp byte[KEYCODE], K_F1
 		je RetMovement
+		call VerifySerial  ; serial
 		call VerifyKey
 		cmp al, 0
 		je LoopMoviment
@@ -492,6 +493,16 @@ WaitToEnd:
 	jne WaitToEnd
 RetMovement:
 	ret
+	
+VerifySerial:
+	cmp byte[SerialStatus], 1
+	jne RetSerial
+	mov byte[SERIAL_DATA], al
+	call SERIAL_HANDLER
+	mov byte[SERIAL_DATA], 0
+RetSerial:
+	ret
+
 ;_________________________________________________________________________
 
 
@@ -712,6 +723,10 @@ VerifyKey:
 	je ChangeToWall
 	cmp byte[KEYCODE], CTRL_X
 	je ChangeToIron
+	cmp byte[KEYCODE], K_F2  ; serial
+	je SerialInit            
+	cmp byte[KEYCODE], K_F3  ; serial
+	je ChangeSerialStatus
 	;cmp al, OUTRA_TECLA   -> Descomente para adicionar outras teclas
 	;je AlgumaRotina          de controle para outra rotina
 	mov al, 0
@@ -778,6 +793,17 @@ ret
 ChangeToIron:
 	mov al, 2
 	mov cx, _IRON
+ret
+SerialInit:   ; serial
+	call SERIAL_INSTALL
+ret
+ChangeSerialStatus:  ; serial
+	cmp byte[SerialStatus], 0
+	je RetStatus
+	mov byte[SerialStatus], 0
+ret
+RetStatus:
+	mov byte[SerialStatus], 1
 ret
 ; __________________________________________________________________________________
 ;
