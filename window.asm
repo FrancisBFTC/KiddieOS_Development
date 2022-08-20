@@ -1,6 +1,7 @@
 %INCLUDE "Hardware/memory.lib"
+%INCLUDE "Hardware/kernel.lib"
 [BITS SYSTEM]
-[ORG WINDOWS]
+[ORG WINDOW]
 
 
 
@@ -12,21 +13,22 @@ popa
 ; =====================================
 ; Inclusion Files
 
+%INCLUDE "Hardware/fontswriter.lib"
 %INCLUDE "Hardware/win16.lib"
 
 ; =====================================
 	
 DefineWindow:
 	mov ah, 0Ch
-	mov al, byte[Window_Border_Color]
-	mov cx, word[Window_PositionX]
-	mov dx, word[Window_PositionY]
-	cmp byte[Window_Bar], 0
+	mov al, byte[fs:Window_Border_Color]
+	mov cx, word[fs:Window_PositionX]
+	mov dx, word[fs:Window_PositionY]
+	cmp byte[fs:Window_Bar], 0
 	je WindowNoBar
 	jmp WindowWithBar
 	
 WindowNoBar:
-	mov bx, word[Window_Width]
+	mov bx, word[fs:Window_Width]
 	add bx, cx
 	call BorderUp
 	LineUp:
@@ -35,7 +37,7 @@ WindowNoBar:
 		cmp cx, bx
 		jne LineUp
 		call BorderRightDown
-		mov bx, word[Window_PositionY]
+		mov bx, word[fs:Window_PositionY]
 		call BorderLeft
 	LineLeft:
 		int 10h
@@ -46,8 +48,8 @@ WindowNoBar:
 		jmp Return
 		
 WindowWithBar:
-	mov al, byte[Window_Bar_Color]
-	mov bx, word[Window_Width]
+	mov al, byte[fs:Window_Bar_Color]
+	mov bx, word[fs:Window_Width]
 	add bx, cx
 	push ax
 	mov ax, dx
@@ -64,9 +66,9 @@ WindowWithBar:
 		inc al
 		cmp dx, word[StateWindowBar]
 		jne BackColumn
-		mov al, byte[Window_Border_Color]
+		mov al, byte[fs:Window_Border_Color]
 		call BorderRightDown
-		mov bx, word[Window_PositionY]
+		mov bx, word[fs:Window_PositionY]
 		add bx, 8
 		call BorderLeft
 		LineLeftBar:
@@ -78,8 +80,8 @@ WindowWithBar:
 			call ButtonsBar
 			jmp Return
 	BackColumn:
-		mov cx, word[Window_PositionX]
-		mov bx, word[Window_Width]
+		mov cx, word[fs:Window_PositionX]
+		mov bx, word[fs:Window_Width]
 		add bx, cx
 		push bx
 		mov bx, word[StateWindowBar]
@@ -94,7 +96,7 @@ WindowWithBar:
 		jmp PaintBar
 	
 BorderRightDown:
-		mov bx, word[Window_Height]
+		mov bx, word[fs:Window_Height]
 		add bx, dx
 		call BorderRight
 	LineRight:
@@ -102,7 +104,7 @@ BorderRightDown:
 		inc dx
 		cmp dx, bx
 		jne LineRight
-		mov bx, word[Window_PositionX]
+		mov bx, word[fs:Window_PositionX]
 		call BorderDown
 	LineDown:
 		int 10h
@@ -112,34 +114,34 @@ BorderRightDown:
 ret
 
 BorderUp:
-	cmp byte[Window_Border], 1
+	cmp byte[fs:Window_Border], 1
 	jne Return
-	mov al, byte[Window_Border_Up]
+	mov al, byte[fs:Window_Border_Up]
 ret
 
 BorderRight:
-	cmp byte[Window_Border], 1
+	cmp byte[fs:Window_Border], 1
 	jne Return
-	mov al, byte[Window_Border_Right]
+	mov al, byte[fs:Window_Border_Right]
 ret
 
 BorderDown:
-	cmp byte[Window_Border], 1
+	cmp byte[fs:Window_Border], 1
 	jne Return
-	mov al, byte[Window_Border_Down]
+	mov al, byte[fs:Window_Border_Down]
 ret
 
 BorderLeft:
-	cmp byte[Window_Border], 1
+	cmp byte[fs:Window_Border], 1
 	jne Return
-	mov al, byte[Window_Border_Left]
+	mov al, byte[fs:Window_Border_Left]
 ret
 
 BackColor:
-	mov al, byte[Window_Back_Color]
-	mov cx, word[Window_PositionX]
-	mov dx, word[Window_PositionY]
-	cmp byte[Window_Bar], 1
+	mov al, byte[fs:Window_Back_Color]
+	mov cx, word[fs:Window_PositionX]
+	mov dx, word[fs:Window_PositionY]
+	cmp byte[fs:Window_Bar], 1
 	je WithBar
 	jmp NoBar
 WithBar:
@@ -155,7 +157,7 @@ Salt:
 	mov word[BackInitialPositionX], cx
 Initial:
 	mov cx, word[BackInitialPositionX]
-	mov bx, word[Window_Width]
+	mov bx, word[fs:Window_Width]
 	add bx, cx
 	sub bx, 1
 Columns:
@@ -163,7 +165,7 @@ Columns:
 	inc cx
 	cmp cx, bx
 	jne Columns
-	mov bx, word[Window_Height]
+	mov bx, word[fs:Window_Height]
 	add bx, word[BackInitialPositionY]
 	sub bx, 1
 Rows:
@@ -173,22 +175,22 @@ Rows:
 ret
 	
 ButtonsBar:
-   mov bx, word[Window_PositionX]
+   mov bx, word[fs:Window_PositionX]
    mov word[SavePositionX], bx
-   mov bx, word[Window_PositionY]
+   mov bx, word[fs:Window_PositionY]
    mov word[SavePositionY], bx
-   mov bx, word[Window_Width]
+   mov bx, word[fs:Window_Width]
    mov word[SaveWidth], bx
-   mov bx, word[Window_Height]
+   mov bx, word[fs:Window_Height]
    mov word[SaveHeight], bx
 Button0:
-	cmp byte[ButtonClose], 1
+	cmp byte[fs:ButtonClose], 1
 	je Close
 Button1:
-	cmp byte[ButtonMaximize], 1
+	cmp byte[fs:ButtonMaximize], 1
 	je Maximize
 Button2:
-	cmp byte[ButtonMinimize], 1
+	cmp byte[fs:ButtonMinimize], 1
 	je Minimize
 	jmp Return
 Close:
@@ -256,20 +258,20 @@ Minimize:
 
 	
 ButtonProperty:
-	mov byte[Window_Bar], 0
-	mov byte[Window_Border_Color], al
-	mov byte[Window_Back_Color], al
-	mov byte[Window_Border], 0
+	mov byte[fs:Window_Bar], 0
+	mov byte[fs:Window_Border_Color], al
+	mov byte[fs:Window_Back_Color], al
+	mov byte[fs:Window_Border], 0
 	mov ax, word[SavePositionX]
 	mov cx, word[SaveWidth]
 	add ax, cx
 	sub ax, dx
-	mov word[Window_PositionX], ax
+	mov word[fs:Window_PositionX], ax
 	mov ax, word[SavePositionY]
 	add ax, 1
-	mov word[Window_PositionY], ax
-	mov word[Window_Width], 6
-	mov word[Window_Height], 6
+	mov word[fs:Window_PositionY], ax
+	mov word[fs:Window_Width], 6
+	mov word[fs:Window_Height], 6
 ret
 	
 	

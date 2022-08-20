@@ -10,7 +10,7 @@
 ; Main Strings __________________________________
 ; _______________________________________________
 
-NameSystem db "KiddieOS", 0
+;NameSystem db "KiddieOS", 0
 
 ; _______________________________________________
 
@@ -23,7 +23,7 @@ NameSystem db "KiddieOS", 0
 Count        dw 0000h
 BackWidth    dw 0000h
 BackHeight   dw 0000h
-BackColor    db 46
+BackColor    db 30
 Pagination   db 0
 CursorX   	 db 15
 CursorY      db 12
@@ -70,6 +70,7 @@ DrawBackground:
 ret
 
 PrintString:
+	pusha
 	mov ah, 09h
 	mov bh, [Pagination]
 	mov cx, 1
@@ -82,6 +83,7 @@ PrintString:
 		mov al, [si]
 		cmp al, 0
 		jne print
+	popa
 ret
 
 MoveCursor:
