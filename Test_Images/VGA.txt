@@ -1,0 +1,25 @@
+0x6A  800 x 600
+0x12  640 x 480
+
+http://www.wagemakers.be/english/doc/vga
+
+file:///C:/Users/BFTC/Downloads/Arquivos/Meus%20Cursos%20&%20Estudos/Apostilas%20Assembly/Lab12_VIDEO-Programming-with-INT-10h.pdf
+
+
+
+Escrever 1 pixel
+;Pinta o fundo da tela
+DrawBackground:
+	mov ax, 0xA000
+	mov es, ax
+	mov dx, 03C4h ; dx = Registro de Indice
+	mov ah, 0x02  ; Plano de bits Branco
+	mov al, 0x02  ; Indice = Map Mask
+	out dx, ax    ; Escreve todos os planos de bits
+	xor di, di
+	mov di, (640*20)/8
+	mov ecx, 1  ;((640*480)/8)/4  ; = 38400 -> 9600
+	mov al, 11000000b         ; Escreva para cada pixel
+	;mov al, 0x02
+	rep stosb            ; Preenche a tela
+ret

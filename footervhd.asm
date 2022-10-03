@@ -49,25 +49,25 @@ vhd_footer:
 .timeStamp:
     dd 0x5868091E
 .creatorApp:
-    db 0x6A, 0x6D, 0x76, 0x61
+    dd 0x61766D6A
 .creatorVersion:
     dd 0x0A000400
 .creatorOS:
     dd 0x6B326957
 .originalSyze:
-	dd 0, 0x00000002    ;bytes.
+	dd 1, 0xDC300000    ;bytes.
 .currentSyze:
-    dd 0, 0x00000002    ;bytes.
+    dd 1, 0xDC300000    ;bytes.
 .diskGeometry:
-    dw 0xC303           ;# Cylinders.
-    db 4                ;# Heads.
-    db 0x11             ;# Sectors.
+    dw 971              ;# Cylinders.
+    db 255              ;# Heads.
+    db 63               ;# Sectors.
 .diskType:
     dd 0x02000000       ;fixed.
 .chechsum:
     dd 0xC2E7FFFF
 .uniqueID:
-	db 0x11, 0x80, 0xF2, 0x62
+	db 0x12, 0x80, 0xF3, 0x63
 	db 0xD4, 0x95, 0x65, 0x44
     db 0x88, 0x88, 0x88, 0x88
 	db 0x88, 0x88, 0x88, 0x88
@@ -75,5 +75,4 @@ vhd_footer:
 	db 0
 .reserved:
 	times 427 db 0
-    
     

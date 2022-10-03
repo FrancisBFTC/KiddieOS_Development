@@ -1,0 +1,106 @@
+Trap:TF (bit 8) - Defina para ativar o modo de passo único para depuração; Limpe para desativar o modo de passo único. Em Modo de
+passo único, o processador gera uma exceção de depuração após cada instrução. Isso permite o Estado de execução
+de um programa ser inspecionado após cada instrução. Se um programa de aplicação define o sinalizador TF usando uma instrução POPF, POPFD ou IRET, 
+uma exceção de depuração é gerada após a instrução que segue o POPF, POPFD ou IRET.
+
+
+Habilitar interrupção:IF (bit 9) - Controla a resposta do processador à interrupção de hardware mascarável
+(veja também: Seção 6.3.2, “Interrupções de hardware mascaráveis”). O sinalizador está definido para responder a
+interrupções de hardware mascarável; Limpado para inibir interrupções de hardware mascaráveis. O sinalizador IF 
+não afeta o gerador de exceções ou interrupções não mascaráveis ​​(interrupções NMI). O CPL, IOPL e o estado do sinalizador 
+VME no registro de controle CR4 determina se o sinalizador IF pode ser modificado pelo CLI, STI, POPF, POPFD,
+e IRET.
+
+
+Campo de nível de privilégio de E / S: IOPL (bits 12 e 13) - Indica o nível de privilégio de E / S (IOPL) do atual
+programa ou tarefa em execução. O CPL do programa ou tarefa atualmente em execução deve ser menor ou igual a
+o IOPL para acessar o espaço de endereço de E / S. As instruções POPF e IRET podem modificar este campo apenas quando
+está operando a um CPL = 0.
+
+O IOPL também é um dos mecanismos que controla a modificação do sinalizador IF e o tratamento de
+interrupções no modo virtual-8086 quando as extensões do modo virtual estão em vigor (quando CR4.VME = 1). Veja também:
+Capítulo 19, "Entrada / Saída," no Manual do Desenvolvedor de Software Intel® 64 e IA-32 Architectures,
+Volume 1.
+
+Tarefa aninhada:NT (bit 14) - controla o encadeamento de tarefas interrompidas e chamadas. O processador define este sinalizador
+em chamadas para uma tarefa iniciada com uma instrução CALL, uma interrupção ou uma exceção. Ele examina e modifica
+este sinalizador em retorna de uma tarefa iniciada com a instrução IRET. O sinalizador pode ser explicitamente definido ou apagado
+com as instruções POPF / POPFD; no entanto, mudar o estado deste sinalizador pode gerar exceções em programas de aplicação.
+Consulte também: Seção 7.4, “Vinculação de tarefas”.
+
+Retomar:RF (bit 16) - Controla a resposta do processador às condições do ponto de interrupção da instrução. Quando definido, este
+sinalizador desativa temporariamente as exceções de depuração (#DB) de serem geradas para pontos de interrupção de instrução
+(embora outras condições de exceção possam fazer com que uma exceção seja gerada). Quando limpado, a instrução de
+pontos de interrupção irão gerar exceções de depuração.
+A função principal do sinalizador RF é permitir o reinício de uma instrução após uma exceção de depuração
+que foi causado por uma condição de ponto de interrupção de instrução. Aqui, o software de depuração deve definir este sinalizador no
+Imagem EFLAGS na pilha antes de retornar ao programa interrompido com IRETD (para evitar o
+ponto de interrupção da instrução de causar outra exceção de depuração). O processador então limpa automaticamente
+este sinalizador após a instrução retornada ter sido executada com sucesso, habilitando o ponto de interrupção da instrução
+falhas novamente.
+Consulte também: Seção 17.3.1.1, “Condição de exceção de ponto de interrupção de instrução”.
+
+Modo 8086 virtual:VM (bit 17) - Defina para habilitar o modo 8086 virtual; desmarque para retornar ao modo protegido.
+
+Verificação de alinhamento ou controle de acesso:AC (bit 18) - Se o bit AM estiver definido no registro CR0, alinhamento
+a verificação de acessos de dados em modo de usuário é habilitada se e somente se este sinalizador for 1. Uma exceção de verificação de alinhamento
+é gerado quando é feita referência a um operando não alinhado, como uma palavra em um endereço de byte ímpar ou um
+doubleword em um endereço que não seja um múltiplo integral de quatro. Exceções de verificação de alinhamento são gerais
+atado apenas no modo de usuário (nível de privilégio 3). Referências de memória que têm como padrão o nível de privilégio 0, como
+o descritor de segmento carrega, não gere esta exceção, mesmo quando causada por instruções executadas em
+modo de usuário.
+A exceção de verificação de alinhamento pode ser usada para verificar o alinhamento de dados. Isso é útil ao trocar
+dados com processadores que exigem que todos os dados sejam alinhados. A exceção de verificação de alinhamento também pode ser usada
+por intérpretes para sinalizar alguns ponteiros como especiais desalinhando o ponteiro. Isso elimina a sobrecarga de
+verificando cada ponteiro e apenas manipulando o ponteiro especial quando usado.
+Se o bit SMAP for definido no registro CR4, os acessos explícitos aos dados do modo supervisor para as páginas do modo do usuário são
+permitido se e somente se este bit for 1. Consulte a Seção 4.6, “Direitos de acesso”.
+
+Interrupção virtual:VIF (bit 19) - contém uma imagem virtual do sinalizador IF. Este sinalizador é usado em conjunto com
+a bandeira VIP. O processador só reconhece o sinalizador VIF quando o sinalizador VME ou o sinalizador PVI estão sob controle
+o registro CR4 é definido e o IOPL é menor que 3. (O sinalizador VME ativa as extensões do modo virtual-8086;
+o sinalizador PVI ativa as interrupções virtuais de modo protegido.)
+Consulte também: Seção 20.3.3.5, “Método 6: Tratamento de interrupção de software” e Seção 20.4, “Modo protegido
+Interrupções virtuais. ”
+
+Interrupção virtual pendente:VIP (bit 20) - Definido pelo software para indicar que uma interrupção está pendente; liberado para
+indicam que nenhuma interrupção está pendente. Este sinalizador é usado em conjunto com o sinalizador VIF. O processador lê
+este sinalizador, mas nunca o modifica. O processador só reconhece o sinalizador VIP quando o sinalizador VME ou o
+O sinalizador PVI no registro de controle CR4 é definido e o IOPL é menor que 3. O sinalizador VME ativa o virtual-8086
+extensões de modo; o sinalizador PVI ativa as interrupções virtuais de modo protegido.
+Consulte a Seção 20.3.3.5, “Método 6: Tratamento de interrupção de software” e a Seção 20.4, “Virtual em modo protegido
+Interrompe. ”
+
+identificação:ID (bit 21) - A capacidade de um programa ou procedimento para definir ou limpar este sinalizador indica suporte
+para a instrução CPUID.
+
+BIT 0-7                 = Controlados pela CPU
+000000010b              = OR : Setar -> 0x02 (BIT 1 sempre setado)
+100000000b              = TF : Setar -> OR 0x100, Limpar -> AND 0xFFFFFEFF
+1000000000b             = IF : Setar -> OR 0x200, Limpar -> AND 0xFFFFFDFF
+00111111111111b         = IOPL 0 : Limpar -> AND 0xFFFFCFFF (Apenas)
+01000000000000b         = IOPL 1 : Setar  -> OR 0x1000, Limpar -> AND 0xFFFFEFFF
+10000000000000b         = IOPL 2 : Setar  -> OR 0x2000, Limpar -> AND 0xFFFFDFFF
+11000000000000b         = IOPL 3 : Setar  -> OR 0x3000 (Apenas)
+100000000000000b        = NT :  Setar -> OR 0x4000,   Limpar -> AND 0xFFFFBFFF
+10000000000000000b      = RF :  Setar -> OR 0x10000,  Limpar -> AND 0xFFFEFFFF
+100000000000000000b     = VM :  Setar -> OR 0x20000,  Limpar -> AND 0xFFFDFFFF
+1000000000000000000b    = AC :  Setar -> OR 0x40000,  Limpar -> AND 0xFFFBFFFF
+10000000000000000000b   = VIF : Setar -> OR 0x80000,  Limpar -> AND 0xFFF7FFFF
+100000000000000000000b  = VIP : Setar -> OR 0x100000, Limpar -> AND 0xFFEFFFFF
+1000000000000000000000b = ID  : Setar -> OR 0x200000, Limpar -> AND 0xFFDFFFFF
+BIT 22-31               = Reservados : Setar para 0 -> AND 0x3FFFFF
+
+100000001000000010b     = VM & IF = 1 (Virtual Mode 8086) -> 0x20202 (BIT 2 sempre é 1)
+0x9A & 0x92 -> GDT: CPL & DPL = 0
+Modo Virtual 8086 -> DPL = 3 & CPL = 0
+
+
+Depurando ->
+	iopl=0 vm nv up ei pl nz na pe nc
+	eflags=00020202
+Não-depurando ->
+	iopl=0 vm nv up ei pl nz na pe nc
+	eflags=00020202
+	
+1010100000000001000110 = 2a0046

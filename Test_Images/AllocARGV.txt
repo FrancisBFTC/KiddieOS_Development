@@ -1,0 +1,15 @@
+In assembly, a one-dimensional integer variable would look like this:
+
+Variable dd 0x00000000
+
+Already a two-dimensional (2 positions), you can use the instruction "times":
+
+Matriz: TIMES  2  dd 0x00000000   ; <- 2 integer positions.  int Matriz[2] = 0;
+
+A three-dimensional, would have to be a multiplication in TIMES:
+
+Matriz: TIMES  3 * 3 * 3  DD 0x00000000   ; int Matriz[3][3][3] = 0;
+
+However, we are talking about fixed allocation... equal to the corresponding matrices in C... but in the case of dynamic allocation, like: char* [ ] argv; It is necessary to calculate in runtime by direct RAM memory and not in development time, look:
+
+An assembly char pointer could be stored in the DI register, where DI would point to a variable, but this variable could not be a fixed variable made in Times. It would have to be dynamic. So a memory space at the beginning of the program must be reserved for such variables: So let's say that address 0x0040:0x0000 is reserved for variables. And the DI points to address 0x0040:0x0200 (from offset 512), DS would be 0x0040 and DI would be 0x0200. 

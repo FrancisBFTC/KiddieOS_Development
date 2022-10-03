@@ -1,0 +1,94 @@
+     
+ Os 2 bits mais altos de Setor pertencem ao Cilindro
+   
+
+Definição na Partição:
+
+   11111110 = FE - Cabeçote (H) -> 254
+
+   11001010 = CA - Cilindro (C) -> 202
+
+   11111111 = FF - Setor    (S) -> 255
+    
+
+
+Valores reais (Bits exportados de S para C):     
+
+
+         11111110 = FE  - Cabeçote  (H) -> 254
+
+     (11)11001010 = 3CA - Cilindro  (C) -> 970
+
+         ..111111 = 3F  - Setor     (S) -> 63
+
+
+    Leitura física:
+
+	Cabeçotes = 255 (0 a 254)
+	Cilindros = 971 (0 a 970)
+	Setores   = 63  (1 a 63)
+	Setores absolutos = EE2000 (Leitura lógica)
+    
+
+
+DiskPart:
+
+   Offset da partição : 1048576 bytes = 2048 setores
+               
+	HCS Begin: 00, 33, 32
+
+	1048576 / 512 bytes = 2048 setores
+	2048 / (63 - 1 ) setores = 33 (21h = Trilhas) 
+	63 - 32 = 31 -> Diferença
+	((33 x 63) - 31) = 2048    
+	1048576 / 1024 = 1024KB
+	
+        
+    Partição pelo DiskPart:
+	
+	0xEE2000 - 0x800 = 0xEE1800
+	0xEE2000 = 15605760
+	0x800    = 2048
+
+	((15605760 / 63) / 971)  = 255 (Cabeçotes)
+	((15605760 / 63) / 255)  = 971 (Cilindros)
+	((15605760 / 971) / 255) = 63  (Setores)
+	
+	15605760 - 2048 = 15603712 -> EE1800
+        (((15603712 x 512) / 1024) / 1024) = 7619MB
+
+
+    Partição pelo KiddieOS:
+	
+	15605760 - 4 = 15605756 -> EE1FFC
+	Deslocamento em bytes = 1536 (512 x 3)
+
+
+   Formula Exata:
+	LBA_TAM = (((Tamanho_MegaBytes_Disco x 1024 x 1024) / 512)  - (Inicio_Offset + 1))
+
+        
+	   
+PART1: ; (DISKPART)
+
+ FLAG:        db  0x80     
+ HCS_BEGIN:   db  0x00, 0x21, 0x20  ; (0, 33, 32)
+ PART_TYPE:   db  0x0B              ; Tipo FAT         
+ HCS_FINAL:   db  0xFE, 0xCA, 0xFF  ; (254, 971, 63)
+ LBA_BEGIN:   dd  0x00000800        ; Deslocamento
+ PART_SIZE:   dd  0x00EE1800        ; Tamanho de setores
+
+
+
+PART1: ; (KIDDIEOS)
+
+ FLAG:        db  0x80     
+ HCS_BEGIN:   db  0x00, 0x00, 0x03  ; (0, 0, 3)
+ PART_TYPE:   db  0x0B              ; Tipo FAT         
+ HCS_FINAL:   db  0xFE, 0xCA, 0xFF  ; (254, 971, 63)
+ LBA_BEGIN:   dd  0x00000003        ; Deslocamento
+ PART_SIZE:   dd  0x00EE1FFC        ; Tamanho de setores
+
+Site de assembly:
+https://silva97.gitbook.io/assembly-x86/a-base/instrucoes-do-nasm
+   

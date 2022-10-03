@@ -1,0 +1,35 @@
+jmp 	$
+	
+	mov 	cx, 50
+Test_Moviment:
+	push 	cx
+	mov 	cx, WORD [WINDOW_WIDTH_A]
+	mov 	eax, [BytesPerPixel]
+	mul 	cx
+	xor 	edx, edx
+	mov 	dx, ax
+	mov 	esi, DWORD [FRAME_POS]
+	mov 	edi, esi
+	sub 	edi, DWORD [ATUAL_FRAME]
+	;call 	WindowsDraw
+	mov 	eax, edx
+	mov 	ecx, [ScreenXTotal]
+	sub     ecx, edx
+	mov 	edx, ecx
+	xor 	ecx, ecx
+	mov 	cx, WORD [WINDOW_HEIGHT_A]
+Copy3:
+	push 	cx
+	mov 	cx, ax
+CopyBuffer3: movsb
+	loop 	CopyBuffer3
+	add 	edi, edx
+	add 	esi, edx
+	pop 	cx
+	loop 	Copy3
+	
+	sub 	DWORD [ATUAL_FRAME], 6
+	pop 	cx
+	loop 	Test_Moviment
+	mov 	eax, ebx
+	jmp 	$

@@ -1,0 +1,52 @@
+[Definição completa & Atual da Syscall do KiddieOS 32-bit]
+
+Sobre o gerenciador da syscall (syscmng.osf)....
+
+Neste sistema é possível alternar os modos do processador de 16 bits para 32 bits, modo real para modo protegido e o processo inverso. O gerenciador da Syscall utiliza a inclusão de um arquivo que contem uma GDT com 4 descritores (Modo protegido: de código 16 bits, de dados 16 bits, de código 32 bits e de dados 32 bits) e 2 IDTs (Para 32 bits e 16 bits), o gerenciador carrega na CPU a GDT completa apenas uma única vez durante a alteração para 32 bits, quando é voltado para o modo real, apenas é recarregada a IDT de 16 bits.
+
+O propósito deste gerenciador é na chamada de execução de programas e no armazenamento das ISRs. Quando o Shell encontra um programa operável determinado pelo usuário, O syscmng entra em ação para alternar o modo do processador e copia todo o buffer do programa para uma memória em modo protegido, o programa pode utilizar interrupções de softwares para chamar as ISRs que contem dentro do syscmng. Logo após o programa terminar sua execução, toda a memória do programa é zerada, como também do buffer, o processador é alternado novamente para modo real 16 bits e retornado pra chamada de origem no Shell. Desta forma é possível executar programas de 32 bits num sistema operacional que originalmente é 16 bits.
+
+Sobre as estruturas GDT & IDT (gdtidt_x86)...
+
+ Nós temos 4 descritores da estrutura GDT e mais 2 estruturas IDT.
+No GDT temos os seguintes descritores:
+
+    1. Descritor de Código 32 bits: Ring 0; Modo protegido; Seletor 0x08; Código pode ser executado;
+    2. Descritor de dados 32 bits  : Ring 0; Modo protegido; Seletor 0x10; Código não pode ser executado;
+    3. Descritor de Código 16 bits: Ring 0; Modo protegido; Seletor 0x18; Código pode ser executado;
+    4. Descritor de Dados 16 bits : Ring 0; Modo protegido; Seletor 0x20; Código não pode ser executado;
+
+Nas 1ª IDT temos:
+
+    1. 2048 bytes de Tamanho;
+    2. IDT de 32 bits;
+    3. Aponta para uma estrutura com 256 Descritores de 8 bytes;
+    4. Apenas 2 descritores são utilizados: IRQ0 & IRQ1;
+    5. Contem o seletor 0x08 (Executa no segmento de código de 32 bits)
+    6. Cada IRQ aponta para 1 Vetor de endereços de ISRs (Como a IRQ1: LIB_String32 com rotinas de monitor).
+    7. 256 descritores determinados como "Porta de interrupção" (0x8E)
+
+Na 2ª IDT temos:
+
+    1. 1024 bytes de tamanho;
+    2. IDT de 16 bits;
+    3. Aponta para o endereço 0x0000:0x0000 (IVT);
+    4. Aponta para o IVT da BIOS que contem os segmentos 0xF000;
+
+Vetor de endereços:
+
+Basicamente uma "IVT" para o "IDT", contem 256 posições, cada uma delas de 4 bytes contendo o Offset de 32 bits para cada Endereço de rotina. Os endereços são rotinas iniciais que calculam o deslocamento para uma determinada rotina daquela função. Funções que são colocadas em EAX.
+
+Sobre os programas (Arquivos KXE)...
+
+ Programas que serão executado em 32 bits. Num endereço de memória copiado pelo gerenciador da syscall (syscmng.osf). Este programa em Assembly utiliza funções e macros do arquivo "libasm.inc" incluido nele, desta forma teremos uma simplificação da sintaxe para criar programas executados no Shell em modo texto, no entanto, todo o código é convertido para a sintaxe tradicional do Assembly x86.
+
+A extensão .KXE é aderido para programas executáveis do KiddieOS. O código-fonte original .ASM será montado para .KXE e executado normalmente no Shell modo texto do KiddieOS, apenas programas KXE poderão ser executados via linha de comando no Shell (inseridos suas extensões na digitação ou não), arquivos que não contem a extensão .KXE serão considerados "Arquivos não-operáveis.".
+
+Obs.: Todas as Atualizações referente a Syscall serão colocadas neste repositorio. No inicio das aulas de Syscall no curso D.S.O.S os arquivos deste repositorio serão migrados para o repositório original do KiddieOS (KiddieOS_Development).
+https://github.com/FrancisBFTC/KiddieOS_SysCall
+
+Acesse a playlist do Curso D.S.O.S e fique por dentro das novas aulas: 
+https://www.youtube.com/watch?v=QoUmgHuCaJM&list=PLsoiO2Be-2z8BfsSkspJfDiuKeC9-LSca
+
+#cursodsos #desenvolvendosistemasoperacionais #assembly #kiddieos

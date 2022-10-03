@@ -1,6 +1,7 @@
 [BITS 16]
 [ORG 0000h]
 
+
 jmp Boot_Begin
 
 LBASIZE   EQU  61173  ; ((Cylinder x Sector))
@@ -8,21 +9,21 @@ LBASIZE   EQU  61173  ; ((Cylinder x Sector))
 BUFFER_NAME           db "MSDOS5.0"    ;MSDOS5.0
 BPB:
 BytesPerSector        dw 0x0200
-SectorsPerCluster     db 1
-ReservedSectors       dw 62
+SectorsPerCluster     db 1   ;8
+ReservedSectors       dw 4      ;4 -> funcionando
 TotalFATs             db 0x02
 MaxRootEntries        dw 0x0200
-TotalSectorsSmall     dw LBASIZE     ;65512    ; -> FUNCIONANDO (HCS=255/971/63-1)
+TotalSectorsSmall     dw 0x0000
 MediaDescriptor       db 0xF8    ; 0xF8
 SectorsPerFAT         dw 246     ; 246   
 SectorsPerTrack       dw 63      ; 63  
 NumHeads              dw 255     ; 255
-HiddenSectors         dd 0x00000005  ;2
-TotalSectorsLarge     dd 0x00000000
-DriveNumber           db 0x80    
+HiddenSectors         dd 0x00000003   ;5  3 -> funcionando
+TotalSectorsLarge     dd 0x00EE2000
+DriveNumber           db 0x00    
 Flags                 db 0x00
-Signature             db 0x29
-BUFFER_VOLUME_ID      dd 0x6EB150E3
+Signature             db 0x28   ; <- alterar para 0x28
+BUFFER_VOLUME_ID      dd 0x80808080
 VolumeLabel           db "KIDDIEOS   "
 SystemID              db "FAT16   "  
 
@@ -43,15 +44,14 @@ FCLUSTER_ENTRY   EQU 0x001A
 FSIZE_ENTRY      EQU 0x001C
 ROOT_SEGMENT     EQU 0x07C0
 FAT_SEGMENT      EQU 0x17C0
-KERNEL_SEGMENT   EQU 0x0800
+KERNEL_SEGMENT   EQU 0x0C00
 DIRECTORY_SIZE   EQU 32
 EXT_LENGTH       EQU 3
 NAME_LENGTH      EQU 8
   
-Extension       db "BIN"
+Extension       db "OSF"
 ClusterFile     dw  0x0000
 FileFound       db 0
-Vetor   db "0123456789ABCDEF"
 
 Boot_Begin:
     cli
@@ -63,16 +63,18 @@ Boot_Begin:
     mov  sp, 0x6000
     sti
 	
-	mov byte [DriveNumber], byte dl 
-    mov ax, 02h
-    int 010h
+	mov ax, 3
+	int 0x10
+	
+	mov byte [DriveNumber], dl
 	
 	call LoadRootDirectory
 	call LoadFAT
 	call SearchFile
 	mov dl, byte [DriveNumber]
-	;jmp $
-	JMP 0800h:0000H
+	
+	
+	JMP 0C00h:0000H
 	
 	
 LoadRootDirectory:
@@ -91,11 +93,12 @@ LoadRootDirectory:
     mov  al, BYTE [TotalFATs]
     mul  WORD [SectorsPerFAT]   
 	add  ax, WORD [FATSTART]
-   
-    mov word [ROOTDIRSTART], ax   ; Setor 559
+    
+	;sub ax, 1 ; <- Setor Escondido da MBR
+    mov word [ROOTDIRSTART], ax   ; Setor 498
 	push ax
-    add  ax, cx                   
-    mov  WORD [DATASTART], ax     ; Setor 591
+    add  ax, cx
+    mov  WORD [DATASTART], ax     ; Setor 530
 	
 
     pop ax                        ; setor inicial para ler
@@ -122,8 +125,8 @@ SearchFile:
 	xor bx, bx
 _Loop:
     push  cx
-    mov  cx, EXT_LENGTH       ; 0x000B Eleven character name.
-    mov  si, Extension    ; NameFile Image name to find.
+    mov  cx, EXT_LENGTH       ; Extension size.
+    mov  si, Extension    	  ; NameFile to find.
     push  di
 	call VerifyExt
 	pop  di
@@ -186,9 +189,6 @@ ReadDataFile:
     add bx, ax                    ; index into FAT    
     mov dx, WORD [gs:bx]          ; read two bytes from FAT
     mov  WORD [ClusterFile], dx   ; DX está com o próximo Cluster
-	;call Print_Hexa_Value16
-	;mov ah, 00h
-	;int 16h
 	
     cmp  dx, END_OF_CLUSTER    ; Ou 0xFFFF
     jne  ReadDataFile
@@ -203,9 +203,6 @@ ReadDataFile:
 	mov edx, DWORD[es:di + (FSIZE_ENTRY - NAME_LENGTH)]
 	add bx, dx
 	add bx, 2
-	;call Print_Hexa_Value16
-	;mov ah, 00h
-	;int 16h
 ret
 RetLoadFile:
     pop bx
@@ -239,7 +236,7 @@ _SECTORLOOP:
 
     push si
     mov ah, 0x42
-    mov dl, 0x80
+	mov dl, byte[DriveNumber]
     mov si, DAPSizeOfPacket
     int 0x13
     pop si
@@ -252,7 +249,7 @@ _SECTORLOOP:
     pop  bx
     pop  ax
 	
-    jnz  _SECTORLOOP    
+    jnz  _SECTORLOOP
 	jmp BOOT_FAILED
 	
 _SUCCESS:
@@ -278,13 +275,10 @@ _NEXTSECTOR:
     mov WORD [DAPStart], ax
     loop  _MAIN                 ; Read next sector.
 ret
-	
-	
 
 BOOT_FAILED:
     int  0x18
 
-
-TIMES 510-($-$$) DB 0
-
-db 0x55, 0xAA
+MBR_SIG:
+	TIMES 510-($-$$) DB 0
+	DW 0xAA55

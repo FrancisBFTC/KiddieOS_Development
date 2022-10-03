@@ -3,31 +3,35 @@
 [BITS SYSTEM]
 [ORG SHELL16]
 
+
+jmp Os_Shell_Setup
+jmp Os_Inter_Shell
+
+
 %DEFINE FAT16.LoadDirectory (FAT16+3)
 %DEFINE FAT16.LoadFAT       (FAT16+6)
 %DEFINE FAT16.LoadThisFile  (FAT16+9)
 
-FAT16.FileSegments    EQU   (FAT16+12)
-FAT16.DirSegments 	  EQU   (FAT16+14)
-FAT16.LoadingDir      EQU   (FAT16+16)
+FAT16.FileSegments    EQU   (FAT16+15)
+FAT16.DirSegments 	  EQU   (FAT16+17)
+FAT16.LoadingDir      EQU   (FAT16+19)
 
-;KERNEL.VetorHexa  EQU (KERNEL+30h)
-;KERNEL.VetorUpper EQU (KERNEL+32h)
-;KERNEL.VetorLower EQU (KERNEL+34h)
-
-jmp Os_Shell_Setup
-jmp Os_Inter_Shell
+%DEFINE A3_TONE  1355
+%DEFINE F3_TONE  1715
+%DEFINE B3_TONE  1207
 
 Shell.CounterFName db 0
 ErrorDir           db 0
 ErrorFile          db 0
 IsFile             db 0
+IsHexa             db 0
 
 
-BufferKeys 	       times 30 db 0
+BufferKeys 	       times 60 db 0
+BufferArgs         times 60 db 0
 FolderAccess:
 	db '\'
-	times 60 db 0
+	times 150 db 0
 CounterAccess      dw 0x0001
 CmdCounter 	       db 0
 ExtCounter         db 0
@@ -36,6 +40,7 @@ CursorRaw          db 5
 CursorCol          db 12
 LimitCursorBeginX  db 0
 LimitCursorFinalY  db 22
+QuantDirs          db 1
 StatusArg     db 0
 CounterChars  db 0
 CounterChars1 db 0
@@ -50,10 +55,23 @@ Borderpanel_Color db 0010_1111b
 Backeditor_Color  db 0000_1111b 
 Backpanel_Color   db 0111_0000b
 
+PointerBuffer     dd 0x00000000
+SavePointerArgs   dw 0x0000
+
 OffsetNextFile    dw 0x0000
 CD_SEGMENT        dw 0x07C0   ; start in root directory
 
-
+; Buffer to Disk Drive Parameters (Pointer = DS:SI)
+; ------------------------------------------------
+SizeBuffer        dw 0x001E
+InfoFlags         dw 0x0000
+NumberCylinders   dd 0x00000000
+NumberHeads       dd 0x00000000
+SectorsPerTrack   dd 0x00000000
+AbsoluteSectors   dq 0x0000000000000000
+BytesPerSector    dw 0x0000
+EDDParameters     dd 0x00000000
+; ------------------------------------------------
 	
 ; Create_Panel Routine :
 ; 		CH -> First Line ; CL -> First Column ; DH -> Last Line ; DL -> Last Column
@@ -77,7 +95,7 @@ Os_Shell_Setup:
 	Back_Green_Right:
 		mov     bh, [Borderpanel_Color]       
 		mov     cx, 0x0444         ; CH = 4, CL = 68               
-		mov     dx, 0x1650         ; DH = 22, DL = 80
+		mov     dx, 0x164F         ; DH = 22, DL = 80
 		call    Create_Panel
 	Back_White_Left:
 		mov     bh, [Backpanel_Color]      
@@ -93,9 +111,9 @@ Os_Shell_Setup:
 		mov 	si, Vector.CMD_Names
 		call 	Write_Info
 	Back_White_Right:
-		mov     bh, [Backpanel_Color]     
+		mov     bh, [Backpanel_Color]
 		mov     cx, 0x0545         ; CH = 5, CL = 69               
-		mov     dx, 0x1650         ; DH = 22, DL = 80
+		mov     dx, 0x164F         ; DH = 22, DL = 79
 		call    Create_Panel
 		mov 	word[SavePositionRight], cx
 	Back_Bottom_Green:
@@ -161,6 +179,9 @@ Shell_Editor:
 	call 	Zero_Buffer
   Shell_Editor2:
 	mov 	byte[CmdWrite], 0
+	mov 	di, BufferArgs
+	mov 	word[SavePointerArgs], di
+	call 	Zero_Buffer
 	mov 	di, BufferKeys
 	mov 	si, Vector.CMD_Names
 	push 	di
@@ -197,13 +218,29 @@ Shell_Editor:
 		mov 	byte[StatusArg], 1
 		mov 	ah, 0Eh
 		int 	10h
+		push 	di
+		push 	ds
+		pop 	es
+		mov 	di, word[SavePointerArgs]
+		stosb
+		mov 	word[SavePointerArgs], di
+		pop 	di
 		jmp 	SaveAndShow
 	SaveChar:
 		mov 	ah, 0Eh
 		int 	10h
+		push 	di
+		push 	ds
+		pop 	es
+		mov 	di, word[SavePointerArgs]
+		stosb
+		mov 	word[SavePointerArgs], di
+		pop 	di
 		mov 	bl, al
 		cmp 	bl, "."
 		je 		CreateSpaceFile
+		cmp 	bl, '/'
+		je 		IncQuantDirs
 		cmp 	bl, 0x60
 		ja  	Conversion2
 		cmp 	bl, 0x40
@@ -212,6 +249,10 @@ Shell_Editor:
 		ja 		ConvertNumber
 		jmp 	SaveAndShow
 		
+		IncQuantDirs:
+			inc 	byte[QuantDirs]
+			jmp 	SaveAndShow
+			
 		Conversion1:
 			cmp 	byte[StatusArg], 1
 			je	 	SaveAndShow
@@ -306,6 +347,7 @@ Shell_Editor:
 		call 	Get_Cursor
 		cmp 	dl, byte[LimitCursorBeginX]
 		je		Start
+		dec 	word[SavePointerArgs]
 		dec		di
 		call 	EraseSpaceFile
 		mov 	byte[di], 0
@@ -392,10 +434,9 @@ Shell_Interpreter:
 		xor 	dx, dx
 		jmp 	bx
 	NoFounded:
-		pop 	di
-		pop 	si	
-		mov 	si, ErrorFound
-		call 	Print_String
+		pop 	si
+		pop 	di	
+		call 	Exec.SearchFileToExec     ; Tentar encontrar programa operável
 		add 	byte[CursorRaw], 1
 		mov 	byte[StatusArg], 0
 		mov 	byte[CounterChars], 0
@@ -418,6 +459,8 @@ List_Commands:
 		mov 	si, Vector.CMD_Names
 		call 	Write_Info
 		pop 	cx
+		mov 	ax, A3_TONE
+		call 	Play_Sound
 		
 	Select_Options:
 		mov 	ah, 00h
@@ -472,8 +515,10 @@ List_Commands:
 		call 	Write_Info
 		mov     bh, [Backpanel_Color]      
 		mov 	cx, word[SavePositionRight]             
-		mov     dx, 0x1650         ; DH = 22, DL = 80
+		mov     dx, 0x164F         ; DH = 22, DL = 80
 		call    Create_Panel
+		mov 	ax, F3_TONE
+		call 	Play_Sound
 		jmp 	Cursor_Commands
 	WriteCommand:
 		mov 	byte[CmdWrite], 1
@@ -498,6 +543,8 @@ List_Commands:
 			inc 	di
 			cmp 	byte[si], 0
 			jnz 	SaveCommand
+			mov 	ax, B3_TONE
+			call 	Play_Sound
 			jmp 	UnSelectExit
 			
 	VerifyToWrite:
@@ -604,9 +651,28 @@ PrintData:
 	xor		bl, bl
 Display:
 	mov 	al, byte[es:di]
+	cmp 	byte[IsHexa], 1
+	je      DisplayHex
+DisplayText:
 	cmp		al, 0x0D
 	je 		IsEnter
+	cmp 	al, 0x09
+	je 		DisplayTab
 	int 	0x10
+	jmp 	JumpDisplayHex
+	DisplayTab:
+		mov 	al, 0x20
+		int 	0x10
+		int 	0x10
+		int 	0x10
+		int 	0x10
+		jmp 	JumpDisplayHex
+DisplayHex:
+	call 	Print_Hexa_Value8
+	mov 	ah, 0eh
+	mov 	al, " "
+	int 	10h
+JumpDisplayHex:
 	call 	Get_Cursor
 	cmp 	dl, 67
 	ja 		IsEnter
@@ -625,6 +691,39 @@ Display:
 	Continue:
 		loop 	Display
 DONE:
+	inc 	byte[LimitCursorFinalY]
+	popa
+RET
+
+PrintDataHex16:
+	pusha
+	mov 	ah, 0x0E
+	dec 	byte[LimitCursorFinalY]
+	xor		bl, bl
+Display1:
+	mov 	ax, word[es:di]
+	call 	Print_Hexa_Value16
+	mov 	ah, 0eh
+	mov 	al, " "
+	int 	10h
+	call 	Get_Cursor
+	cmp 	dl, 65
+	ja 		IsEnter1
+	add 	di, 2
+	jmp 	Continue1
+	IsEnter1: 
+		inc 	bl
+		cmp 	bl, 17
+		jne 	LineBreak1
+		call 	Wait_Key
+		xor 	bl, bl
+		LineBreak1:
+			inc 	byte[CursorRaw]
+			call 	Cursor.CheckToRollEditor
+			add 	di, 2
+	Continue1:
+		loop 	Display1
+DONE1:
 	inc 	byte[LimitCursorFinalY]
 	popa
 RET
@@ -663,7 +762,7 @@ Show_Information:
 	pusha
 	mov     bh, [Backpanel_Color]      
 	mov 	cx, word[SavePositionRight]             
-	mov     dx, 0x1650         ; DH = 22, DL = 80
+	mov     dx, 0x164F         ; DH = 22, DL = 80
 	call    Create_Panel
 	mov 	dx, cx
 	xor 	bx, bx
@@ -695,7 +794,7 @@ ret
 FillWithSpaces:
 	push 	si
 	push 	ax
-	mov 	al, 0
+	;mov 	al, 0    ; ==== analyse =====
 	call 	NextInfo
 	pop 	ax
 	dec 	si
@@ -733,6 +832,339 @@ RetErase:
 	pop 	si
 ret
 
+Exec:
+
+.SearchFileToExec:
+	mov  	ax, word[CD_SEGMENT]
+	mov 	es, ax
+	mov 	di, 0x0200
+	
+	;inc 	byte[CursorRaw]
+	;call 	Cursor.CheckToRollEditor
+	
+	push 	si
+	mov 	al, 0
+	call 	FillWithSpaces
+	pop 	si
+	
+	mov 	byte[Shell.CounterFName], 0
+	
+	push 	si
+	push 	di
+	
+	mov 	cx, 11
+	call 	ToUpper
+	
+	TryFind:
+		cmp 	byte[es:di + 11], 0x0F   ; LFN ATTRIB
+		je 		TryNextFile
+		
+		pop 	di
+		pop 	si
+		push 	si
+		push 	di
+		
+		mov 	cx, 7
+	Check1:	
+		mov 	al, byte[es:di]
+		cmp 	al, byte[ds:si]
+		jne  	TryNextFile
+		inc 	di
+		inc 	si
+		inc 	byte[Shell.CounterFName]
+		loop 	Check1
+		
+		pop 	di
+		pop 	si
+		push 	si
+		push 	di
+		
+		mov 	cx, 3
+		add 	di, 8
+		mov 	si, ProgExtension
+	Check2:	
+		mov 	al, byte[es:di]
+		cmp 	al, byte[ds:si]
+		jne  	TryNextExtension
+		inc 	di
+		inc 	si
+		loop 	Check2
+		jmp 	NextStep
+	
+	TryNextExtension:
+		pop 	di
+		pop 	si
+		push 	si
+		push 	di
+		
+		mov 	cx, 3
+		add 	di, 8
+		mov 	si, ProgExtension
+		add 	si, cx
+	Check3:	
+		mov 	al, byte[es:di]
+		cmp 	al, byte[ds:si]
+		jne  	TryNextFile
+		inc 	di
+		inc 	si
+		loop 	Check3
+		
+		inc 	byte[CursorRaw]
+		call 	Cursor.CheckToRollEditor
+			
+		jmp 	NextStep
+		
+	TryNextFile:
+		pop 	di
+		pop 	si
+		
+		add 	di, 32
+		
+		cmp 	byte[es:di], 0
+		jz 		ShowErrorFound
+		
+		push 	si
+		push 	di
+	
+		jmp 	TryFind
+		
+	NextStep:
+		; Conversão de argumento para nome de arquivo na entrada 
+		; ======================================================
+		sub 	si, 3
+		mov 	bx, si    		; BX = Endereço da Extensão KXE
+		pop 	di
+		pop 	si       		; Nome do arquivo com espaços
+		push 	si
+		push 	di
+		mov 	di, si    		; DI = Nome de arquivo com espaços
+		add 	di, 8     		; Desloca até posição da extensão
+		mov 	si, bx    		; SI = Extensão
+		mov 	ax, ds
+		mov 	es, ax          ; Define ES = DS
+		cld                     ; Limpa a Flag de direção (incremento)
+		mov 	cx, 3
+		rep  	movsb	        ; move CX bytes de DS:SI para ES:DI 
+		xor 	ax, ax
+		stosb			        ; Após a extensão será 0
+		pop 	di
+		pop 	si              ; Recupera endereço de SI para leitura
+		; ======================================================
+		
+		mov 	ax, 0x9000 ; segmento de processos
+		mov 	word[FAT16.FileSegments], ax
+		mov 	ax, word[CD_SEGMENT]
+		mov 	word[FAT16.DirSegments], ax
+		mov 	byte[FAT16.LoadingDir], 0
+		mov 	bx, 0x0000
+		call 	FAT16.LoadThisFile
+		cmp 	cx, 0
+		jz 		NoFoundError
+		cmp 	byte[ErrorFile], 0
+		jnz 	PrintErrorFile
+	
+	; ------------------------------------------------------------
+	; TODO detectar executáveis MZ checando os primeiros 2 caracteres
+	; do endereço carregado e efetuar o procedimento para execução
+	; do programa MZ em modo real
+	
+		
+		mov 	ax, 0x9000
+		mov 	es, ax
+		
+		cmp 	WORD[es:0x0], "MZ"
+		jne 	Run_32BIT_Prog
+		
+		mov 	cx, WORD [es:0x0 + 0x06]  ; Numero de entradas na tabela de realocação
+		mov 	bx, WORD [es:0x0 + 0x18] ; Deslocamento para tabela de realocação
+		
+	addic_entry_offset:
+		mov 	dx, [es:bx]
+		mov 	ax, [es:bx + 2]
+		shl 	ax, 4
+		add 	ax, dx
+		push 	bx
+		mov 	bx, ax
+		mov 	ax, es
+		xor 	dx, dx
+		mov 	es, dx
+		add 	[es:bx], ax
+		mov 	es, ax
+		pop 	bx
+		add 	bx, 4
+		loop 	addic_entry_offset
+		
+		shl 	bx, 4
+		jmp 	0x9000:0x01C0
+	; ------------------------------------------------------------
+	
+		;xor		ah,ah
+		;int		1Ah
+		;mov		ax,cx
+		;shl		eax,16
+		;mov		ax,dx
+		;mov		[StartTime],eax
+	
+	Run_32BIT_Prog:
+	; ----------------------------------------------------------
+	; MANIPULANDO ARGUMENTOS DA CLI
+	
+		mov 	si, BufferArgs
+	    mov 	ecx, 1
+		push 	si
+	CheckCountArgs:
+		lodsb
+		cmp 	al, 0
+		je 		CountSuccess
+		cmp 	al, 0x20
+		jne 	CheckCountArgs
+	SkipSpace:
+		lodsb
+		cmp 	al, 0
+		je 		CountSuccess
+		cmp 	al, 0x20
+		je 		SkipSpace
+		inc 	ecx
+		dec 	si
+		jmp 	CheckCountArgs
+
+	CountSuccess:
+		pop 	si
+		mov 	ebx, 4
+		call 	Calloc
+		mov 	dword[PointerBuffer], eax
+		mov 	edi, dword[PointerBuffer]
+		push 	ds
+		pop 	es
+		push 	ecx
+		push 	edi
+		
+	TransferArgs:
+		mov 	eax, esi
+		add 	eax, 0xC000
+		stosd
+	OffsetToSpace:
+		lodsb
+		cmp 	al, 0
+		je 		ReplaceSpaceToZero
+		cmp 	al, 0x20
+		jne 	OffsetToSpace
+	OffsetToExitSpace:
+		lodsb
+		cmp 	al, 0
+		je 		ReplaceSpaceToZero
+		cmp 	al, 0x20
+		je 		OffsetToExitSpace
+		dec 	esi
+		jmp 	TransferArgs
+	
+	ReplaceSpaceToZero:
+		mov 	si, BufferArgs
+		ReplaceSpace:
+			lodsb
+			cmp 	al, 0
+			je 		Load_Program
+			cmp 	al, 0x20
+			jne 	ReplaceSpace
+			dec 	si
+			mov 	byte[si], 0
+			inc 	si
+			jmp 	ReplaceSpace
+			
+	
+	; ----------------------------------------------------------	
+
+	Load_Program:
+		pop 	esi
+		add 	esi, 0xC000
+		pop 	ecx
+		
+		mov 	dh, byte[CursorRaw]
+		mov 	dl, byte[CursorCol]
+		
+		call 	SYSCMNG     ; <- Chama o programa pelo gerenciador da SysCall
+		
+		mov 	dx, si
+		mov 	byte[CursorRaw], dh
+		mov 	byte[CursorCol], dl
+		
+		mov 	ax, word[SYSCMNG + 3]
+		mov 	byte[ReturnByte], al
+		
+		;xor	ah,ah
+		;int	1Ah
+		;mov	ax,cx
+		;shl	eax,16
+		;mov	ax,dx
+		;sub	eax,[StartTime]
+		;mov [StartTime], eax
+		
+		
+		inc 	byte[CursorRaw]
+		call 	Cursor.CheckToRollEditor
+		
+		push 	ds
+		pop 	es
+		;mov 	di, ProgTerminate1
+		;mov 	cx, word[ProgTerminate1.SizeTerm1]
+		;call 	PrintData
+		
+		;mov 	ax, word[StartTime]
+		;call 	Print_Hexa_Value16
+		;mov 	ax, word[StartTime+2]
+		;call	Print_Hexa_Value16
+		
+		;mov 	di, ProgTerminate2
+		;mov 	cx, word[ProgTerminate2.SizeTerm2]
+		;call 	PrintData
+		
+		;mov 	al, byte[ReturnByte]
+		;call 	Print_Hexa_Value8
+		
+		jmp 	RetSFTE
+			
+ShowErrorFound:
+	inc 	byte[CursorRaw]
+	call 	Cursor.CheckToRollEditor
+		
+	mov 	ax, ds
+	mov 	es, ax
+	mov 	di, ErrorFound
+	mov 	cx, word[ErrorFound.LenghtError0]
+	call 	PrintData
+	push 	si
+	mov 	al, " "
+	call 	NextInfo
+	dec 	si
+	mov 	byte[si], 0
+	pop 	si
+	call 	Print_String
+	mov 	di, ErrorProg
+	mov 	cx, word[ErrorProg.LenghtError1]
+	call 	PrintData
+		
+RetSFTE:
+	;inc 	byte[CursorRaw]
+ret
+
+ToUpper:
+	mov 	al, [ds:si]
+	mov 	bl, al
+	Case:
+		cmp 	bl, 0x60
+		ja 		ChangeToUpper
+		jmp 	BackTheLoop
+	ChangeToUpper:
+		cmp 	bl, 0x7B
+		jae		BackTheLoop
+		sub 	bl, 0x61
+		mov 	al, byte[VetorCharsUpper + bx]
+		mov 	byte[ds:si], al
+	BackTheLoop:
+		inc 	si
+		loop 	ToUpper
+ret
+		
 
 Cmd.EXIT   : jmp	Kernel_Menu
 Cmd.REBOOT : jmp 	Reboot_System
@@ -904,6 +1336,8 @@ Cmd.LF:
 		je 		TypeArc
 		cmp 	al, 0x30  ; FOLDER ATTRIB
 		je 		TypeFol
+		cmp 	al, 0x08  ; VOLUME ATTRIB
+		je 		TypeVol
 		mov 	si, MetaData.Oth
 		call	Print_String
 		jmp 	CheckDateTime
@@ -918,6 +1352,10 @@ Cmd.LF:
 	TypeFol:
 		mov 	si, MetaData.Fol
 		call	Print_String
+		jmp 	CheckDateTime
+	TypeVol:
+		mov 	si, MetaData.Vol
+		call 	Print_String
 
 		
 	CheckDateTime:
@@ -997,7 +1435,7 @@ Cmd.READ:
 		mov 	word[OffsetNextFile], bx
 		sub 	bx, 2
 	
-		mov 	cx, dx      ;ou dx
+		mov 	cx, dx
 		mov 	ax, 0x3800
 		mov 	es, ax
 		xor 	di, di
@@ -1029,13 +1467,51 @@ RetRead:
 	mov 	byte[IsFile], 0
 ret
 
+Cmd.FAT:
+	mov 	ax, 0x17C0
+	mov 	es, ax
+	mov 	di, 0x0200
+	mov 	cx, 100
+	call 	PrintDataHex16
+	inc 	byte[CursorRaw]
+ret
 
+Cmd.HEX:
+	xor 	byte[IsHexa], 1
+	mov 	si, DisabledMsg
+	cmp 	byte[IsHexa], 1
+	jnz 	RetHex
+	mov 	si, EnabledMsg
+RetHex:
+	call 	Print_String
+	inc 	byte[CursorRaw]
+ret
+	
+	
+	
+
+	
 
 Cmd.CD:
 	inc 	si         ; Argumento: ponteiro para nome de arquivo
 	
 	cmp 	byte[IsFile], 1
 	je 		NoFillSpaces
+	
+	; ====================================
+	; analyse
+	
+	cmp 	byte[QuantDirs], 1
+	jna 	TillZero
+	mov 	al, "/"
+	jmp 	FillTillBar
+	
+TillZero:
+	mov 	al, 0
+FillTillBar:
+
+	; end analyse
+	; =====================================
 	
 	call 	FillWithSpaces
 	
@@ -1094,7 +1570,23 @@ AddSegment:
 	call 	EraseSpaces
 	call 	SaveFolderNext
 	
-	jmp 	RetCd
+	; ====================================
+	; analyse
+	
+	mov cx, 0x000B
+	NextDir:
+		inc 	si
+		cmp 	byte[si], 0
+		je 		RetCd
+		loop 	NextDir
+		
+		dec 	byte[QuantDirs]
+		
+		jmp 	Cmd.CD
+		
+	; end analyse
+	; ====================================
+		;jmp 	RetCd
 	
 	NoFoundError1:
 		push 	si
@@ -1180,8 +1672,100 @@ Cmd.ASSIGN:
 	inc 	byte[CursorRaw]
 ret
 
+Cmd.DISK:
+	pusha
+_MainDisk:
+	mov 	di, 0x0005
+	mov 	si, SizeBuffer
+	_ReadLoop:
+		mov 	ah, 0x48
+		mov 	dl, 0x80
+		int 	0x13
+		jnc 	 _ReadSuccess 
+	_TryAgain:
+		xor 	 ax, ax        
+		int 	 0x13            
+		dec 	 di          
+    
+	
+		jnz 	 _ReadLoop  
+		jmp 	_ReadError
+		
+	_ReadSuccess:
+		mov 	ah, 0x08
+		mov 	dl, 0x80
+		int 	0x13
+		jc 		_TryAgain
+		
+		mov 	si, ReadMsgSuccess
+		call 	Print_String
+		
+		inc 	byte[CursorRaw]
+		call	Cursor.CheckToRollEditor
+		
+		mov 	si, DiskParameter.NumberOfHeads
+		call 	Print_String
+		;mov 	ax, word[NumberHeads+2]
+		;call 	Print_Hexa_Value16
+		;mov 	ax, word[NumberHeads]
+		;call 	Print_Hexa_Value16
+		mov 	al, dh
+		call	Print_Hexa_Value8
+		
+		inc 	byte[CursorRaw]
+		call	Cursor.CheckToRollEditor
+		
+		mov 	si, DiskParameter.NumberOfCylinders
+		call 	Print_String
+		;mov 	ax, word[NumberCylinders+2]
+		;call 	Print_Hexa_Value16
+		;mov 	ax, word[NumberCylinders]
+		;call 	Print_Hexa_Value16
+		mov 	al, ch
+		call	Print_Hexa_Value8
+		
+		inc 	byte[CursorRaw]
+		call	Cursor.CheckToRollEditor
+		
+		mov 	si, DiskParameter.SectorsPerTracks
+		call 	Print_String
+		;mov 	ax, word[SectorsPerTrack+2]
+		;call 	Print_Hexa_Value16
+		;mov 	ax, word[SectorsPerTrack]
+		;call 	Print_Hexa_Value16
+		mov 	al, cl
+		call	Print_Hexa_Value8
+		
+		inc 	byte[CursorRaw]
+		call	Cursor.CheckToRollEditor
+		
+		mov 	si, DiskParameter.NumberOfSectors
+		call 	Print_String
+		mov 	ax, word[AbsoluteSectors+6]
+		call 	Print_Hexa_Value16
+		mov 	ax, word[AbsoluteSectors+4]
+		call 	Print_Hexa_Value16
+		mov 	ax, word[AbsoluteSectors+2]
+		call 	Print_Hexa_Value16
+		mov 	ax, word[AbsoluteSectors]
+		call 	Print_Hexa_Value16
+		
+		inc 	byte[CursorRaw]
+		call	Cursor.CheckToRollEditor
+		
+		jmp 	RetDiskReader
+	_ReadError:
+		mov 	si, ReadMsgError
+		call 	Print_String
+	
+RetDiskReader:
+	inc 	byte[CursorRaw]
+	popa
+ret
+
+
 Cmd.HELP:
-	mov 	ax, 0x0800
+	mov 	ax, 0x0C00
 	mov 	es, ax
 	mov 	di, Inf
 	mov 	si, Vector.CMD_Names
@@ -1224,20 +1808,33 @@ ShowInConsole:
 	inc 	byte[CursorRaw]
 ret
 		
-NameSystem     db "KiddieOS Shell v1.2.0",0
+NameSystem     db "KiddieOS Shell v1.2.2",0
 LetterDisk     db "K:",0
 SimbolCommands db ">",0
 CommandsStr    db "Commands",0
 InfoStr        db "Information",0
 helptext1      db "KEY Commands -> ESC : Goto Commands/Editor  |  UP/DOWN : Select Command |",0
 helptext2      db "ENTER : Choose Command  |  F1, F2, F3, F4, F5, F6 : Update Layouts",0
-ErrorFound     db "Sorry! Command not Found!",0
 MsgFileError1  db "The file '",0
 MsgFileError2  db "' wasn't found!",0
 MsgDirError1   db "The directory '",0
 
 ErrIsNotFile1  db "' is not a file!",0
 ErrIsNotDir1   db "' is not a folder!",0  
+EnabledMsg     db "Hexa displayer was enabled!",0
+DisabledMsg     db "Hexa displayer was disabled!",0
+ReadMsgSuccess  db "Disk was read successfully!",0
+ReadMsgError    db "Disk found a problem! sorry me!",0
+
+ErrorFound:     
+	db "Sorry! Command not Found... "
+    db "The name '"
+	.LenghtError0 dw ($-ErrorFound)
+ErrorProg:
+	db "' is not an internal or external command or operable program."
+	.LenghtError1 dw ($-ErrorProg)
+ReturnByte 	db 0
+StartTime   dd 0
 
 VetorHexa  db "0123456789ABCDEF",0
 VetorCharsLower db "abcdefghijklmnopqrstuvwxyz",0
@@ -1271,21 +1868,38 @@ MetaData:
 .Dir db " directory  ",0
 .Arc db "archive    ",0
 .Fol db " folder     ",0
+.Vol db " volume ID  ",0
 .Oth db " other      ",0
 	
-COUNT_COMMANDS    EQU 10
+DiskParameter:
+	.NumberOfCylinders   db "Number of Cylinders : 0x",0
+	.NumberOfHeads       db "Number Of Heads     : 0x",0
+	.SectorsPerTracks    db "Sectors Per Track   : 0x",0
+	.NumberOfSectors     db "Number Of Sectors   : 0x",0
+	
+
+ProgExtension  db "KXE", "EXE",0   ; Adicionar .APP
+ProgTerminate1: db "Process exited after 0x"
+.SizeTerm1      dw ($-ProgTerminate1)
+ProgTerminate2: db " milliseconds with return value 0x"
+.SizeTerm2      dw ($-ProgTerminate2)
+	
+COUNT_COMMANDS    EQU 13  ; <- A cada comando alterar
 
 Vector:
 
 .CMD_Names:
 	db "exit"  ,0,   "reboot"  ,0,  "start"   ,0,  "bpb"    ,0,  "lf"  ,0 
 	db "clean" ,0,   "read "   ,0,  "cd "     ,0,  "assign ",0, "help" ,0
+	db "fat"   ,0,   "hex"     ,0,  "disk"    ,0,
 	
 .CMD_Funcs:
-	dw Cmd.EXIT, Cmd.REBOOT, Cmd.START, Cmd.BPB, Cmd.LF, Cmd.CLEAN, Cmd.READ, Cmd.CD, Cmd.ASSIGN, Cmd.HELP
+	dw Cmd.EXIT, Cmd.REBOOT, Cmd.START, Cmd.BPB, Cmd.LF, Cmd.CLEAN, Cmd.READ
+	dw Cmd.CD, Cmd.ASSIGN, Cmd.HELP,  Cmd.FAT, Cmd.HEX, Cmd.DISK
 	
 .CMD_Infos:
-	dw Inf.EXIT, Inf.REBOOT, Inf.START, Inf.BPB, Inf.LF, Inf.CLEAN, Inf.READ, Inf.CD, Inf.ASSIGN, Inf.HELP
+	dw Inf.EXIT, Inf.REBOOT, Inf.START, Inf.BPB, Inf.LF, Inf.CLEAN, Inf.READ
+    dw Inf.CD, Inf.ASSIGN, Inf.HELP, Inf.FAT, Inf.HEX, Inf.DISK
 	
 	
 	
@@ -1311,5 +1925,10 @@ Inf:
 	db 7,"Assign a",0,"letter to",0,"the unity.",0,"Require 1",0,"parameter ;",0,"Ex.: assign",0,"D",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 .HELP:
 	db 4,"show this",0,"commands",0,"infos and",0,"params.",0,0,0,0,0,0,0,0,0,0,0,0
-	
+.FAT:	
+	db 4,"Display the",0,"File Alloca",0,"tion Table ",0,"Memory.",0,0,0,0,0
+.HEX:
+	db 5,"Enable or",0,"Disable",0,"hexadecimal",0,"values Dis",0,"player.",0,0,0,0,0,0,0,0,0,0,0,0
+.DISK:
+	db 2,"Disk Geomet",0,"ry Reader.",0,0
 

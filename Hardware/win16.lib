@@ -7,11 +7,11 @@
 %IFNDEF _WIN16_LIB
 %DEFINE _WIN16_LIB
 
-%DEFINE WIN_SEGMENT 0800h
+%DEFINE WIN_SEGMENT 0C00h
 %DEFINE WIN_OFFSET  WINDOW
 %DEFINE WIN_SECTOR  WINDOW_SECTOR
 
-%DEFINE WindowAddress  WINDOW
+%DEFINE WindowAddress  DefineWindow
 
 %DEFINE Window_Bar	          3000h
 %DEFINE Window_Width          3001h
@@ -66,7 +66,9 @@ CountPositions dw 0000h ;end
 
 %MACRO __ShowWindow 1
 	mov byte[fs:Window_Exist], %1
+	pusha
 	call WindowAddress
+	popa
 	mov byte[fs:Window_Border], 0
 %ENDMACRO
 
@@ -101,7 +103,9 @@ JmpValue%1:
 
 %MACRO __ShowField 1
 	mov byte[fs:Field_Exist], %1
+	pusha
 	call WindowAddress
+	popa
 	mov byte[fs:Window_Border], 0
 %ENDMACRO
 ; ___________________________________________
@@ -118,7 +122,9 @@ JmpValue%1:
 
 %MACRO __ShowButton 1
 	mov byte[fs:Button_Exist], %1
+	pusha
 	call WindowAddress
+	popa
 	mov byte[fs:Window_Border], 0
 %ENDMACRO
 

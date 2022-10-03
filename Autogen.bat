@@ -2,29 +2,31 @@ ECHO OFF
 cls
 
 cd /
-cd Users\CIDA\Desktop\KiddieOS
+cd Users\BFTC\Desktop\D.S.O.S\KiddieOS
 
 setlocal enabledelayedexpansion
 
-set QuantFile=7
+set QuantFile=8
 
-set Drive=1
+set Drive=5
 
 set file1=kernel
 set file2=fwriter
-set file3=window
-set file4=fat16
-set file5=shell16
-set file6=wmanager
+set file3=fat16
+set file4=shell16
+set file5=winmng
+set file6=syscmng
 set file7=keyboard
+set file8=pci
 
-set filebin1=Binary\%file1%.bin
-set filebin2=Binary\%file2%.bin
-set filebin3=Binary\%file3%.bin
-set filebin4=Binary\%file4%.bin
-set filebin5=Binary\%file5%.bin
-set filebin6=Binary\%file6%.bin
-set filebin7=Driver\%file7%.sys
+set filebin1=Binary\%file1%.osf
+set filebin2=Binary\%file2%.osf
+set filebin3=Binary\%file3%.osf
+set filebin4=Binary\%file4%.osf
+set filebin5=Binary\%file5%.osf
+set filebin6=Binary\%file6%.osf
+set filebin7=Binary\%file7%.drv
+set filebin8=Binary\%file8%.drv
 
 set VHD=KiddieOS
 set LibFile=Hardware\memory.lib
@@ -62,8 +64,8 @@ cecho {\n}
 	if %nasm% NEQ 0 GOTO:EOF
 	
 	set i=0
-	set Sector=591
-	set Segment=0x0800   rem Segmento do kernel
+	set Sector=531
+	set Segment=0x0C00   rem Segmento do kernel
 	set Boot=0x7C00      rem Offset do Inicial Bootloader
 	set Kernel=0x0000    rem Offset Inicial Do Kernel
 	call :AutoGenerator
@@ -123,8 +125,8 @@ set /A "W=0"
 	echo 0. Nothing
 	echo.
 	set /p Choose=
-	if %Choose% EQU 1 "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" startvm  --putenv VBOX_GUI_DBG_ENABLED=true KiddieOSUSB
-	if %Choose% EQU 2 "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" startvm  --putenv VBOX_GUI_DBG_ENABLED=true KiddieOSVHD
+	if %Choose% EQU 1 "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" startvm  --putenv VBOX_GUI_DBG_ENABLED=true KiddieOSU
+	if %Choose% EQU 2 "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" startvm  --putenv VBOX_GUI_DBG_ENABLED=true KiddieOSV
 	
 	cecho {\n}
 	goto END
@@ -230,15 +232,26 @@ GOTO:EOF
 	echo.
 	cecho {0B}Remounting Binary Files.
 	call :Assembler
+	
+	nasm -O0 -f bin -o Binary\winmng32.kxe winmng32.asm
+	::nasm -O0 -f bin -o Binary\filemng.osf filemng.asm
+	cd KiddieOS\Programs\Sources
+	nasm -O0 -f bin -o ..\Program.kxe Program.asm
+	nasm -O0 -f bin -o ..\Devmgr.kxe Devmgr.asm
+	nasm -O0 -f bin -o ..\Prog1.kxe Prog1.asm
+	cd ..\..\..\
+	fasm FASM/DOS/FASM.ASM KiddieOS/Programs/fasm.exe
+	
 	cecho {\n}
 	cecho {0A}%i% Binary Files remounted successfully{\n\n}
 	cecho {0F}
 	GOTO:EOF
-
+	
+::32769K
 :VHDCreate	
 	cecho {0A}Mounting VHD file...{\n}
 	cecho {0B}
-	imdisk -a -f %ImageFile% -s 32769K -m B:
+	imdisk -a -f %ImageFile% -s 33553920 -m Z:  
 	set i=0
 	:Creating
 		set /a i=i+1
@@ -248,33 +261,52 @@ GOTO:EOF
 		call set Bin=%%%Var3%%%
 		
 		cecho {0B}Adding '%Bin%' to the VHD file{\n}
-		copy %BinFile% B:
+		copy %BinFile% Z:
 		
 		if %i% NEQ %QuantFile% goto Creating
-
-		xcopy /S /E KiddieOS B:\KiddieOS
+		
+		copy %filebin7% KiddieOS\Drivers\
+		copy %filebin8% KiddieOS\Drivers\
+		
+		xcopy /I /E KiddieOS Z:\KiddieOS
+		
+		copy Binary\winmng32.kxe Z:
+		::copy Binary\filemng.osf Z:
+		copy Images\child.bmp Z:
+		copy Images\logo1.bmp Z:
+		copy Images\logo2.bmp Z:
+		copy Images\Forest.bmp Z:
+		copy Images\Forest1.bmp Z:
+		copy Images\wallcat.bmp Z:
+		copy Images\flower1.bmp Z:
+		copy Images\welcome.bmp Z:
+		copy Images\browser.bmp Z:
+		copy text.txt Z:
 		
 		cecho {0A}Dismounting VHD file...{\n}
 		cecho {0B}
-		imdisk -D -m B:
+		imdisk -D -m Z:
 		
 		cecho {0A}{\n}The '%VHD%.vhd' was created successfully!{\n\n}
 GOTO:EOF
 
 :ReassembleFAT
 cecho {0B} Assembling FAT16 and MBR...{\n}
-nasm -O0 -f bin -o Binary\bootmbr.bin bootmbr.asm
-nasm -O0 -f bin -o Binary\bootvbr.bin bootvbr.asm
-nasm -O0 -f bin -o FAT.bin FAT.asm
-nasm -O0 -f bin -o Binary\footervhd.bin footervhd.asm
+nasm -O0 -f bin -o Binary\bootmbr.osf bootmbr.asm
+nasm -O0 -f bin -o Binary\bootvbr.osf bootvbr.asm
+nasm -O0 -f bin -o Binary\FAT.osf FAT.asm
+nasm -O0 -f bin -o Binary\VolumeLabel.osf VolumeLabel.asm
+nasm -O0 -f bin -o Binary\footervhd.osf footervhd.asm
 GOTO:EOF
 
 :SendFatToVHD
 cecho {0B}Sending FAT16 and MBR into VHD...{\n}
-dd count=2 seek=0 bs=512 if=Binary\bootmbr.bin of=%ImageFile%
-dd count=2 seek=63 bs=512 if=Binary\bootvbr.bin of=%ImageFile%
-dd count=2 seek=67 bs=512 if=FAT.bin of=%ImageFile%
-dd count=2 seek=65537 bs=512 if=Binary\footervhd.bin of=%ImageFile%
+::dd count=2 seek=0 bs=512 if=FATS.bin of=%ImageFile%
+dd count=2 seek=0 bs=512 if=Binary\bootmbr.osf of=%ImageFile%
+dd count=2 seek=3 bs=512 if=Binary\bootvbr.osf of=%ImageFile%
+dd count=2 seek=7 bs=512 if=Binary\FAT.osf of=%ImageFile%
+dd count=2 seek=499 bs=512 if=Binary\VolumeLabel.osf of=%ImageFile%
+dd count=2 seek=65534 bs=512 if=Binary\footervhd.osf of=%ImageFile%
 cecho {0A}Done!{\n}
 
 cls
@@ -282,9 +314,9 @@ GOTO:EOF
 	
 
 :BootFlashDrive
-	
+	::33.553.920
 	cecho {0B}Writing system in Disk (Drive %Drive%) ...{\n}
-	rmpartusb drive=%Drive% filetousb file="%ImageFile%" filestart=0 length=33.558.528 usbstart=%OffsetPartition%
+	rmpartusb drive=%Drive% filetousb file="%ImageFile%" filestart=0 length=33.553.920 usbstart=%OffsetPartition%
 	cecho {0A}The System was written successfully{\n\n}
 	cecho {0F}
 GOTO:EOF

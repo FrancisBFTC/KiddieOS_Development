@@ -1,0 +1,83 @@
+Memoria Convencional - ate 640 KB:
+
+Endereço Inicial: 0x0000:0x0000 (0x0000)
+Endereço Final  : 0X000A:0x0000 (0xA0000)
+Tamanho 	: 655360 bytes (640 KB)
+Total Segmentos : 10
+
+
+Memoria superior - de 640 KB a 1 MB:
+
+*Memoria de video (Video Memory)
+*UMB 		  (Upper Memory Blocks)
+*EMS Page Frame   (Memory Bank)
+
+Endereço Inicial: 0x000A:0x0000 (0xA0000)
+Endereço Final  : 0x0010:0x0000 (0x100000)
+Tamanho 	: 393216 bytes (384 KB)
+Total Segmentos : 6
+
+
+Memoria de video - de 640 KB a 800 KB:
+
+Grafico = 0xA0000 a 0xB8000
+Texto   = 0xB8000 a 0xC8000
+Endereço Inicial: 0x000A:0x0000 (0xA0000)
+Endereço Final  : 0x000C:0x8000 (0xC8000)
+Tamanho 	: 163840 bytes (160 KB)
+Total Segmentos : 2,5
+
+
+
+Blocos de Memoria Superior (UMB) - de 800 KB a 896 KB:
+
+Armazenamento de dados de ->
+*Programas residentes (Esta na memoria convencional)
+*Drivers              (Esta na memoria convencional)
+
+Endereço Inicial: 0x000C:0x8000 (0xC8000)
+Endereço Final  : 0x000E:0x0000 (0xE0000)
+Tamanho 	: 98304 bytes (96 KB)
+Total Segmentos : 1,5
+
+EMS Page Frame (Memory Bank) - de 896 KB a 960 KB:
+
+
+Configuração    : 4 páginas de 16 KB (64 KB) 
+Endereço Inicial: 0x000E:0x0000 (0xE0000)
+Endereço Final  : 0x000F:0x0000 (0xF0000)
+Tamanho  	: 65536 (64 KB)
+Total Segmentos : 1
+
+
+Memoria Alta (HMA) - 1 MB pra cima:
+
+utilizada para armazenar partes do núcleo do sistema operacional DOS, 
+que poderiam ocupar espaço na memória convencional ou na memória superior.
+
+Endereço Inicial: 0x0010:0x0000 (0x100000)
+Endereço Final  : 0x0011:0x0000 (0x110000)
+*Inicio da memoria extendida
+
+
+Memória Estendida (XMS) - 1 MB pra cima: 
+
+memória acessível apenas em  modo protegido, localizada a partir de 1 Mbyte, 
+abrigando a memória HMA e a memória expandida
+
+Endereço Inicial: 0x0010:0x0000 (0x100000)
+
+
+Memória  Expandida  (EMS): 
+
+fornece  acesso  superior  a  1  Mbyte  de  memória  em  modo  real, 
+independente  da  capacidade  de  endereçamento  do  processador. 
+Localização:  placas  de  expansão EMS (XT e 286), ou final da memória estendida 
+(386 ou superior). Utilização de recursos (drivers) de gerência de memória 
+que permitem a função de chaveamento de bancos sem necessidade de hardware 
+adicional  (EMM386.EXE e  HIMEM.SYS). Total  de  memória:  64  blocos  (frames)  
+de  16 kbytes = 1 Mbyte. Apenas 4 blocos de 16 kbytes podem ser acessados a 
+cada instante. Apesar de não poder armazenar programas a serem executados, 
+possibilita o armazenamento dos dados utilizados pelos programas.
+
+*Final da memoria extendida ou placa de expansao.

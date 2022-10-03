@@ -25,8 +25,8 @@ BackWidth    dw 0000h
 BackHeight   dw 0000h
 BackColor    db 30
 Pagination   db 0
-CursorX   	 db 15
-CursorY      db 12
+CursorCol    db 30
+CursorRaw    db 12
 State        db 0
 
 ; _______________________________________________
@@ -38,35 +38,40 @@ State        db 0
 
 ; Definir o modo de vídeo e configura posição padrão
 VGA.SetVideoMode:
-	mov ah, 00h
-	mov al, 13h
-	int 10h
-	mov ax, 320
-	mov WORD[BackWidth], ax
-	mov ax, 200
-	mov WORD[BackHeight], ax
-	call DrawPixelConfig
+	mov 	ah, 00h
+	mov 	al, 6Ah  	; <- (800 x 600) 16 cores = 6Ah
+	;mov 	al, 12h    	; <- (640 x 480) 16 cores = 12h
+	int 	10h
+	mov 	ax, 800    ;640
+	mov 	WORD[BackWidth], ax
+	mov 	ax, 600    ;480
+	mov 	WORD[BackHeight], ax
 ret
 
-; função de gravar pixels na tela
-DrawPixelConfig:
-	mov ah, 0Ch
-	mov al, [BackColor]
-	mov cx, 0
-	mov dx, 0
+SVGA.SetVideoMode:
+	mov ax, 4F02h
+	mov bx, 103h   	; <- (800 x 600) 256 cores = 103h
+	;mov bx, 101h  	; <- (640 x 480) 256 cores = 101h
+	int 10h
+	mov ax, 800    ;640
+	mov WORD[BackWidth], ax
+	mov ax, 600    ;480
+	mov WORD[BackHeight], ax
 ret
 
 ;Pinta o fundo da tela
 DrawBackground:
-	int 10h
-	inc cx
-	cmp cx, WORD[BackWidth]
-	jne DrawBackground
-	mov cx, 0
-	inc dx
-	cmp dx, WORD[BackHeight]
-	jne DrawBackground
-	mov dx, 0
+	mov ax, 0xA000
+	mov es, ax
+	mov dx, 03C4h ; dx = Registro de Indice
+	mov ah, 0x01  ; Plano de bits azul
+	mov al, 0x02  ; Indice = Map Mask
+	out dx, ax    ; Escreve todos os planos de bits
+	xor di, di
+	mov ecx, ((800*600)/8)/4  ; = 60000 -> 15000 vezes
+	mov eax, 0xFFFFFFFF  ; Escreva para cada 4 pixels
+	;mov al, 0x02
+	rep stosd            ; Preenche a tela
 ret
 
 PrintString:
@@ -94,10 +99,10 @@ MoveCursor:
 ret
 
 EffectInit:
-	mov bl, 44 
+	mov bl, 44
 	start:
-		mov dh, [CursorY]
-		mov dl, [CursorX]
+		mov dh, byte[CursorRaw]
+		mov dl, byte[CursorCol]
 		call MoveCursor
 		mov si, NameSystem
 		call PrintString
@@ -142,11 +147,44 @@ ret
 Waiting:
 	pusha
 	mov ah, 86h
-	mov cx, 0000h    ; 150 milisegundos (150.000) cx = 0002h, dx = 49F0h
-	mov dx, 0000h
+	mov cx, 0001h    ; 150 milisegundos (150.000) cx = 0002h, dx = 49F0h
+	mov dx, 24F8h
 	int 15h
 	popa
 ret
+
+
+LIB_Monitor32:
+
+Print_String32:
+	pushad
+	push 	edx
+	push 	ecx
+	xor 	cx, cx
+	xor 	eax, eax
+	mov 	edi, 0xB8000
+	mov 	dh, byte[CursorRaw]
+	mov 	al, (80*2)
+	mov 	cl, dh
+	mul 	cl
+	mov 	cl, byte[CursorCol]
+	shl 	cl, 1
+	add 	ax, cx
+	add 	edi, eax
+	pop 	ecx
+	pop 	edx
+Print_S:
+    mov 	al,byte [ds:esi]
+    mov 	byte [edi],al 
+    inc 	edi 
+    mov 	al, dl
+    mov 	byte [edi],al 
+	inc 	esi
+	inc 	edi
+	loop 	Print_S
+	popad
+	inc 	byte[CursorRaw]
+iretd
 
 ; _______________________________________________
 

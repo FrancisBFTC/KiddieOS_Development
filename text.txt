@@ -1,0 +1,42 @@
+The x86_64 structure is slightly different. The RSP0, RSP1 and RSP2 fields remain. RSPx is loaded in whenever an interrupt causes the CPU to change PL (privilege level) to x. The TSS in long mode also holds the Interrupt Stack Table, which is a table of 7 known good stack pointers that can be used for handling interrupts. You can set an interrupt vector to use an IST entry in the Interrupt Descriptor Table by giving it a number from 0 - 7. If 0 is selected, then the IST mechanism is not used. If any other number is selected then when that interrupt vector is called the CPU will load RSP from the corresponding IST entry. This is useful for handling things like double faults, since you don't have to worry about switching stacks; the CPU will do it for you.
+
+Note that in any case, when an interrupt occurs, SS is forced to NULL and the SS selector's RPL field is set to the new CPL.
+TSS in software multitasking
+
+For each CPU which executes processes possibly wanting to do system calls via interrupts, one TSS is required. The only interesting fields are SS0 and ESP0. Whenever a system call occurs, the CPU gets the SS0 and ESP0-value in its TSS and assigns the stack-pointer to it. So one or more kernel-stacks need to be set up for processes doing system calls. Be aware that a thread's/process' time-slice may end during a system call, passing control to another thread/process which may as well perform a system call, ending up in the same stack. Solutions are to create a private kernel-stack for each thread/process and re-assign esp0 at any task-switch or to disable scheduling during a system-call (see also Kernel Multitasking).
+
+Setting up a TSS is straight-forward. An entry in the Global Descriptor Table is needed (see also the GDT Tutorial), specifying the TSS' address as "base", TSS' size as "limit", 0x89 (Present|Executable|Accessed) as "access byte" and 0x40 (Size-bit) as "flags". In the TSS itself, the members "SS0", "ESP0" and "IOPB offset" are to be set:
+
+    SS0 gets the kernel datasegment descriptor (e.g. 0x10 if the third entry in your GDT describes your kernel's data)
+    ESP0 gets the value the stack-pointer shall get at a system call
+    IOPB may get the value sizeof(TSS) (which is 104) if you don't plan to use this io-bitmap further (according to mystran in http://forum.osdev.org/viewtopic.php?t=13678) 
+
+The actual loading of the TSS must take place in protected mode and after the GDT has been loaded. The loading is simple as: 
+
+
+The bit fields are:
+
+    Pr: Present bit. This must be 1 for all valid selectors.
+    Privl: Privilege, 2 bits. Contains the ring level, 0 = highest (kernel), 3 = lowest (user applications).
+    S: Descriptor type. This bit should be set for code or data segments and should be cleared for system segments (eg. a Task State Segment)
+    Ex: Executable bit. If 1 code in this segment can be executed, ie. a code selector. If 0 it is a data selector.
+    DC: Direction bit/Conforming bit.
+        Direction bit for data selectors: Tells the direction. 0 the segment grows up. 1 the segment grows down, ie. the offset has to be greater than the limit.
+        Conforming bit for code selectors:
+            If 1 code in this segment can be executed from an equal or lower privilege level. For example, code in ring 3 can far-jump to conforming code in a ring 2 segment. The privl-bits represent the highest privilege level that is allowed to execute the segment. For example, code in ring 0 cannot far-jump to a conforming code segment with privl==0x2, while code in ring 2 and 3 can. Note that the privilege level remains the same, ie. a far-jump form ring 3 to a privl==2-segment remains in ring 3 after the jump.
+            If 0 code in this segment can only be executed from the ring set in privl. 
+    RW: Readable bit/Writable bit.
+        Readable bit for code selectors: Whether read access for this segment is allowed. Write access is never allowed for code segments.
+        Writable bit for data selectors: Whether write access for this segment is allowed. Read access is always allowed for data segments. 
+    Ac: Accessed bit. Just set to 0. The CPU sets this to 1 when the segment is accessed.
+    Gr: Granularity bit. If 0 the limit is in 1 B blocks (byte granularity), if 1 the limit is in 4 KiB blocks (page granularity).
+    Sz: Size bit. If 0 the selector defines 16 bit protected mode. If 1 it defines 32 bit protected mode. You can have both 16 bit and 32 bit selectors at once. 
+
+x86-64 Changes
+
+    L bit (bit 53, next to Sz) is used to indicate x86-64 code descriptor. For data segments, this bit is reserved
+    Sz bit (bit 54) has to be 0 when the L bit is set, as the combination Sz = 1, L = 1 is reserved for future use (and will throw an exception if you try to use it) 
+
+
+The LGDT instruction will look for a 8-byte base address in long mode.
+See Figure 3-8, "Segment Descriptor" of the Intel System Programmer's manual. 

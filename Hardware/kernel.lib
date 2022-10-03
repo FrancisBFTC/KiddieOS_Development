@@ -21,8 +21,13 @@
 %DEFINE  Kernel_Menu			0021h
 %DEFINE  Write_Info 			0024h
 %DEFINE  Print_Name_File        0027h
-%DEFINE  Wmanager_Start         002Ah     
-%DEFINE  Reboot_System          002Dh
+%DEFINE  Wmanager_Start         002Ah 
+%DEFINE  Print_Hexa_Value8      002Dh
+%DEFINE  Play_Sound             0030h
+%DEFINE  Print_Dec_Value32      0033h  
+%DEFINE  Calloc                 0036h
+%DEFINE  _Free                  0039h  
+%DEFINE  Reboot_System          003Ch
 
 
 %ENDIF

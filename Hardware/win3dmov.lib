@@ -134,8 +134,8 @@
 
 ; -- Resolução da tela (Útil para os papéis de parede) -------------------
 ;
-%DEFINE SCREEN_WIDTH 	0x140
-%DEFINE SCREEN_HEIGHT   0xC8
+%DEFINE SCREEN_WIDTH 	800
+%DEFINE SCREEN_HEIGHT   600
 ; ------------------------------------------------------------------------
 
 ;_________________________________________________________________________
@@ -190,7 +190,7 @@
 %MACRO WallPaper 5    ; chamada principal de algum papel de parede
 
 ; ------- Configurações iniciais para ambas as rotinas -------
-	push cx     ;uncomment
+	push ecx     ;uncomment
 	xor ax, ax
 	xor dx, dx
 	xor cx, cx
@@ -227,7 +227,7 @@ NotMore1:
 NotMore2:
 	mov bx, %4
 	mov ax, %5
-	pop cx     ;uncomment
+	pop ecx     ;uncomment
 	jmp %1     ;uncomment but...
 	;jmp _%1     ;comment
 	
@@ -238,8 +238,8 @@ NotMore2:
 _WALL:
 	xor dx, dx
 	xor cx, cx
-WALL:
-	__CreateWindow 0,0,0,0,0,0,WALLCOLOR,cx,dx, %4, %5
+WALL:						   ;WALLCOLOR
+	__CreateWindow 0,0,0,0,0,2,4,cx,dx, %4, %5
 	__ShowWindow 1
 	inc word[CountWallX]
 	mov bx, word[CountWallX]

@@ -7,10 +7,16 @@ jmp 	LoadAllExtensionFiles
 jmp 	LoadDirectory
 jmp 	LoadFAT
 jmp 	LoadThisFile
+jmp 	LoadV86File
+
 
 FileSegments    dw 0x0000
 DirSegments     dw 0x0000
 LoadingDir      db 0
+
+SYS.VM db 0
+FileVM  times 11 db 0
+ClusterFile     dw  0x0000
 
 DAPSizeOfPacket db 10h
 DAPReserved     db 00h
@@ -25,16 +31,17 @@ DATASTART            EQU  0x004E
 FATSTART             EQU  0x0050 
 ROOTDIRSTART         EQU  0x0003
 BYTES_PER_SECTOR     EQU  512
-SECTORS_PER_CLUSTER  EQU  1
+SECTORS_PER_CLUSTER  EQU  1   ;8
 MAX_ROOT_ENTRIES     EQU  512
 
 BAD_CLUSTER      EQU 0xFFF7
-END_OF_CLUSTER   EQU 0xFFF8
+END_OF_CLUSTER1  EQU 0xFFF8
+END_OF_CLUSTER2  EQU 0xFFFF
 FCLUSTER_ENTRY   EQU 0x001A
 FSIZE_ENTRY      EQU 0x001C
 ROOT_SEGMENT     EQU 0x07C0
 FAT_SEGMENT      EQU 0x17C0
-KERNEL_SEGMENT   EQU 0x0800
+KERNEL_SEGMENT   EQU 0x0C00
 FILE_SEGMENT     EQU 0x3800
 
 DIRECTORY_SIZE   EQU 32
@@ -42,7 +49,6 @@ EXT_LENGTH       EQU 3
 NAME_LENGTH      EQU 8
   
 ;Extension       db "SYS"
-ClusterFile     dw  0x0000
 FileFound       db 0
 StringDvr  db " driver loaded at address 0x",0
 LoadDriver db 0
@@ -108,11 +114,23 @@ RetVerify:
 ret
 
 LoadThisFile:
-	;mov ax, ROOT_SEGMENT
-	mov es, ax
-    mov  cx, MAX_ROOT_ENTRIES    ; Instrução LOOP decrementa CX até 0
-    mov  di, 0x0200                   ; Determinando o offset do root carregado
-.Loop:
+	clc
+	mov 	es, ax
+    mov  	cx, MAX_ROOT_ENTRIES    ; Instrução LOOP decrementa CX até 0
+    mov  	di, 0x0200                   ; Determinando o offset do root carregado
+	cmp 	byte[SYS.VM], 1
+	je 		ConfigVM
+	jmp 	FLoop
+ConfigVM:
+	;sti
+	mov 	word[DirSegments], 0x07C0
+	mov  	si, FileVM         ; Argumento: ponteiro para nome de arquivo
+	mov 	ax, 0x5000 				  ; segmento de arquivos 0x5000
+	mov 	word[FileSegments], ax
+	mov 	byte[LoadingDir], 0
+	mov 	byte[LoadDriver], 0
+	mov 	bx, 0x0000
+FLoop:
     push  cx
     mov  cx, 0x000B       	;  Eleven character name.
     push  si
@@ -125,10 +143,43 @@ LoadThisFile:
     add  di, DIRECTORY_SIZE   ; Queue next directory entry (32).
 	cmp byte[FileFound], 1
 	je RetLoadThis
-    loop .Loop
+    loop FLoop
+	stc
 RetLoadThis:
-	mov byte[FileFound], 0
+	cmp 	byte[SYS.VM], 1
+	je 		RetV86Mode
+	mov 	byte[FileFound], 0
+	mov 	byte[SYS.VM], 0
+RetNow:
+	ret
+
+
+RetV86Mode:
+	cmp  	dx, END_OF_CLUSTER1    ; 0xFFF8
+    je  	ClearVMode
+	cmp  	dx, END_OF_CLUSTER2    ; 0xFFFF
+	je 		ClearVMode
+	cmp 	byte[FileFound], 0
+	je 		ClearVMode
 ret
+ClearVMode:
+	mov 	byte[SYS.VM], 0
+	mov 	byte[FileFound], 0
+ret
+
+LoadV86File:
+	mov 	ax, word[FileSegments]
+	mov 	es, ax
+	xor 	bx, bx
+	call 	ReadRest
+	jmp 	RetV86Mode
+	
+ReadRest:
+	push 	bx
+	push 	di
+	push 	bx
+	jmp 	SetOtherSegments
+	
 	
 LoadFile:
 	push bx
@@ -198,10 +249,10 @@ ReadDataFile:
     pop  bx    ; Buffer do arquivo  
 	
     mov  ax, WORD [ClusterFile]   
-    call  ClusterLBA              		 ; Conversão de Cluster para LBA.
+    call  ClusterLBA          		 ; Conversão de Cluster para LBA.
     xor  cx, cx
-    mov  cl, SECTORS_PER_CLUSTER    ; 1 Setor para ler
-    call  ReadLogicalSectors
+    mov  cl, SECTORS_PER_CLUSTER    ; 8 Setores para ler
+    call  	ReadLogicalSectors
 
     push bx
     
@@ -213,9 +264,18 @@ ReadDataFile:
     mov dx, WORD [gs:bx]          ; read two bytes from FAT
     mov  WORD [ClusterFile], dx   ; DX está com o próximo Cluster
 	
-    cmp  dx, END_OF_CLUSTER    ; Ou 0xFFFF
-    jne  ReadDataFile
+	cmp 	byte[SYS.VM], 1
+	je 		RetLoadFile
 	
+    cmp  dx, END_OF_CLUSTER1    ; 0xFFF8
+    je  EndOfFile
+	cmp  dx, END_OF_CLUSTER2    ; 0xFFFF
+	je 	EndOfFile
+	
+	jmp ReadDataFile
+	
+	
+EndOfFile:	
 	pop bx
 	pop di
 	pop bx
@@ -297,7 +357,7 @@ _SUCCESS:
     pop  cx
     pop  bx
     pop  ax
-
+	
     ; Queue next buffer.
     add bx, BYTES_PER_SECTOR
     cmp bx, 0x0000
@@ -317,8 +377,6 @@ _NEXTSECTOR:
     loop  _MAIN                 ; Read next sector.
 ret
 	
-	
-
 BOOT_FAILED:
     int  0x18
 
