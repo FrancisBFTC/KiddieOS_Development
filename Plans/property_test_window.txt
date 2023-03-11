@@ -1,0 +1,132 @@
+============================= testados =============================
+
+1ª Etapa - Elementos de interface:
+
+90h   -> Elemento, Bordas do sistema, opaco, SEM fundo - OK
+1090h -> Elemento, Bordas do usuário, opaco, SEM fundo - OK
+10h   -> Elemento, Bordas do sistema, transparente, SEM fundo - OK
+1010h -> Elemento, Bordas do usuário, transparente, SEM fundo - OK
+
+2090h -> Elemento, Bordas do sistema, opaco, COM fundo - OK
+3090h -> Elemento, Bordas do usuário, opaco, COM fundo - OK
+2010h -> Elemento, Bordas do sistema, transparente, COM fundo - OK
+3010h -> Elemento, Bordas do usuário, transparente, COM fundo - OK
+
+2ª Etapa - Janela Principal - Sem topo:
+
+4090h -> Janela, Bordas do sistema, opaco, SEM fundo - OK
+5090h -> Janela, Bordas do usuário, opaco, SEM fundo - OK
+4010h -> Janela, Bordas do sistema, transparente, SEM fundo - OK
+5010h -> Janela, Bordas do usuário, transparente, SEM fundo - OK
+
+6090h -> Janela, Bordas do sistema, opaco, COM fundo - OK
+7090h -> Janela, Bordas do usuário, opaco, COM fundo - OK
+6010h -> Janela, Bordas do sistema, transparente, COM fundo - OK
+7010h -> Janela, Bordas do usuário, transparente, COM fundo - OK
+
+3ª Etapa - Janela Principal - Com topo:
+
+4091h -> Janela, Bordas do sistema, opaco, SEM fundo - OK
+5091h -> Janela, Bordas do usuário, opaco, SEM fundo - OK
+4011h -> Janela, Bordas do sistema, transparente, SEM fundo - OK
+5011h -> Janela, Bordas do usuário, transparente, SEM fundo - OK
+
+6091h -> Janela, Bordas do sistema, opaco, COM fundo - OK
+7091h -> Janela, Bordas do usuário, opaco, COM fundo - OK
+6011h -> Janela, Bordas do sistema, transparente, COM fundo - OK
+7011h -> Janela, Bordas do usuário, transparente, COM fundo - OK
+
+====================================================================
+
+============================= testados =============================
+
+4ª Etapa - Transparência na escala negra & outras cores:
+
+190h   -> Elemento, Bordas do sistema, opaco, SEM fundo - OK
+1190h -> Elemento, Bordas do usuário, opaco, SEM fundo - OK
+
+
+
+
+Lógica de tranparência:
+
+*Escalas de vermelho, verde & azul ->
+
+Vermelho:
+	Substituir byte R da tela pelo byte R do programa.
+Verde:
+	Substituir byte G da tela pelo byte G do programa.
+Azul:
+	Substituir byte B da tela pelo byte B do programa.
+
+*Escalas de preto, cinza & branco ->
+
+Definir número central do sistema = 0x32 ou 0x4E (Na entrada de cinza).
+
+Preto:
+	Subtrair número central por byte de cor do programa.
+	Subtrair byte de cor da tela pelo resultado do cálculo.
+Cinza e Branco:
+	Se número central for maior que byte de cor do programa, então...
+ 	Subtrair número central por byte de cor do programa.
+	"Subtrair" byte de cor da tela pelo resultado do cálculo.	
+	Se número central for menor que byte de cor do programa, então...
+	Inverter números e subtrair byte de cor do programa por número central.
+	"Adicionar" byte de cor da tela pelo resultado do cálculo.
+
+Nota: Se número central for maior que byte de cor do programa e...
+      byte de cor da tela for menor que resultado do cálculo, então...
+      defina byte de cor da tela para zero.
+
+
+AND LFB, RGB = Black Scale
+OR  LFB, RGB = Any Color Scale
+
+Tabela de Posições Interativas (IPT):
+
+StatusP -> "Status,Property" (32 bits):
+Status (16 bits Altos):
+	00000000 00000000 = BIT 16-31
+	
+	BIT 0-7 : Eventos do mouse
+		BIT 0 : LEFT_BUTTON_PRESS
+		BIT 1 : LEFT_BUTTON_RELEASE
+		BIT 2 : RIGHT_BUTTON_PRESS 
+		BIT 3 : RIGHT_BUTTON_RELEASE
+		BIT 4 : ROLL_BUTTON_EVENT
+	 	BIT 5 : MOUSE_CLICK
+		BIT 6 : MOUSE_OVER
+		BIT 7 : MOUSE_OUT
+
+	BIT 8-9 : Eventos do Teclado
+		BIT 8 : KEY_PRESS
+		BIT 9 : KEY_RELEASE
+	
+	BIT 10-15 : Status de Eventos
+		BIT 10 : Reservado
+		BIT 11 : Reservado
+		BIT 12 : Reservado
+		BIT 13 : Reservado
+		BIT 14 : Reservado
+        	BIT 15 : Contém | Não Contém Evento 
+Property (16 bits Baixos):
+	00000000 00000000 = BIT 0-15
+	-> Propriedade das janelas
+
+BeginXY -> "Initial LFB Window Position"
+FinalXY -> "Final LFB Window Position"
+TotalWH -> "Window Total Width, Normal Height"
+	00000000 00000000 = BIT 0-31
+	Width (16 bits altos) : BIT 16-31
+	Height (16 bits baixos) : BIT 0-15
+
+EventPT -> "Event Pointer Address":
+	00000000 00000000 = BIT 0-31
+ 	-> Linear Address of Protected Mode
+
+Buffer -> "Memory Buffer Address":
+	00000000 00000000 = BIT 0-31
+ 	-> Linear Address of Protected Mode
+	-> Examples: Strings for TextFields, Buttons,etc...
+
+IPT Total Bytes : 24 bytes

@@ -19,37 +19,61 @@ popa
 ; =====================================
 	
 DefineWindow:
-	mov ah, 0Ch
-	mov al, byte[fs:Window_Border_Color]
-	mov cx, word[fs:Window_PositionX]
-	mov dx, word[fs:Window_PositionY]
-	cmp byte[fs:Window_Bar], 0
-	je WindowNoBar
-	jmp WindowWithBar
+	mov 	ax, 0xA000
+	mov 	es, ax
+	xor 	di, di
+	mov 	ax, 800
+	mov 	cx, word[fs:Window_PositionY]
+	mul 	cx
+	push 	ax
+	mov 	ax, dx
+	shl 	eax, 16
+	pop 	ax
+	mov 	cx, word[fs:Window_PositionX]
+	mov 	edi, eax
+	add 	edi, ecx
+	xor 	eax, eax
+	mov 	al, byte[fs:Window_Border_Color]
+	mov 	dx, word[fs:Window_PositionY]
+	cmp 	byte[fs:Window_Bar], 0
+	je 		WindowNoBar
+	jmp 	WindowWithBar
 	
 WindowNoBar:
-	mov bx, word[fs:Window_Width]
-	add bx, cx
-	call BorderUp
+	call BorderUpColor
 	LineUp:
-		int 10h
-		inc cx
-		cmp cx, bx
-		jne LineUp
-		call BorderRightDown
-		mov bx, word[fs:Window_PositionY]
-		call BorderLeft
+		mov 	cx, word[fs:Window_Width]
+		rep 	stosb
+		call 	BorderRightDown
+		call 	BorderLeftColor
+		mov 	cx, word[fs:Window_Height]
+		inc 	di
 	LineLeft:
-		int 10h
-		dec dx
-		cmp dx, bx
-		jne LineLeft
-		call BackColor
-		jmp Return
+		sub 	di, 800
+		stosb
+		dec 	di
+		loop	LineLeft
+		call 	BackColor
+ret
 		
 WindowWithBar:
-	mov al, byte[fs:Window_Bar_Color]
-	mov bx, word[fs:Window_Width]
+	push 	dx
+	mov 	dx, 03C4h                     ; dx = Registro de Indice
+	mov 	ah, byte[fs:Window_Bar_Color] ; Plano de cor "Window_Bar_Color"
+	mov 	al, 0x02                      ; Indice = Map Mask 
+	out 	dx, ax                        ; Escreve todos os planos de bits
+	pop 	dx
+	
+	push 	cx
+	mov 	cx, word[fs:Window_Width]
+	shr 	cx, 2   ; Divide por 4
+	xor 	ax, ax
+	mov 	eax, 0xF0000000
+	rep 	stosd
+	pop 	cx
+	
+	jmp 	$
+	
 	add bx, cx
 	push ax
 	mov ax, dx
@@ -70,7 +94,7 @@ WindowWithBar:
 		call BorderRightDown
 		mov bx, word[fs:Window_PositionY]
 		add bx, 8
-		call BorderLeft
+		call BorderLeftColor
 		LineLeftBar:
 			int 10h
 			dec dx
@@ -96,82 +120,68 @@ WindowWithBar:
 		jmp PaintBar
 	
 BorderRightDown:
-		mov bx, word[fs:Window_Height]
-		add bx, dx
-		call BorderRight
+		dec 	di
+		mov 	cx, word[fs:Window_Height]
+		call 	BorderRightColor
 	LineRight:
-		int 10h
-		inc dx
-		cmp dx, bx
-		jne LineRight
-		mov bx, word[fs:Window_PositionX]
-		call BorderDown
+		add 	di, 800
+		stosb
+		dec 	di
+		loop	LineRight
+		call 	BorderDownColor
 	LineDown:
-		int 10h
-		dec cx
-		cmp cx, bx
-		jne LineDown
+		std
+		mov 	cx, word[fs:Window_Width]
+		rep 	stosb
+		cld
 ret
 
-BorderUp:
+BorderUpColor:
 	cmp byte[fs:Window_Border], 1
 	jne Return
 	mov al, byte[fs:Window_Border_Up]
 ret
 
-BorderRight:
+BorderRightColor:
 	cmp byte[fs:Window_Border], 1
 	jne Return
 	mov al, byte[fs:Window_Border_Right]
 ret
 
-BorderDown:
+BorderDownColor:
 	cmp byte[fs:Window_Border], 1
 	jne Return
 	mov al, byte[fs:Window_Border_Down]
 ret
 
-BorderLeft:
+BorderLeftColor:
 	cmp byte[fs:Window_Border], 1
 	jne Return
 	mov al, byte[fs:Window_Border_Left]
 ret
 
 BackColor:
-	mov al, byte[fs:Window_Back_Color]
-	mov cx, word[fs:Window_PositionX]
-	mov dx, word[fs:Window_PositionY]
-	cmp byte[fs:Window_Bar], 1
-	je WithBar
-	jmp NoBar
-WithBar:
-	add dx, 9
-	mov word[BackInitialPositionY], dx
-	add word[BackInitialPositionY], 1
-	jmp Salt
-NoBar:
-	inc dx
-	mov word[BackInitialPositionY], dx
-Salt:
-	inc cx
-	mov word[BackInitialPositionX], cx
-Initial:
-	mov cx, word[BackInitialPositionX]
-	mov bx, word[fs:Window_Width]
-	add bx, cx
-	sub bx, 1
-Columns:
-	int 10h
-	inc cx
-	cmp cx, bx
-	jne Columns
-	mov bx, word[fs:Window_Height]
-	add bx, word[BackInitialPositionY]
-	sub bx, 1
-Rows:
-	inc dx
-	cmp dx, bx
-	jne Initial
+	mov 	al, byte[fs:Window_Back_Color]
+	cmp 	byte[fs:Window_Bar], 1
+	jne 	NoHaveBar
+	add 	di, ((800*9)+1)
+	jmp 	DrawBack
+NoHaveBar:
+	add 	di, (800+1)
+	mov 	cx, word[fs:Window_Height]
+	sub 	cx, 1
+DrawBack:
+	push 	cx
+	mov 	cx, word[fs:Window_Width]       ;bx
+	sub 	cx, 2
+	push 	cx
+	rep 	stosb
+	pop 	cx
+	sub 	di, cx
+	pop 	cx
+	add 	di, 800
+	loop 	DrawBack
+	jmp 	$
 ret
 	
 ButtonsBar:

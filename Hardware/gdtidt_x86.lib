@@ -1,0 +1,374 @@
+; ==================================================================
+; Base = Addr1 + Addr2 + Addr3 (0x00000000)
+; Segmento Limite = Size1 + Size2 (0xFFFFF)
+; Estrutura GDT para 32-bit
+; Contém descritor de código e dados
+
+align 4
+GDT:
+	.Size    dw GDT_End - GDT_Start - 1		; Tamanho do GDT
+	.Address dd GDT_Start    			 	; Endereço Inicial do GDT
+
+align 4
+GDT_Start:
+	dd 0
+    dd 0
+
+	; Descritor de código 32-bit
+	; CS deve apontar para este descritor
+	.Code32: 
+		.C32Size1    dw 0xFFFF	     ; Tamanho do segmento (primeiros 0-15 bits)
+		.C32Addr1    dw 0x0000      ; Endereço de base (0-15 bits) (Linear Address - 0x3000)
+		.C32Addr2    db 0x00        ; Endereço de base (16-23 bits)
+		.C32AccType  db 0x9A        ; Tipo de acesso (10011010b)
+		.C32F_Size2  db 0xCF  ; Flags (F) = High 4 bits, Size2 = Low 4 bits (Size = 20 bits)
+		.C32Addr3    db 0x00        ; Endereço de base (24-31 bits)
+	   
+	; Descriptor de dados 4GB 
+	; DS, SS, ES, FS e GS devem apontar para este descritor
+	.Data32: 
+		.D32Size1    dw 0xFFFF	     ; Tamanho de segmento (primeiros 0-15 bits)
+		.D32Addr1    dw 0x0000      ; Endereço de base (0-15 bits) (Linear Address - 0x3000)
+		.D32Addr2    db 0x00        ; Endereço de base (16-23 bits)
+		.D32AccType  db 0x92        ; Tipo de acesso (10010010b)
+		.D32F_Size2  db 0xCF  ; Flags (F) = High 4 bits, Size2 = Low 4 bits (Size = 20 bits)
+		.D32Addr3    db 0x00        ; Endereço de base (24-31 bits)
+		
+	; Descritor de código 16-bit
+	; CS deve apontar para este descritor
+	.Code16: 
+		.C16Size1    dw 0xFFFF	     ; Tamanho do segmento (primeiros 0-15 bits)
+		.C16Addr1    dw 0x0000      ; Endereço de base (0-15 bits) (Linear Address - 0x3000)
+		.C16Addr2    db 0x00        ; Endereço de base (16-23 bits)
+		.C16AccType  db 0x9A        ; Tipo de acesso (10011010b)
+		.C16F_Size2  db 0x8F  ; Flags (F) = High 4 bits, Size2 = Low 4 bits (Size = 20 bits)
+		.C16Addr3    db 0x00        ; Endereço de base (24-31 bits)
+	   
+	; Descriptor de dados 4GB 
+	; DS, SS, ES, FS e GS devem apontar para este descritor
+	.Data16: 
+		.D16Size1    dw 0xFFFF	     ; Tamanho de segmento (primeiros 0-15 bits)
+		.D16Addr1    dw 0x0000      ; Endereço de base (0-15 bits) (Linear Address - 0x3000)
+		.D16Addr2    db 0x00        ; Endereço de base (16-23 bits)
+		.D16AccType  db 0x92        ; Tipo de acesso (10010010b)
+		.D16F_Size2  db 0x8F  ; Flags (F) = High 4 bits, Size2 = Low 4 bits (Size = 20 bits)
+		.D16Addr3    db 0x00        ; Endereço de base (24-31 bits)
+		
+		
+	.TSS32: 
+		.T32Size1    dw TSS_End - TSS_Start - 1	     ; Tamanho de segmento (primeiros 0-15 bits)
+		.T32Addr1    dw TSS_Start+30000h     ; Endereço de base (0-15 bits) (Linear Address - 0x3000)
+		.T32Addr2    db 0x00        ; Endereço de base (16-23 bits)
+		.T32AccType  db 0x89        ; Tipo de acesso (10010010b)
+		.T32F_Size2  db 0x80  		; Flags (F) = High 4 bits, Size2 = Low 4 bits (Size = 20 bits)
+		.T32Addr3    db 0x00        ; Endereço de base (24-31 bits)
+		
+		
+GDT_End:
+
+
+CODE_SEG32 EQU GDT_Start.Code32 - GDT_Start
+DATA_SEG32 EQU GDT_Start.Data32 - GDT_Start
+CODE_SEG16 EQU GDT_Start.Code16 - GDT_Start
+DATA_SEG16 EQU GDT_Start.Data16 - GDT_Start
+
+
+TSS_Start:
+	.Link   DD 0x00000000
+	.ESP0   DD 0x00000000
+	.SS0    DD 0x00000010
+	.ESP1   DD 0x00000000
+	.SS1    DD 0x00000000
+	.ESP2   DD 0x00000000
+	.SS2    DD 0x00000000
+	.CR3    DD 0x00000000
+	.EIP    DD 0x00000000
+	.EFLAGS DD 0x00200002
+	.EAX    DD 0x00000000
+	.ECX    DD 0x00000000
+	.EDX    DD 0x00000000
+	.EBX    DD 0x00000000
+	.ESP    DD 0x00000000
+	.EBP    DD 0x00000000
+	.ESI    DD 0x00000000
+	.EDI    DD 0x00000000
+	.ES     DD 0x00000010
+	.CS     DD 0x00000000
+	.SS     DD 0x00000010
+	.DS     DD 0x00000010
+	.FS     DD 0x00000010
+	.GS     DD 0x00000010
+	.LDTR   DD 0x00000000
+	.IOPB   DD 0xFFFF0000
+	
+
+TSS_End:
+
+; ==================================================================
+
+
+IDTBASE     EQU  0x00000000
+IDTSIZE     EQU  256
+QUANT_INT   EQU  2
+MY_INT      EQU  0xCD
+
+INT32_DPL0  EQU  0x8E
+INT32_DPL1  EQU  0xAE
+INT32_DPL2  EQU  0xCE
+INT32_DPL3  EQU  0xEE
+INT16_DPL0  EQU  0x86
+INT16_DPL1  EQU  0xA6
+INT16_DPL2  EQU  0xC6
+INT16_DPL3  EQU  0xE6
+
+TRAP32_DPL0 EQU  0x8F
+TRAP32_DPL1 EQU  0xAF
+TRAP32_DPL2 EQU  0xCF
+TRAP32_DPL3 EQU  0xEF
+TRAP16_DPL0 EQU  0x87
+TRAP16_DPL1 EQU  0xA7
+TRAP16_DPL2 EQU  0xC7
+TRAP16_DPL3 EQU  0xE7
+
+TASK32_DPL0 EQU  0x85
+TASK32_DPL1 EQU  0xA5
+TASK32_DPL2 EQU  0xC5
+TASK32_DPL3 EQU  0xE5
+
+; ==================================================================
+; Estrutura IDT (Interrupt Descriptor Table) - Real Mode
+; Contém o descriptor de 32-bit & 16-bit
+; O Limite é de 1023 (256 * 4) - 1
+align 4
+IDT16:
+	.IDT_Size16  dw (IDTSIZE * 4) - 1
+	.IDT_Addr16  dd IDTBASE
+
+IDT32:
+	.IDT_Size32  dw IDT_End - IDT_Start - 1
+	.IDT_Addr32  dd IDT_Start
+
+; ==================================================================
+
+; ==================================================================
+; Descriptors IDT
+
+
+IDT_Start:
+	TIMES 2 DB 0,0,CODE_SEG32,0,0,TRAP32_DPL0,0,0  ; ISR0 - ISR1 
+	DQ 0x0000000000000000                		   ; (ISR2 Reserved)
+	TIMES 6 DB 0,0,CODE_SEG32,0,0,TRAP32_DPL0,0,0  ; ISR3 - ISR8
+	DQ 0x0000000000000000                		   ; (ISR9 Reserved)
+	TIMES 5 DB 0,0,CODE_SEG32,0,0,TRAP32_DPL0,0,0  ; ISR10 - ISR14
+	DQ 0x0000000000000000                		   ; (ISR15 Reserved)
+	TIMES 6 DB 0,0,CODE_SEG32,0,0,TRAP32_DPL0,0,0  ; ISR16 - ISR21
+	TIMES 10 DQ 0x0000000000000000                 ; (ISR22 - ISR31 Reserved)
+	
+	; ISR32 - ISR255 User Defined
+	IRQ0:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	; ISR33
+	IRQ1:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	TIMES (MY_INT - (32+2)) DQ 0x0000000000000000
+	
+	INTxCD:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	INTxCE:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	TIMES (IDTSIZE - MY_INT) - QUANT_INT DQ 0x0000000000000000
+IDT_End:
+
+Vector.Address:
+	DD  DE_Exception
+	DD  DB_Exception
+	DD  0x00000000
+	DD  BP_Exception
+	DD  OF_Exception
+	DD  BR_Exception
+	DD  UD_Exception
+	DD  NM_Exception
+	DD  DF_Exception
+	DD  0x00000000
+	DD  TS_Exception
+	DD  NP_Exception
+	DD  SS_Exception
+	DD  GP_Exception
+	DD  PF_Exception
+	DD  0x00000000
+	DD  MF_Exception
+	DD  AC_Exception
+	DD  MC_Exception
+	DD  XM_Exception
+	DD  VE_Exception
+	DD  CP_Exception
+	TIMES 10 DD 0x00000000
+	DD  IRQ_Timer
+	DD  IRQ_Keyboard
+	TIMES (MY_INT - (32+2)) DD 0x00000000
+	DD 	LIB_Graphic32  ; INT 0xCD
+	DD  LIB_String32   ; INT 0xCE
+	TIMES (IDTSIZE - MY_INT) - QUANT_INT DD 0x00000000
+; ==================================================================
+
+; ==================================================================
+; Interrupções & Funções KiddieOS
+
+	; INT 0xCE : Interrupção para modo texto  ---------
+	; ---------------------------------------------
+	; Função 0 		-> Exibir uma String na tela
+	; Parâmetros: 	EAX = Função
+	; 				ESI = String
+	;				DL  = Cor de fundo|Texto
+	;				ECX = Tamanho da String
+	; Retorno: 		Nenhum
+	
+	; Função 1 		->  Pegar uma String da tela
+	; Parâmetros: 	EAX = Função
+	; 				EDI = Buffer
+	;				DH  = Coluna
+	; 				DL  = Linha
+	;				ECX = Tamanho do Buffer
+	; Retorno: 		Nenhum
+	
+	; Função 2 		->  Carregar um arquivo na memória
+	; Parâmetros: 	EAX = Função
+	; 				EDI = Buffer de destino
+	;				ESI = Nome do arquivo
+	; Retorno: 		Nenhum
+	; ----------------------------------------------
+	
+	; INT 0xCD : Interrupção de Programas Gráficos ---------
+	; Função 0 		->  Criar uma janela
+	; Parâmetros: 	EAX = Função
+	; 				ESI = Buffer do título
+	;				EDI = Caminho do ícone
+	;				EBX = Parte Baixa   -> Propriedades da janela (Ver mapa logo abaixo)
+	;				ECX = Parte Alta  -> Comprimento
+	;				ECX = Parte Baixa -> Altura
+	;				EDX = Parte Alta  -> Posição X
+	;				EDX = Parte Baixa -> Posição Y
+	;				PUSH DWORD COLORS -> Buffer de cores 24 bits (Topo, Bordas & Fundo)
+	;				PUSH DWORD ID     -> ID da janela (Byte Alto: ID mestre; Byte Baixo: ID Escravo)
+	; Retorno: 		EAX = ID para próximos elementos dentro da janela
+	;				POP EBX -> ID da Janela Atual
+	; Mapa de BITs em EBX:
+	;	* 16 Bits mais altos de EBX:
+	;		BIT 0  = Barra de topo
+	; 		BIT 1  = Botão fechar
+	;		BIT 2  = Botão maximizar
+	;		BIT 3  = Botão minimizar
+	;		BIT 4  = Visibilidade
+	;		BIT 5  = Movimentável
+	;		BIT 6  = Redimensionável
+	;		BIT 7,8  = Opacidade/Transparência
+	;			 01  = Opacidade
+	;			 00  = Transparência em qualquer escala (Exceto preto)
+	;			 10  = Transparência na escala de preto
+	;		BIT 9  = Clicável
+	;		BIT 10 = Escrevível
+	; 		BIT 11 = Reajustável
+	;		BIT 12 = Cor das bordas
+	; 		BIT 13 = Cor de fundo
+	;		BIT 14 = Janela Principal
+	;		BIT 15 = Elemento Ativo/Inativo
+	; -------------------------------------------------------
+	
+	; Função 1 		->  Mostrar janela/elemento
+	; Parâmetros: 	EAX = Função
+	; 				EBX = ID da janela/elemento
+	; Retorno: 		Nenhum
+	
+; ==================================================================
+
+
+; ==================================================================
+; Interruptions & KiddieOS Functions
+	
+	; INT 0xCE : Text Mode Interruption  ----------
+	; ---------------------------------------------
+	; Function 0 	-> Display a String on Screen
+	; Parameters: 	EAX = Function
+	; 				ESI = String
+	;				DL  = Background|Text Color
+	;				ECX = String Length
+	; Return: 		No one
+	
+	; Function 1 	-> Get a String from Screen
+	; Parameters: 	EAX = Function
+	; 				EDI = Buffer
+	;				DH  = Column
+	; 				DL  = Line
+	;				ECX = Buffer Length
+	; Return: 		No one
+	
+	; Function 2 	->  Load a file to the memory
+	; Parameters: 	EAX = Function
+	; 				EDI = Destiny Buffer
+	;				ESI = File name
+	; Return: 		No one
+	; ----------------------------------------------
+	
+	; INT 0xCD : Graphical Programs Interruption -----
+	; Function 0 	->  Create a window
+	; Parameters: 	EAX = Function
+	; 				ESI = Title Buffer
+	;				EDI = Icon Path
+	;				EBX = Low Part   -> Window Property (See map below)
+	;				ECX = High Part  -> Width
+	;				ECX = Low Part   -> Height
+	;				EDX = High Part  -> Position X
+	;				EDX = Low Part   -> Position Y
+	;				PUSH DWORD COLORS -> 3 24-bit Colors Buffers (Top, Borders & Back)
+	;				PUSH DWORD ID -> ID = Window ID Number (High Byte: MasterID; Low Byte: SlaveID)
+	; Return: 		EAX = ID for next elements within main window
+	;				POP EBX -> ID of the Main Window
+	; BITs MAP on EBX:
+	;	* 16 Bits more high of EBX:
+	;		BIT 0  = Top Bar
+	; 		BIT 1  = Button Close
+	;		BIT 2  = Button Maximize
+	;		BIT 3  = Button Minimize
+	;		BIT 4  = Visibility
+	;		BIT 5  = Movable
+	;		BIT 6  = Resizable
+	;		BIT 7,8  = Opacity/Transparancy
+	;			 01  = Opacity
+	;			 00  = Transparancy in any scale (Except Black)
+	;			 10  = Transparancy in Black Scale
+	;		BIT 9  = Clickable
+	;		BIT 10 = Writable
+	; 		BIT 11 = Readjustable
+	;		BIT 12 = Border Color
+	; 		BIT 13 = Background
+	;		BIT 14 = Main Window
+	;		BIT 15 = Active/Inactive Element
+	; ---------------------------------------------
+	
+	; Function 1 	->  Show Windows/Elements
+	; Parameters: 	EAX = Function
+	; 				EBX = Window/Element ID
+	; Return: 		No one
+; ==================================================================
+
+
