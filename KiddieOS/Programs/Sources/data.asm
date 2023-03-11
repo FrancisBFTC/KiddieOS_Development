@@ -3,11 +3,11 @@
 %INCLUDE "libasm.inc" 	; Includes KiddieOS macros and function structures
 
 ; STRINGS TO TERMINAL
-MsgRead		db 0x0D,"Performing data reading...",0
-MsgWrite	db 0x0D,"Performing data writing...",0
-MsgConfig	db 0x0D,"Performing data configuration...",0
-MsgDebug	db 0x0D,"Performing data debugging...",0
-NoArgs 		db 0x0D,"No arguments were entered!",0
+MsgRead		db "Performing data reading...",0x0D,0
+MsgWrite	db "Performing data writing...",0x0D,0
+MsgConfig	db "Performing data configuration...",0x0D,0
+MsgDebug	db "Performing data debugging...",0x0D,0
+NoArgs 		db "No arguments were entered!",0
 
 ; VECTOR INDEX
 i 			dd 0 	

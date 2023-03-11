@@ -206,9 +206,9 @@ Print_Labels:
 		call 	Move_Cursor
 		mov 	si, helptext2
 		call 	Print_String
-		dec 	byte[CursorRaw] 
-	Cursor_Commands:
+		mov 	byte[CursorRaw], 5
 		dec 	byte[CursorRaw]
+	Cursor_Commands:
 		call	Cursor.CheckToRollEditor
 		mov 	bx, word[CounterAccess]
 		add 	dl, bl
@@ -464,7 +464,7 @@ Shell_Interpreter:
 		mov 	byte[IsFile], 0
 		mov 	byte[IsCommand], 0
 		cmp 	byte[Out_Of_Shell], 1
-		je 		Return_Os_Shell
+		je 		Ret_OutOfShell
 		jmp 	Cursor_Commands
 	No_Return_Jump:
 		call 	Zero_Buffer
@@ -481,11 +481,12 @@ Shell_Interpreter:
 		pop 	di
 		mov 	byte[IsCommand], 0
 		call 	Exec.SearchFileToExec     ; Tentar encontrar programa operável
-		add 	byte[CursorRaw], 1
 		cmp 	byte[Out_Of_Shell], 1
-		je 		Return_Os_Shell
+		je 		Ret_OutOfShell0
 		jmp 	Cursor_Commands
-	Return_Os_Shell:
+	Ret_OutOfShell0:
+		call 	Cursor.CheckToRollEditor
+	Ret_OutOfShell:
 		mov 	byte[Out_Of_Shell], 0
 	ret
 			
@@ -806,6 +807,8 @@ RetCheck:
 ret
 Execute_Out:
 	pusha
+	call 	Get_Cursor
+	mov 	byte[CursorRaw_Out], dh
 	inc 	byte[CursorRaw_Out]
 	mov 	dh, byte[CursorRaw_Out]
 	cmp 	dh, byte[LimitCursorFinalY_Out]
@@ -1000,7 +1003,7 @@ Exec:
 		
 	ExtensionFound:
 		sub 	si, 3
-		call 	Cursor.CheckToRollEditor
+		;call 	Cursor.CheckToRollEditor
 		
 	ExtensionInsert:
 		; SI aponta para a extensão encontrada
@@ -1101,8 +1104,8 @@ Exec:
 		call 	Restore_Dir
 		; -------------------------------
 		
-		cmp 	byte[Out_Of_Shell], 1
-		je 		RetentionSI
+		;cmp 	byte[Out_Of_Shell], 1
+		;je 		RetentionSI
 		xor 	esi, esi
 		;mov 	si, BufferArgs
 		mov 	si, di  	; Recupera arquivo do BufferArgs
@@ -1176,17 +1179,18 @@ Exec:
 		add 	esi, 0x30000		; 0xC000
 		pop 	ecx
 		
+		
 		cmp 	byte[Out_Of_Shell], 1
 		je 		Insert_Out
 		mov 	dh, byte[CursorRaw]
 		mov 	dl, byte[CursorCol]
-		xor 	eax, eax	; Limpo se chamada de processos é dentro do Shell16
+		xor 	bx, bx	; Limpo se chamada de processos é dentro do Shell16
 		jmp 	Call_Prog
 	Insert_Out:
 		call 	Get_Cursor
 		mov 	byte[CursorRaw_Out], dh
 		mov 	byte[CursorCol_Out], dl
-		mov 	eax, 1 		; Definido se chamada de processos é fora do Shell16
+		mov 	bl, 1 		; Definido se chamada de processos é fora do Shell16
 		
 	Call_Prog:
 		call 	SYSCMNG     ; <- Chama o programa pelo gerenciador da SysCall
@@ -1206,6 +1210,7 @@ Exec:
 		mov 	ax, word[SYSCMNG + 3]
 		mov 	byte[ReturnByte], al
 		
+		call 	Move_Cursor
 		jmp 	RetSFTE
 			
 ShowErrorFound:
@@ -1215,7 +1220,7 @@ ShowErrorFound:
 	call 	Restore_Dir
 	; -------------------------------
 	
-	call 	Cursor.CheckToRollEditor
+	;call 	Cursor.CheckToRollEditor
 		
 	mov 	ax, ds
 	mov 	es, ax
@@ -1234,7 +1239,7 @@ ShowErrorFound:
 	call 	PrintData
 		
 RetSFTE:
-	call 	Cursor.CheckToRollEditor
+	;call 	Cursor.CheckToRollEditor
 		
 	push 	ds
 	pop 	es
@@ -1360,7 +1365,7 @@ Loop_Print2:
 	call 	PrintData
 	
 	;add 	byte[CursorRaw], 1
-	call	Cursor.CheckToRollEditor
+	;call	Cursor.CheckToRollEditor
 ret
 
 Cmd.LF:
@@ -1477,7 +1482,7 @@ Cmd.LF:
 	
 		jmp 	ShowFiles
 RetLF:
-	call 	Cursor.CheckToRollEditor
+	;call 	Cursor.CheckToRollEditor
 	;add 	byte[CursorRaw], 2    ;1
 ret
 
@@ -1486,7 +1491,7 @@ Cmd.CLEAN:
 	mov     cx, 0x050C         ; CH = 5, CL = 12              
 	mov     dx, 0x1643         ; DH = 22, DL = 67          
 	call    Create_Panel
-	mov 	byte[CursorRaw], 5
+	mov 	byte[CursorRaw], 4
 ret
 
 
@@ -1522,7 +1527,8 @@ RetRead:
 	pop 	word[CD_SEGMENT]
 	call 	Restore_Dir
 	; -------------------------------
-	inc 	byte[CursorRaw]
+	;inc 	byte[CursorRaw]
+	;call 	Cursor.CheckToRollEditor
 	mov 	byte[ErrorFile], 0
 	mov 	byte[ErrorDir], 0
 	mov 	byte[IsFile], 0
@@ -1747,7 +1753,7 @@ Cmd.FAT:
 	mov 	di, 0x0000
 	mov 	cx, 100
 	call 	PrintDataHex16
-	inc 	byte[CursorRaw]
+	;inc 	byte[CursorRaw]
 ret
 
 Cmd.HEX:
@@ -1758,7 +1764,7 @@ Cmd.HEX:
 	mov 	si, EnabledMsg
 RetHex:
 	call 	Print_String
-	inc 	byte[CursorRaw]
+	;inc 	byte[CursorRaw]
 ret
 	
 	
@@ -2082,7 +2088,8 @@ SuccessAdd:
 		jmp 	ContinuePaths
 		
 RetCd:
-	inc 	byte[CursorRaw]
+	;inc 	byte[CursorRaw]
+	;call 	Cursor.CheckToRollEditor
 	mov 	byte[ErrorFile], 0
 	mov 	byte[ErrorDir], 0
 	mov 	byte[IsFile], 0
@@ -2206,7 +2213,7 @@ Assig_Write:
 	
 Assig_Success:
 	;mov 	byte[LetterDisk], al
-	inc 	byte[CursorRaw]
+	;inc 	byte[CursorRaw]
 ret
 PacketWrite:
 	db 16 			; Size of Packet
@@ -2302,7 +2309,7 @@ _MainDisk:
 		call 	Print_String
 	
 RetDiskReader:
-	inc 	byte[CursorRaw]
+	;inc 	byte[CursorRaw]
 	popa
 ret
 
@@ -2348,7 +2355,7 @@ ShowInConsole:
 	loop 	ShowInConsole
 	
 	pop 	di
-	inc 	byte[CursorRaw]
+	;inc 	byte[CursorRaw]
 ret
 		
 NameSystem 	   db "KiddieOS Shell ",VERSION,0

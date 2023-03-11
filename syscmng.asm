@@ -5,7 +5,7 @@
 [BITS 16]
 [ORG SYSCMNG] 
 
-jmp 	_SYSCALL_MAIN
+jmp 	SwitchTo32BIT	;_SYSCALL_MAIN
 
 
 STACK32_TOP  	EQU 0x200000
@@ -25,16 +25,18 @@ Out_Of_Shell db 0
 ; Inicializaçao da chamada de programas e mudanças do processador
 
 _SYSCALL_MAIN:
-	jmp 	SwitchTo32BIT
+	
+	
 
 
 ; ==================================================================
 	
 	
 SwitchTo32BIT:
-	mov 	byte[Out_Of_Shell], al
+	mov 	byte[Out_Of_Shell], bl
 	
 	call 	EnableA20       ; Habilite o portão A20 (usa o método rápido como prova de conceito)
+	
 	
 	mov 	dword[ArgsAddr], esi
 	shl 	ecx, 16
@@ -85,7 +87,7 @@ SwitchTo32BIT:
 	
 	push 	eax
 	
-	;push 	esi
+	push 	esi
 	;push 	ecx
 	
 	mov 	si, IDT_Start
@@ -104,7 +106,7 @@ FillIDT:
 	loop 	FillIDT
 	
 	;pop 	ecx
-	;pop 	esi
+	pop 	esi
 	
 	pop 	eax
 	
@@ -255,6 +257,7 @@ Start32:
 	;mov 	[Params], edx        ; Transfira Byte Alto de EDX para EAX (Quantidade de Args da CLI)
 	                             ; E Byte Baixo sendo região do Cursor
 	mov 	edx, ss
+	
 	
     cld
     mov 	eax,DATA_SEG32              ; 0x10 = é um seletor plano para dados

@@ -120,13 +120,16 @@ OSMain:
 	
 	mov 	si, Command
 	call 	Shell.Execute
-	;mov 	si, Command1
-	;call 	Shell.Execute
+	mov 	si, Command1
+	call 	Shell.Execute
+	mov 	si, Command2
+	call 	Shell.Execute
 	jmp 	Load_Menu
 Shell.Execute:
 	jmp 	SHELL16+3
 	Command db "cd kiddieos\users",0
-	Command1 db "..\programs\procx86.kxe",0
+	Command1 db "k:\kiddieos\programs\procx86.kxe",0
+	Command2 db "..\programs\data.kxe -read -config",0
 	times 10 db 0
 	
 Load_Menu:
