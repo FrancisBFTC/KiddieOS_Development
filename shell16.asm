@@ -72,10 +72,16 @@ ErrorFile          db 0
 IsFile             db 0
 IsHexa             db 0
 
+WriteEnable  db 1
+ArgFile 	 db 0
+ArgData 	 db 0
 
 BufferAux 		   times 120 db 0
 BufferKeys 	       times 120 db 0
 BufferArgs         times 120 db 0
+
+InitB 			   dd 0x0D0D0D0D
+BufferWrite 	   times 100 db 0
 FolderAccess:
 	db '\'
 	times 150 db 0
@@ -209,24 +215,33 @@ Print_Labels:
 		mov 	byte[CursorRaw], 5
 		dec 	byte[CursorRaw]
 	Cursor_Commands:
-		call	Cursor.CheckToRollEditor
+		call	Cursor.CheckToRollEditor		
 		mov 	bx, word[CounterAccess]
 		add 	dl, bl
 		add 	dl, 3   ;2
 		cmp 	byte[Quant], 0
 		jna 	PrintAccess
 		inc 	dl
+		
 	PrintAccess:
 		mov 	byte[LimitCursorBeginX], dl
 		mov 	byte[LimitCursorBeginY], dh
 		call 	AssignDriveLetter
+		
+		mov 	al, byte[WriteEnable]
+		cmp 	al, 0
+		je 		NoPrintAccess
 		mov     si, LetterDisk
 		call    Print_String
 		mov 	si, FolderAccess
 		call 	Print_String
 		mov     si, SimbolCommands
 		call    Print_String
+		jmp 	SetCursorShape
 		
+	NoPrintAccess:
+		mov 	byte[LimitCursorBeginX], 12
+	SetCursorShape:
 		; Set Cursor Shape Full-Block
 		call 	Show_Cursor
 		call 	VerifyToWrite
@@ -240,6 +255,7 @@ Print_Labels:
 Shell_Editor:
 	mov 	byte[CmdWrite], 0
 	mov 	di, BufferKeys
+	mov 	cx, 120
 	call 	Zero_Buffer
 	mov 	di, BufferArgs
 	mov 	si, Vector.CMD_Names
@@ -248,8 +264,10 @@ Shell_Editor:
 	jmp 	Start
   Shell_Editor2:
 	mov 	di, BufferKeys
+	mov 	cx, 120
 	call 	Zero_Buffer
 	mov 	di, BufferArgs
+	mov 	cx, 120
 	call 	Zero_Buffer
 	mov 	word[SavePointerArgs], di
 	mov 	si, Vector.CMD_Names
@@ -408,6 +426,7 @@ Os_Inter_Shell:
 	push 	ds
 	pop 	es
 	mov 	di, BufferArgs
+	mov 	cx, 120
 	call 	Zero_Buffer
 	call 	Copy_Buffers
 	push 	di
@@ -467,6 +486,7 @@ Shell_Interpreter:
 		je 		Ret_OutOfShell
 		jmp 	Cursor_Commands
 	No_Return_Jump:
+		mov 	cx, 120
 		call 	Zero_Buffer
 		mov 	byte[CmdCounter], 0
 		mov 	byte[CounterList], 0
@@ -571,6 +591,7 @@ List_Commands:
 	WriteCommand:
 		mov 	byte[CmdWrite], 1
 		mov 	di, BufferArgs
+		mov 	cx, 120
 		call 	Zero_Buffer
 		mov 	si, Vector.CMD_Names
 		xor 	cx, cx
@@ -685,7 +706,6 @@ ret
 			
 Zero_Buffer:
 	pusha
-	mov 	cx, 120
 	Zero:
 		mov 	byte[di],0
 		inc 	di
@@ -1923,6 +1943,7 @@ ContinueConv:
 	cmp 	byte[QuantDirs], 0
 	jz 		NoRestoreSI
 	mov 	di, BufferAux
+	mov 	cx, 120
 	call 	Zero_Buffer
 	call 	Copy_Buffers
 	sub 	si, 3
@@ -2313,6 +2334,252 @@ RetDiskReader:
 	popa
 ret
 
+; THIS IS THE WRITE COMMAND 
+Cmd.WRITE:
+	inc 	si		; Ponteiro para argumento
+	mov 	byte[IsCommand], 0
+	cmp		dword[si], 0x006e6f2d	; si == "-on"?
+	je	 	WriteON
+	cmp 	dword[si], 0x206e6f2d  	; si == "-on "?
+	je 		WriteON
+	cmp 	dword[si], 0x66666f2d  	; si == "-off"?
+	je 		WriteOFF
+	jmp 	CheckArgs
+WriteON:
+	mov 	byte[WriteEnable], 1
+	jmp 	Ret.WRITE
+WriteOFF:
+	mov 	byte[WriteEnable], 0
+	jmp 	Ret.WRITE
+CheckArgs:
+	xor 	ax, ax
+	cmp 	dword[si], 0x2063662d 	; si == "-fc "?
+	sete 	ah
+	cmp 	dword[si], 0x2061662d 	; si == "-fa "?
+	sete	al
+	cmp 	ax, 0
+	jnz 	FileWrite
+	cmp 	byte[si], 0
+	jz 		Ret.WRITE
+	
+	; CÓPIA DE DADOS PARA BUFFER DE IMPRESSÃO/ESCRITA
+DataCopy:
+	mov 	byte[ArgData], 1
+	mov 	di, BufferWrite
+	mov 	cx, 100
+	call 	Zero_Buffer
+	xor 	cx, cx
+	cmp 	byte[si], '"'
+	jne 	TransferData
+	inc 	si
+TransferData:
+	inc 	cx
+	cmp 	word[si], "\n"
+	je 		MoveBreak
+	cmp 	word[si], "\t"
+	je 		MoveTab
+	cmp 	byte[si], '"'
+	je 		EndTransfer
+	cmp 	byte[si], 0
+	je 		EndTransfer2
+	movsb
+	jmp 	TransferData
+MoveBreak:
+	mov 	al, 0x0D
+	stosb
+	add		si, 2
+	jmp 	TransferData
+MoveTab:
+	mov 	al, 0x09
+	stosb
+	add		si, 2
+	jmp 	TransferData
+EndTransfer:
+	inc 	si
+	cmp 	byte[si], 0
+	je 		EndTransfer2
+	cmp 	byte[si], 0x20
+	je 		EndTransfer
+	jmp 	CheckArgs
+EndTransfer2:
+	cmp 	byte[ArgFile], 1
+	je 		WriteFile
+	mov 	di, BufferWrite
+	dec 	cx
+	call 	PrintData
+	jmp 	Ret.WRITE
+	
+FileWrite:
+	mov 	byte[ArgFile], 1
+	push 	word[CD_SEGMENT]
+	push 	ax
+	add 	si, 4
+	mov 	di, BufferKeys
+	call 	Format_Command_Line
+	
+	call 	Store_Dir
+	
+	mov 	cx, 1 	   ; Status
+	call 	Load_File_Path
+	
+	pop 	ax
+	push 	di
+	push 	si
+	push 	ax
+	
+	; DEFINIR ROTA PARA FILECREATE OU FILEAPPEND POR AX
+	cmp 	byte[ArgData], 1
+	je 		WriteFile
+	
+FindSpaceZero:
+	inc 	di
+	cmp 	byte[di], 0
+	je 		WriteEditor
+	cmp 	byte[di], 0x20
+	jne 	FindSpaceZero
+FindNextChar:
+	inc 	di
+	cmp 	byte[di], 0x20
+	je 		FindNextChar
+	mov 	si, di
+	jmp 	DataCopy
+	
+; THIS IS THE MINI-EDITOR OF THE WRITE COMMAND
+; CRIAR FUNÇÕES DE ANÁLISE DE CARACTERES, ARMAZENAMENTO E A ROTA- MINI-EDITOR
+WriteEditor:
+	mov 	di, BufferWrite
+	mov 	cx, 100
+	call 	Zero_Buffer
+FileEditor:
+	xor 	ax, ax
+	int 	0x16
+	cmp 	al, 0x08
+	je 		WriteEditor.BackSpace
+	cmp 	al, 0x0D
+	je		WriteEditor.Enter
+	cmp 	al, 0x13		; CTRL + S = Salvar
+	je 		WriteFile
+	cmp 	al, 0x18 		; CTRL + X = Cancelar
+	je 		ExitEditor
+	StoreChar:
+		stosb
+		call 	Get_Cursor
+		cmp 	dl, byte[LimitCursorFinalX]
+		jne		ShowChar
+		call 	Cursor.CheckToRollEditor
+		mov 	ah, 0Eh
+		int 	10h
+		mov 	al, 0x0D
+		stosb
+		jmp 	FileEditor
+	ShowChar:
+		mov 	ah, 0Eh
+		int 	10h
+		jmp 	FileEditor
+
+WriteFile:
+	pop 	ax
+	pop 	si
+	pop 	di
+
+	;TODO: I WILL DEVELOP THIS FUNCTION YET TO CREATE AND APPEND A FILE
+	; THROUGH THE -FA AND -FC PARAMETERS!
+	;TODO: ENVIAR DADOS E ARQUIVO (BufferWrite & SI) PARA CREATE/APPEND EM FAT16
+	mov 	si, StringSave
+	call 	Print_String
+	mov 	cx, 100
+	mov 	di, BufferWrite
+	call 	PrintData
+	
+	pop 	word[CD_SEGMENT]
+	call 	Restore_Dir
+	jmp 	Ret.WRITE
+	
+ExitEditor:
+	pop 	ax
+	pop 	si
+	pop 	di
+	
+	call 	Cursor.CheckToRollEditor
+	mov 	si, WriteCanceled
+	call 	Print_String
+	
+	pop 	word[CD_SEGMENT]
+	call 	Restore_Dir
+Ret.WRITE:
+	mov 	byte[ArgFile], 0
+	mov 	byte[ArgData], 0
+	ret
+
+WriteEditor.BackSpace:
+		call 	Get_Cursor
+		mov 	bh, byte[LimitCursorBeginY]
+		inc 	bh
+		cmp 	dh, bh
+		jna 	CheckLimitCLIX2	  ; se for igual ou menor, verifica X
+		cmp 	byte[di-1], 0x0D
+		je 		FindColumn
+	CursorToLast:
+		push 	SkipCheckLimit2   ; cursor é maior
+		cmp 	dl, 12
+		je		BackCursorToCLI2
+		pop 	bx
+		jmp 	SkipCheckLimit2
+	FindColumn:
+		push 	di
+		sub 	di, 2
+		mov 	cx, 56
+		FindEnter:
+			std
+			mov 	al, 0x0D
+			repne 	scasb
+			cld
+			pop 	di
+			cmp 	cx, 0
+			je 		CursorToLast
+			sub 	cx, 56
+			not 	cx
+			inc 	cx
+			add 	cx, 12
+			jmp 	BackSpecificColumn
+	CheckLimitCLIX2:			  ; Se X inicial for 12, não faz nada
+		cmp 	dl, 12
+		je		FileEditor
+	SkipCheckLimit2:			  ; apaga caractere e desloca cursor
+		dec 	di
+		mov 	al, 0x08
+		int 	10h
+		mov 	al, 0
+		mov 	[di], al
+		int 	10h
+		mov 	al, 0x08
+		int 	10h
+		jmp 	FileEditor
+	BackCursorToCLI2:		; retorna cursor pra última coluna da linha anterior
+		push 	dx
+		call 	Get_Cursor
+		dec 	dh
+		mov 	byte[CursorRaw], dh
+		mov 	dl, byte[LimitCursorFinalX]
+		call 	Move_Cursor
+		pop 	dx
+		ret
+	BackSpecificColumn:
+		push 	dx
+		call 	Get_Cursor
+		dec 	dh
+		mov 	byte[CursorRaw], dh
+		mov 	dl, cl
+		call 	Move_Cursor
+		pop 	dx
+		jmp 	SkipCheckLimit2
+
+WriteEditor.Enter:
+	stosb
+	mov 	ah, 0x0E
+	int 	0x10
+	call 	Cursor.CheckToRollEditor
+	jmp 	FileEditor
 
 Cmd.HELP:
 	mov 	ax, 0x3000
@@ -2357,7 +2624,7 @@ ShowInConsole:
 	pop 	di
 	;inc 	byte[CursorRaw]
 ret
-		
+
 NameSystem 	   db "KiddieOS Shell ",VERSION,0
 LetterDisk     db " :",0
 SimbolCommands db ">",0
@@ -2434,22 +2701,25 @@ ProgTerminate1: db "Process exited after 0x"
 ProgTerminate2: db " milliseconds with return value 0x"
 .SizeTerm2      dw ($-ProgTerminate2)
 	
-COUNT_COMMANDS    EQU 13  ; <- A cada comando alterar
+WriteCanceled 	db "canceled by the user.",0
+StringSave 	   db "This sequence save the data: ",0
+
+COUNT_COMMANDS    EQU 14  ; <- A cada comando alterar
 
 Vector:
 
 .CMD_Names:
 	db "exit"  ,0,   "reboot"  ,0,  "start"   ,0,  "bpb"    ,0,  "lf"  ,0 
 	db "clean" ,0,   "read "   ,0,  "cd "     ,0,  "assign ",0, "help" ,0
-	db "fat"   ,0,   "hex"     ,0,  "disk"    ,0,
+	db "fat"   ,0,   "hex"     ,0,  "disk"    ,0,  "write"  ,0
 	
 .CMD_Funcs:
 	dw Cmd.EXIT, Cmd.REBOOT, Cmd.START, Cmd.BPB, Cmd.LF, Cmd.CLEAN, Cmd.READ
-	dw Cmd.CD, Cmd.ASSIGN, Cmd.HELP,  Cmd.FAT, Cmd.HEX, Cmd.DISK
+	dw Cmd.CD, Cmd.ASSIGN, Cmd.HELP,  Cmd.FAT, Cmd.HEX, Cmd.DISK, Cmd.WRITE
 	
 .CMD_Infos:
 	dw Inf.EXIT, Inf.REBOOT, Inf.START, Inf.BPB, Inf.LF, Inf.CLEAN, Inf.READ
-    dw Inf.CD, Inf.ASSIGN, Inf.HELP, Inf.FAT, Inf.HEX, Inf.DISK
+    dw Inf.CD, Inf.ASSIGN, Inf.HELP, Inf.FAT, Inf.HEX, Inf.DISK, Inf.WRITE
 	
 	
 	
@@ -2481,6 +2751,8 @@ Inf:
 	db 5,"Enable or",0,"Disable",0,"hexadecimal",0,"values Dis",0,"player.",0,0,0,0,0,0,0,0,0,0,0,0
 .DISK:
 	db 2,"Disk Geomet",0,"ry Reader.",0,0
+.WRITE:
+	db 1, "write com",0
 	
 END_OF_FILE:
 	db 'EOF'

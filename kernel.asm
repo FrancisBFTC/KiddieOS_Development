@@ -129,8 +129,7 @@ Shell.Execute:
 	jmp 	SHELL16+3
 	Command db "cd kiddieos\users",0
 	Command1 db "k:\kiddieos\programs\procx86.kxe",0
-	Command2 db "..\programs\data.kxe -read -config",0
-	times 10 db 0
+	Command2 db "..\programs\data.kxe",0
 	
 Load_Menu:
 	mov 	si, PressKey
