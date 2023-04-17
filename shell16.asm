@@ -57,10 +57,12 @@ jmp Os_Inter_Shell
 %DEFINE FAT16.LoadDirectory (FAT16+3)
 %DEFINE FAT16.LoadFAT       (FAT16+6)
 %DEFINE FAT16.LoadThisFile  (FAT16+9)
+%DEFINE FAT16.WriteThisFile (FAT16+12)
+%DEFINE FAT16.WriteThisEntry (FAT16+18)
 
-FAT16.FileSegments    EQU   (FAT16+18)
-FAT16.DirSegments 	  EQU   (FAT16+20)
-FAT16.LoadingDir      EQU   (FAT16+22)
+FAT16.FileSegments    EQU   (FAT16+21)
+FAT16.DirSegments 	  EQU   (FAT16+23)
+FAT16.LoadingDir      EQU   (FAT16+25)
 
 %DEFINE A3_TONE  1355
 %DEFINE F3_TONE  1715
@@ -75,6 +77,7 @@ IsHexa             db 0
 WriteEnable  db 1
 ArgFile 	 db 0
 ArgData 	 db 0
+WriteCounter dw 0
 
 BufferAux 		   times 120 db 0
 BufferKeys 	       times 120 db 0
@@ -121,7 +124,6 @@ CD_SEGMENT        dw 0x0200   ; 0x07C0, start in root directory
 
 Out_Of_Shell 	  db 0
 IsCommand 		  db 0
-
 
 ; Buffer to Disk Drive Parameters (Pointer = DS:SI)
 ; ------------------------------------------------
@@ -1389,6 +1391,8 @@ Loop_Print2:
 ret
 
 Cmd.LF:
+	call 	Reload_Directory
+	
 	mov 	ax, word[CD_SEGMENT]
 	mov 	es, ax
 	mov 	di, 0x0000
@@ -1403,6 +1407,8 @@ Cmd.LF:
 	
 	ShowFiles:
 		cmp 	byte[es:di + 11], 0x0F   ; LFN ATTRIB
+		je 		NextFile
+		cmp 	byte[es:di + 11], 0x02   ; HIDDEN
 		je 		NextFile
 		
 		;inc 	byte[CursorRaw]
@@ -1434,6 +1440,10 @@ Cmd.LF:
 		je 		TypeFol
 		cmp 	al, 0x08  ; VOLUME ATTRIB
 		je 		TypeVol
+		cmp 	al, 0x04  ; SYSTEM ATTRIB
+		je 		TypeSys
+		cmp 	al, 0x01  ; READ-ONLY ATTRIB
+		je 		TypeRon
 		mov 	si, MetaData.Oth
 		call	Print_String
 		jmp 	CheckDateTime
@@ -1452,7 +1462,14 @@ Cmd.LF:
 	TypeVol:
 		mov 	si, MetaData.Vol
 		call 	Print_String
-
+		jmp 	CheckDateTime
+	TypeSys:
+		mov 	si, MetaData.Sys
+		call 	Print_String
+		jmp 	CheckDateTime
+	TypeRon:
+		mov 	si, MetaData.Ron
+		call 	Print_String
 		
 	CheckDateTime:
 		mov 	ah, 0Eh
@@ -1506,6 +1523,9 @@ RetLF:
 	;add 	byte[CursorRaw], 2    ;1
 ret
 
+ThisDirRoot db "KDS.VOLUME ",0
+ThisDir 	db ".          ",0
+
 Cmd.CLEAN:
 	mov     bh, [Backeditor_Color]
 	mov     cx, 0x050C         ; CH = 5, CL = 12              
@@ -1516,14 +1536,15 @@ ret
 
 
 Cmd.READ:
+	;call 	Reload_Directory
+	
 	mov 	si, BufferArgs
 	mov 	di, BufferKeys
 	call 	Format_Command_Line
 	
-	; -- provisory -------------------
 	push 	word[CD_SEGMENT]
 	call 	Store_Dir
-	; --------------------------------
+
 	
 	mov 	ax, 0x6800 ; segmento de arquivos
 	mov 	bx, 0x0000 ; offset do arquivo
@@ -1562,6 +1583,7 @@ Browse_Count db 0
 ; 	ENTRADAS => SI: Ponteiro para buffer onde contém o caminho de arquivo pré-formatado
 ; 			    AX: Segmento para carregamento dos dados
 ; 			    BX: Offset para carregamento dos dados
+;				CX: 0 - Carrega o arquivo do caminho; 1 - Não carrega o arquivo
 ; 	SAÍDAS 	 => Carry: Definido quando há algum erro de leitura
 Load_File_Path:
 	;push 	word[CD_SEGMENT]
@@ -1725,9 +1747,131 @@ Ret.LoadPath:
 	mov 	byte[Dirs_Count], 0
 	mov 	byte[Browse_Count], 0
 	mov 	byte[Flag_File], 0
+	clc
 	ret
 
 BROWSING_EX dw 0x0000
+
+Cmd.REN:
+	mov 	si, BufferArgs
+	mov 	di, BufferKeys
+	call 	Format_Command_Line
+	
+	push 	word[CD_SEGMENT]
+	call 	Store_Dir
+	
+	mov 	cx, 1
+	call 	Load_File_Path
+	jc 		Ret.REN
+	
+	call 	SkipDI_To_Arguments
+	
+	mov 	byte[IsFile], 0
+	mov 	byte[Dirs_Count], 0
+	mov 	byte[Browse_Count], 0
+	mov 	byte[Flag_File], 0
+	mov 	byte[IsCommand], 0
+	
+	push 	si
+	add 	si, (11 + 1) 		; +11 caracteres + 1 espaço
+	xchg 	si, di
+	call 	Format_Command_Line
+	mov 	bx, si 				; Endereço do dado a renomear
+	pop 	si
+	
+	mov 	ax, [CD_SEGMENT]
+	mov 	[FAT16.DirSegments], ax		; AX = Segmento de Diretório
+	mov 	[FAT16.FileSegments], ax
+	mov 	byte[FAT16.LoadingDir], 0
+	
+	mov 	dx, 0					; Offset 0 para nome de arquivo			
+	push 	di						; SI = Nome do Arquivo Formatado; DI = ... Não-Formatado
+	call 	FAT16.WriteThisEntry
+	pop 	di
+
+Ret.REN:
+	pop 	word[CD_SEGMENT]
+	call 	Restore_Dir
+	mov 	byte[IsFile], 0
+	mov 	byte[Dirs_Count], 0
+	mov 	byte[Browse_Count], 0
+	mov 	byte[Flag_File], 0
+ret
+
+Cmd.ATTRIB:
+	push 	word[CD_SEGMENT]
+	call 	Store_Dir
+	
+	mov 	si, BufferArgs
+	call 	SkipSI_To_Arguments
+	
+	cmp 	dword[si], "-ro "
+	je 		Read_Only_Attr
+	cmp 	dword[si], "-hi "
+	je 		Hidden_Attr
+	cmp 	dword[si], "-sy "
+	je 		System_Attr
+	cmp 	dword[si], "-vo "
+	je 		Volume_Attr
+	cmp 	dword[si], "-di "
+	je 		Dir_Attr
+	cmp 	dword[si], "-ar "
+	je 		Archive_Attr
+	cmp 	dword[si], "-fo "
+	je 		Folder_Attr
+	jmp 	Ret.ATTR
+	
+Read_Only_Attr:
+	mov 	bx, 0x01
+	jmp 	Get_File
+Hidden_Attr:
+	mov 	bx, 0x02
+	jmp 	Get_File
+System_Attr:
+	mov 	bx, 0x04
+	jmp 	Get_File
+Volume_Attr:
+	mov 	bx, 0x08
+	jmp 	Get_File
+Dir_Attr:
+	mov 	bx, 0x10
+	jmp 	Get_File
+Archive_Attr:
+	mov 	bx, 0x20
+	jmp 	Get_File
+Folder_Attr:
+	mov 	bx, 0x30
+	
+Get_File:
+	push 	bx
+	add 	si, 4
+	mov 	di, BufferKeys
+	mov 	byte[IsCommand], 0
+	call 	Format_Command_Line
+	
+	mov 	cx, 1
+	call 	Load_File_Path
+	pop 	bx
+	jc 		Ret.ATTR
+	
+	mov 	ax, [CD_SEGMENT]
+	mov 	[FAT16.DirSegments], ax		; AX = Segmento de Diretório
+	mov 	[FAT16.FileSegments], ax
+	mov 	byte[FAT16.LoadingDir], 0
+	
+	mov 	dx, 11					; Offset 11 para attributo de arquivo			
+	push 	di						; SI = Nome do Arquivo Formatado; DI = ... Não-Formatado
+	call 	FAT16.WriteThisEntry
+	pop 	di
+	
+Ret.ATTR:
+	pop 	word[CD_SEGMENT]
+	call 	Restore_Dir
+	mov 	byte[IsFile], 0
+	mov 	byte[Dirs_Count], 0
+	mov 	byte[Browse_Count], 0
+	mov 	byte[Flag_File], 0
+ret
 
 Store_Dir:
 	pusha
@@ -1771,7 +1915,7 @@ Cmd.FAT:
 	mov 	ax, 0x1000
 	mov 	es, ax
 	mov 	di, 0x0000
-	mov 	cx, 100
+	mov 	cx, 1024
 	call 	PrintDataHex16
 	;inc 	byte[CursorRaw]
 ret
@@ -1995,6 +2139,8 @@ Format_Loop:
 	ret
 
 Cmd.CD:
+	;call 	Reload_Directory
+	
 	mov 	si, BufferArgs
 	mov 	di, BufferKeys
 	call 	Format_Command_Line
@@ -2336,6 +2482,9 @@ ret
 
 ; THIS IS THE WRITE COMMAND 
 Cmd.WRITE:
+	;call	Reload_Directory
+	mov 	word[WriteCounter], 0x0000
+	
 	inc 	si		; Ponteiro para argumento
 	mov 	byte[IsCommand], 0
 	cmp		dword[si], 0x006e6f2d	; si == "-on"?
@@ -2362,12 +2511,48 @@ CheckArgs:
 	cmp 	byte[si], 0
 	jz 		Ret.WRITE
 	
-	; CÓPIA DE DADOS PARA BUFFER DE IMPRESSÃO/ESCRITA
-DataCopy:
-	mov 	byte[ArgData], 1
+	mov 	ax, 0x6800
+	mov 	es, ax
+	xor 	di, di
+	mov 	eax, 0x0D0D0D0D
+	stosd
+	
+	cmp 	byte[si], '"'
+	jne 	IsNotData
+	
+	push 	si
+SkipToParam:
+	inc 	si
+	cmp 	byte[si], 0
+	je 		IsNotData
+	cmp 	byte[si], '-'
+	jne 	SkipToParam
+	inc 	si
+	cmp 	word[si], "fa"
+	jne 	IsNotData
+	
+	mov 	ax, 0x3000
+	mov 	es, ax
 	mov 	di, BufferWrite
 	mov 	cx, 100
 	call 	Zero_Buffer
+	jmp 	IsData
+	
+IsNotData:
+	
+; 	ZERAR BUFFER DE MEMÓRIA
+	push 	di
+	xor 	eax, eax
+	mov 	cx, 1250
+	rep 	stosd
+	pop 	di
+	
+IsData:
+	pop 	si
+	
+; CÓPIA DE DADOS PARA BUFFER DE IMPRESSÃO/ESCRITA
+DataCopy:
+	mov 	byte[ArgData], 1
 	xor 	cx, cx
 	cmp 	byte[si], '"'
 	jne 	TransferData
@@ -2383,15 +2568,18 @@ TransferData:
 	cmp 	byte[si], 0
 	je 		EndTransfer2
 	movsb
+	inc 	word[WriteCounter]
 	jmp 	TransferData
 MoveBreak:
 	mov 	al, 0x0D
 	stosb
+	inc 	word[WriteCounter]
 	add		si, 2
 	jmp 	TransferData
 MoveTab:
 	mov 	al, 0x09
 	stosb
+	inc 	word[WriteCounter]
 	add		si, 2
 	jmp 	TransferData
 EndTransfer:
@@ -2404,7 +2592,8 @@ EndTransfer:
 EndTransfer2:
 	cmp 	byte[ArgFile], 1
 	je 		WriteFile
-	mov 	di, BufferWrite
+
+	mov 	di, 0x0004
 	dec 	cx
 	call 	PrintData
 	jmp 	Ret.WRITE
@@ -2414,15 +2603,88 @@ FileWrite:
 	push 	word[CD_SEGMENT]
 	push 	ax
 	add 	si, 4
+	push 	ds
+	pop 	es
 	mov 	di, BufferKeys
 	call 	Format_Command_Line
 	
 	call 	Store_Dir
 	
-	mov 	cx, 1 	   ; Status
+	mov 	cx, 1
 	call 	Load_File_Path
 	
+	xor 	dx, dx
 	pop 	ax
+	push 	ax
+	cmp 	al, 1
+	jne 	NoFile
+	
+; 	SE PARÂMETRO FOR -FA (AL = 1), ESTE CÓDIGO LER O ARQUIVO
+	mov 	ax, 0x6800
+	mov 	word[FAT16.FileSegments], ax
+	mov 	ax, word[CD_SEGMENT]
+	mov 	word[FAT16.DirSegments], ax
+	mov 	byte[FAT16.LoadingDir], 0
+	mov 	bx, 0x0004
+	push 	di
+	push 	si
+	call 	FAT16.LoadThisFile
+	pop 	si
+	pop 	di
+	jc 		CheckArgData
+	
+	cmp 	byte[ArgData], 1
+	je 		CopyBufferToMem
+	jmp 	NoCopy
+	
+CopyBufferToMem:
+	mov 	cx, [WriteCounter]
+	push 	si
+	push 	di
+	
+	mov 	ax, 0x6800
+	mov 	es, ax
+	mov 	di, 0x0004
+	add 	di, dx
+	mov 	si, BufferWrite
+	rep 	movsb
+	
+	pop 	di
+	pop 	si
+	add 	[WriteCounter], dx
+	jmp 	NoFile
+	
+CheckArgData:
+	cmp 	byte[ArgData], 1
+	je 		CopyBufferToMem
+	jmp 	NoFile
+	
+NoCopy:
+	mov 	[WriteCounter], dx	; Inicie o contador a partir deste ponto do arquivo
+	
+	push 	di
+FindSpaceZero2:
+	inc 	di
+	cmp 	byte[di], '"'
+	je 		RestoreDI
+	cmp 	byte[di], 0
+	jne 	FindSpaceZero2
+	pop 	di
+	
+; 	CASO O ARQUIVO EXISTA, IMPRIMIR OS SEUS CARACTERES
+; 	OBS.: NÃO IMPRIMIR SE NÃO FOR UM EDITOR (CONTROLADO PELO CÓDIGO ACIMA)
+	push 	di
+	mov 	ax, 0x6800
+	mov 	es, ax
+	mov 	di, 0x0004
+	mov 	cx, dx 				; Tamanho do arquivo lido
+	call 	PrintData
+	
+RestoreDI:
+	pop 	di
+	
+NoFile:
+	pop 	ax				; Desempilha a Flag de AX
 	push 	di
 	push 	si
 	push 	ax
@@ -2441,15 +2703,45 @@ FindNextChar:
 	inc 	di
 	cmp 	byte[di], 0x20
 	je 		FindNextChar
+	cmp 	byte[di], 0
+	je 		WriteEditor
 	mov 	si, di
-	jmp 	DataCopy
+	
+	mov 	ax, 0x6800
+	mov 	es, ax
+
+	xor 	di, di
+	mov 	eax, 0x0D0D0D0D
+	stosd
+	add 	di, dx
+	
+	; ZERAR BUFFER DE MEMÓRIA
+	push 	di
+	xor 	eax, eax
+	mov 	cx, 1250
+	rep 	stosd
+	pop 	di
+	
+	jmp 	DataCopy		; QUANDO O PARÂMETRO TEM -FC/FA ANTES DO DADO NA CLI
 	
 ; THIS IS THE MINI-EDITOR OF THE WRITE COMMAND
 ; CRIAR FUNÇÕES DE ANÁLISE DE CARACTERES, ARMAZENAMENTO E A ROTA- MINI-EDITOR
 WriteEditor:
-	mov 	di, BufferWrite
-	mov 	cx, 100
-	call 	Zero_Buffer
+	mov 	ax, 0x6800
+	mov 	es, ax
+
+	xor 	di, di
+	mov 	eax, 0x0D0D0D0D
+	stosd
+	add 	di, dx
+	
+	; ZERAR BUFFER DE MEMÓRIA
+	push 	di
+	xor 	eax, eax
+	mov 	cx, 1250
+	rep 	stosd
+	pop 	di
+	
 FileEditor:
 	xor 	ax, ax
 	int 	0x16
@@ -2464,6 +2756,7 @@ FileEditor:
 	StoreChar:
 		stosb
 		call 	Get_Cursor
+		inc 	word[WriteCounter]
 		cmp 	dl, byte[LimitCursorFinalX]
 		jne		ShowChar
 		call 	Cursor.CheckToRollEditor
@@ -2485,11 +2778,18 @@ WriteFile:
 	;TODO: I WILL DEVELOP THIS FUNCTION YET TO CREATE AND APPEND A FILE
 	; THROUGH THE -FA AND -FC PARAMETERS!
 	;TODO: ENVIAR DADOS E ARQUIVO (BufferWrite & SI) PARA CREATE/APPEND EM FAT16
-	mov 	si, StringSave
-	call 	Print_String
-	mov 	cx, 100
-	mov 	di, BufferWrite
-	call 	PrintData
+	
+	mov 	dx, ax						; DX = Flag de Criação/Acréscimo
+	mov 	cx, word[WriteCounter]		; CX = Quantidade de Caracteres
+	mov 	ax, 0x6800
+	mov 	[FAT16.FileSegments], ax
+	mov 	ax, [CD_SEGMENT]
+	mov 	[FAT16.DirSegments], ax		; AX = Segmento de Diretório
+	mov 	byte[FAT16.LoadingDir], 0
+	mov 	bx, 0x0004					; BX = Buffer com Dados para Escrever
+	push 	di							; SI = Nome do Arquivo Formatado; DI = ... Não-Formatado
+	call 	FAT16.WriteThisFile
+	pop 	di
 	
 	pop 	word[CD_SEGMENT]
 	call 	Restore_Dir
@@ -2507,6 +2807,15 @@ ExitEditor:
 	pop 	word[CD_SEGMENT]
 	call 	Restore_Dir
 Ret.WRITE:
+	push 	es
+	mov 	ax, 0x6800
+	mov 	es, ax
+	xor 	di, di
+	xor 	eax, eax
+	mov 	cx, 1250
+	rep 	stosd
+	pop 	es
+	call 	Reload_Directory
 	mov 	byte[ArgFile], 0
 	mov 	byte[ArgData], 0
 	ret
@@ -2517,7 +2826,7 @@ WriteEditor.BackSpace:
 		inc 	bh
 		cmp 	dh, bh
 		jna 	CheckLimitCLIX2	  ; se for igual ou menor, verifica X
-		cmp 	byte[di-1], 0x0D
+		cmp 	byte[es:di-1], 0x0D
 		je 		FindColumn
 	CursorToLast:
 		push 	SkipCheckLimit2   ; cursor é maior
@@ -2550,10 +2859,11 @@ WriteEditor.BackSpace:
 		mov 	al, 0x08
 		int 	10h
 		mov 	al, 0
-		mov 	[di], al
+		mov 	[es:di], al
 		int 	10h
 		mov 	al, 0x08
 		int 	10h
+		dec 	word[WriteCounter]
 		jmp 	FileEditor
 	BackCursorToCLI2:		; retorna cursor pra última coluna da linha anterior
 		push 	dx
@@ -2579,7 +2889,96 @@ WriteEditor.Enter:
 	mov 	ah, 0x0E
 	int 	0x10
 	call 	Cursor.CheckToRollEditor
+	inc 	word[WriteCounter]
 	jmp 	FileEditor
+
+Cmd.DIVS:
+	pusha
+	
+	inc 	si
+	push 	si
+	xor 	cx, cx
+CountSI:
+	inc 	cx
+	inc 	si
+	cmp 	byte[si], 0x20
+	jne 	CountSI
+	mov 	di, si
+	pop 	si
+	call 	Parse_Dec_Value
+	mov 	[Numerator], eax
+	
+	mov 	si, di
+	xor 	cx, cx
+	inc 	si
+
+	push 	si
+CountSI2:
+	inc 	cx
+	inc 	si
+	cmp 	byte[si], 0
+	je 		StartDIV
+	cmp 	byte[si], 0x20
+	jne 	CountSI2
+StartDIV:
+	pop 	si
+	call 	Parse_Dec_Value
+	mov 	[Denominator], eax
+
+	xor 	ecx, ecx
+	mov 	eax, [Numerator]
+	mov 	ebx, [Denominator]
+	xor 	edx, edx
+	div 	ebx
+	call 	Print_Dec_Value32
+	cmp 	edx, 0
+	jz	 	Ret.DIVS
+	mov 	ah, 0x0E
+	mov 	al, ','
+	int 	0x10
+Mul10:
+	inc 	ecx
+	mov 	eax, edx
+	mov 	ebx, 10
+	xor 	edx, edx
+	mul 	ebx
+	mov 	ebx, [Denominator]
+	xor 	edx, edx
+	div 	ebx
+	call 	Print_Dec_Value32
+	cmp 	ecx, 32
+	je 		Ret.DIVS
+	cmp 	edx, 0
+	jnz 	Mul10
+Ret.DIVS:
+	popa
+	ret
+	
+Numerator 	dd 0
+Denominator dd 0
+Decimals    dq 0
+
+Reload_Directory:
+	pusha
+	mov		ax, word[CD_SEGMENT]
+	cmp 	ax, 0x0200
+	je 		ReLoadDir
+	
+	mov 	si, ThisDir
+	mov 	word[FAT16.DirSegments], ax
+	mov 	bx, 0x0000
+	mov 	word[FAT16.FileSegments], ax
+	mov 	byte[FAT16.LoadingDir], 1
+	push 	di
+	call 	FAT16.LoadThisFile
+	pop 	di
+	jmp 	Ret.Reload
+
+ReLoadDir:
+	call 	FAT16.LoadDirectory
+Ret.Reload:
+	popa
+	ret
 
 Cmd.HELP:
 	mov 	ax, 0x3000
@@ -2624,6 +3023,7 @@ ShowInConsole:
 	pop 	di
 	;inc 	byte[CursorRaw]
 ret
+
 
 NameSystem 	   db "KiddieOS Shell ",VERSION,0
 LetterDisk     db " :",0
@@ -2686,6 +3086,8 @@ MetaData:
 .Arc db "archive    ",0
 .Fol db " folder     ",0
 .Vol db " volume ID  ",0
+.Ron db "read-only  ",0
+.Sys db "system     ",0
 .Oth db " other      ",0
 	
 DiskParameter:
@@ -2704,22 +3106,25 @@ ProgTerminate2: db " milliseconds with return value 0x"
 WriteCanceled 	db "canceled by the user.",0
 StringSave 	   db "This sequence save the data: ",0
 
-COUNT_COMMANDS    EQU 14  ; <- A cada comando alterar
+COUNT_COMMANDS    EQU 17  ; <- A cada comando alterar
 
 Vector:
 
 .CMD_Names:
 	db "exit"  ,0,   "reboot"  ,0,  "start"   ,0,  "bpb"    ,0,  "lf"  ,0 
 	db "clean" ,0,   "read "   ,0,  "cd "     ,0,  "assign ",0, "help" ,0
-	db "fat"   ,0,   "hex"     ,0,  "disk"    ,0,  "write"  ,0
+	db "fat"   ,0,   "hex"     ,0,  "disk"    ,0,  "write"  ,0, "div"  ,0
+	db "ren"   ,0,	 "attrib"  ,0
 	
 .CMD_Funcs:
 	dw Cmd.EXIT, Cmd.REBOOT, Cmd.START, Cmd.BPB, Cmd.LF, Cmd.CLEAN, Cmd.READ
 	dw Cmd.CD, Cmd.ASSIGN, Cmd.HELP,  Cmd.FAT, Cmd.HEX, Cmd.DISK, Cmd.WRITE
+	dw Cmd.DIVS, Cmd.REN, Cmd.ATTRIB
 	
 .CMD_Infos:
 	dw Inf.EXIT, Inf.REBOOT, Inf.START, Inf.BPB, Inf.LF, Inf.CLEAN, Inf.READ
     dw Inf.CD, Inf.ASSIGN, Inf.HELP, Inf.FAT, Inf.HEX, Inf.DISK, Inf.WRITE
+	dw Inf.DIVS, Inf.REN, Inf.ATTRIB
 	
 	
 	
@@ -2753,6 +3158,12 @@ Inf:
 	db 2,"Disk Geomet",0,"ry Reader.",0,0
 .WRITE:
 	db 1, "write com",0
+.DIVS:
+	db 1, "DIV command",0
+.REN:
+	db 1, "REN command",0
+.ATTRIB:
+	db 1, "ATT command",0
 	
 END_OF_FILE:
 	db 'EOF'

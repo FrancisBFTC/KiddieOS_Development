@@ -1,0 +1,5 @@
+%IFNDEF __INFO_LIB__
+	
+	%DEFINE VERSION "v1.3.6"
+
+%ENDIF

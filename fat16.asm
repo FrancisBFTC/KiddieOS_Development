@@ -7,17 +7,18 @@ jmp 	LoadAllExtensionFiles  	; FAT16+0
 jmp 	LoadDirectory		 	; FAT16+3
 jmp 	LoadFAT					; FAT16+6
 jmp 	LoadThisFile			; FAT16+9
-jmp 	LoadV86File				; FAT16+12
+jmp 	WriteThisFile 			; FAT16+12
 jmp 	LoadStartData			; FAT16+15
+jmp 	WriteThisEntry			; FAT16+18 
 
 
-FileSegments    dw 0x0000		; FAT16+18
-DirSegments     dw 0x0000		; FAT16+20
-LoadingDir      db 0			; FAT16+22
+FileSegments    dw 0x0000		; FAT16+21
+DirSegments     dw 0x0000		; FAT16+23
+LoadingDir      db 0			; FAT16+25
 	
-SYS.VM db 0						; FAT16+23
-FileVM  times 11 db 0			; FAT16+24
-ClusterFile     dw  0x0000		; FAT16+35
+SYS.VM db 0						; FAT16+26
+FileVM  times 11 db 0			; FAT16+27
+ClusterFile     dw  0x0000		; FAT16+38
 
 DAPSizeOfPacket db 10h
 DAPReserved     db 00h
@@ -64,7 +65,7 @@ LoadDirectory:
 	mov es, ax
 	mov ax, [ROOTDIRSTART]
 	mov bx, 0x0000
-	mov cx, DIRECTORY_SIZE
+	mov cx, 2		;DIRECTORY_SIZE = 32
 	call ReadLogicalSectors
 	popa
 ret
@@ -102,7 +103,7 @@ ret
 LoadAllExtensionFiles:
 	mov 	ax, ROOT_SEGMENT
 	mov 	es, ax
-    mov  	cx, MAX_ROOT_ENTRIES    ; Instrução LOOP decrementa CX até 0
+    mov  	cx, MAX_ROOT_ENTRIES    ; Instrução LOOP decrementa 512 até 0
     mov  	di, 0x0000              ; Determinando o offset do root carregado
 	add 	di, NAME_LENGTH
 _Loop:
@@ -110,7 +111,6 @@ _Loop:
     mov  	cx, EXT_LENGTH       ; 0x000B Eleven character name.
     push  	si
     push  	di
-	;call 	VerifyExt
 	repe 	cmpsb
 	pop  	di
 	pop  	si
@@ -125,41 +125,18 @@ NoFounded:
 	mov 	byte[FileFound], 0
 ret
 
-;VerifyExt:
-;	Verify:
-;		mov al, byte[es:di]
-;		cmp al, byte[ds:si]
-;		jne RetVerify
-;		inc si
-;		inc di
-;		loop Verify
-;RetVerify:
-;ret
 
 LoadThisFile:
 	push 	es
 	clc
 	mov 	es, ax
     mov  	cx, MAX_ROOT_ENTRIES    ; Instrução LOOP decrementa CX até 0
-    mov  	di, 0x0000                   ; Determinando o offset do root carregado
-	cmp 	byte[SYS.VM], 1
-	je 		ConfigVM
-	jmp 	FLoop
-ConfigVM:
-	;sti
-	mov 	word[DirSegments], 0x0200
-	mov  	si, FileVM         		; Argumento: ponteiro para nome de arquivo
-	mov 	ax, FILE_SEGMENT 		; segmento de arquivos 0x5000
-	mov 	word[FileSegments], ax
-	mov 	byte[LoadingDir], 0
-	mov 	byte[LoadDriver], 0
-	mov 	bx, 0x0000
+    mov  	di, 0x0000              ; Determinando o offset do root carregado
 FLoop:
     push  	cx
     mov  	cx, 0x000B       	;  Eleven character name.
     push  	si
     push  	di
-	;call 	VerifyExt
 	repe 	cmpsb
 	pop  	di
 	pop  	si
@@ -176,51 +153,605 @@ NoFoundedThis:
 	inc 	al
 	pop 	es
 	mov 	byte[FileFound], 0
+	xor 	dx, dx
 	stc
 	ret
-	;jmp 	RetNow
 ProcessErrorCode:
 	pop 	es
 	stc
 	ret
-	;jmp 	RetNow
 RetLoadThis:
 	mov 	byte[FileFound], 0
 	cmp 	byte[SHELL.ErrorDir], 1
 	je 		ProcessErrorCode
 	cmp 	byte[SHELL.ErrorFile], 1
 	je 		ProcessErrorCode
-RetNow:
 	clc
 	pop 	es
 	ret
-
-
-RetV86Mode:
-	cmp  	dx, END_OF_CLUSTER1    ; 0xFFF8
-    je  	ClearVMode
-	cmp  	dx, END_OF_CLUSTER2    ; 0xFFFF
-	je 		ClearVMode
-	cmp 	byte[FileFound], 0
-	je 		ClearVMode
-ret
-ClearVMode:
-	mov 	byte[SYS.VM], 0
-	mov 	byte[FileFound], 0
-ret
-
-LoadV86File:
-	mov 	ax, word[FileSegments]
-	mov 	es, ax
-	xor 	bx, bx
-	call 	ReadRest
-	jmp 	RetV86Mode
 	
-ReadRest:
-	push 	bx
+; AX = Segmento de Diretório Atual
+; BX = Buffer que contém os dados
+; CX = Quantidade de Dados
+; DX = Flag de Criação/Acréscimo
+; SI = Nome do arquivo formatado
+WriteThisFile:
+	push 	es
+	clc
+	mov 	es, ax 		; ES = CD_SEGMENT
+	xor 	di, di		; ES:DI = 0x0200:0x0000 = 0x2000
+Search:
+	push 	cx			; Empilha a quantidade de chars
+	mov 	cx, 11 		; 11 caracteres do nome de arquivo na entrada
+	push 	si			; Empilha nome de arquivo a ser buscado
+	push 	di			; Empilha nome de arquivo da entrada
+	rep 	cmpsb		; Compare os 2 nomes de arquivos
+	pop 	di			; Desempilha nome de arquivo da entrada
+	pop 	si			; Desempilha nome de arquivo a ser buscado
+	pop 	cx			; Desempilha a quantidade de chars
+	jne 	SearchNext	; Caso os nomes não forem iguais, procure a próxima entrada
+	call 	WriteFile 	; Verifica se é Append ou Create (Flag de escrita)
+	jmp 	RetWrite 	; Retorne a rotina de escrita
+SearchNext:
+	add  	di, DIRECTORY_SIZE		; Desloca para próxima entrada
+	cmp 	word[es:di], 0x0000		; Verifique se a entrada é zerada
+	jne 	Search 					; Caso não for, continue buscando arquivo
+	call 	CreateFile 				; Nos dois casos (Append/Create), cria um arquivo
+RetWrite:
+	clc
+	pop 	es
+ret
+
+; AX = Segmento de Diretório Atual
+; DX = Deslocamento da entrada (Tipo de alteração)
+; BX = Dependendo do tipo, BX conterá o valor
+; SI = Nome do arquivo formatado
+WriteThisEntry:
+	push 	es
+	clc
+	mov 	es, ax 		; ES = CD_SEGMENT
+	xor 	di, di		; ES:DI = 0x0200:0x0000 = 0x2000
+SearchEntry:
+	push 	cx			; Empilha a quantidade de chars
+	mov 	cx, 11 		; 11 caracteres do nome de arquivo na entrada
+	push 	si			; Empilha nome de arquivo a ser buscado
+	push 	di			; Empilha nome de arquivo da entrada
+	rep 	cmpsb		; Compare os 2 nomes de arquivos
+	pop 	di			; Desempilha nome de arquivo da entrada
+	pop 	si			; Desempilha nome de arquivo a ser buscado
+	pop 	cx			; Desempilha a quantidade de chars
+	jne 	SearchNextE	; Caso os nomes não forem iguais, procure a próxima entrada
+	call 	ChangeEntry ; Altera entrada
+	jmp 	RetWriteEnt ; Retorne a rotina de escrita
+SearchNextE:
+	add  	di, DIRECTORY_SIZE		; Desloca para próxima entrada
+	cmp 	word[es:di], 0x0000		; Verifique se a entrada é zerada
+	jne 	SearchEntry 			; Caso não for, continue buscando arquivo
+	stc
+	ret
+RetWriteEnt:
+	clc
+	pop 	es
+ret
+
+; ALTERAR ENTRADAS/PROPRIEDADES DO ARQUIVO
+; ROTINA QUE PODE ALTERAR QUAISQUER VALORES
+ChangeEntry:
+	add 	di, dx
+	cmp 	dx, 0
+	jz 		ChangeName
+	cmp 	dx, 11
+	jz 		ChangeAttrib
+	jmp 	Ret.ChEntry
+	
+ChangeName:
+	mov 	si, bx
 	push 	di
-	push 	bx
-	jmp 	SetOtherSegments
+	mov 	cx, 11
+	rep 	movsb
+	pop 	di
+	jmp 	Save_Entry
+	
+ChangeAttrib:
+	mov 	byte[es:di], bl
+	sub 	di, 11
+	
+Save_Entry:
+	mov 	es, ax		  ; ES = SEGMENTO ATUAL
+	xor 	bx, bx		  ; ZERAR BX EM AMBOS OS CASOS (OFFSET 0)
+	cmp 	ax, 0x0200
+	jne 	Search_Entry
+	
+; 	ESCREVER NO DISCO A ENTRADA RAIZ
+	mov 	ax, 499				; Setor inicial do diretório raíz
+	xor  	cx, cx				; Zera cx
+    mov  	cl, 2				; Setores Sequenciais do deslocamento de CD -> 0x40 = 0x400
+    call  	WriteLogicalSectors	; Escreve ES:BX (Dir. Raíz Adaptado) no setor 499 e 500
+	jmp 	Ret.ChEntry			; 
+	
+; 	ESCREVER NO DISCO A ENTRADA DE FOLDER
+Search_Entry:					; Procurar entrada com cluster da pasta atual
+	sub 	di, 32				; Volta uma entrada
+	cmp 	WORD[es:di], ". "	; Compare com o diretório atual
+	jne 	Search_Entry		; Enquanto não for, continue procurando
+	
+	mov 	dx, WORD [es:di + FCLUSTER_ENTRY]	; Quando encontrado, armazene o cluster do dir. atual em dx
+	
+Write_Entry:
+	; escrever es:bx no setor lógico ax, convertido do cluster dx
+	; salvar no disco o diretório atualizado
+	mov 	[ClusterFile], dx
+	mov  	ax, [ClusterFile]   
+    call  	ClusterLBA
+	xor  	cx, cx
+    mov  	cl, SECTORS_PER_CLUSTER    ; 1 Setor para escrever
+    call  	WriteLogicalSectors
+	
+	push 	bx						  ; bx = bx + 512
+
+    mov 	ax, [ClusterFile]    	  ; Restaure o Cluster atual salvo
+    add 	ax, ax                	  ; Converta para bytes (ClusterFile * 2)
+    mov 	bx, 0x0000                ; Zere BX para a soma
+    add 	bx, ax                    ; Índice para o FAT: Some os bytes    
+    mov 	dx, WORD [gs:bx]          ; Leia o próximo Cluster do FAT
+    mov  	[ClusterFile], dx    	  ; DX está com o próximo Cluster
+	
+	pop 	bx						  ; bx = bx + 512
+	
+	cmp  	dx, END_OF_CLUSTER1    ; 0xFFF8
+    je  	Ret.ChEntry
+	cmp  	dx, END_OF_CLUSTER2    ; 0xFFFF
+	je 		Ret.ChEntry
+	jmp 	Write_Entry
+
+Ret.ChEntry:
+	ret
+
+; AX = Segmento Diretório
+; DX = Flag de escrita
+; CX = Quantidade de chars
+; DI = Endereço de entrada
+; SI = Nome do arquivo
+WriteFile:
+	push 	bx		; Empilha BufferWrite
+	push 	di 		; Empilha endereço da entrada
+	push 	ax 		; Empilha segmento de dirs
+	push 	cx		; Empilha quantidade de chars
+	
+; 	ZERAR CLUSTERS NAS DUAS SITUAÇÕES
+	push 	dx
+	mov 	dx, WORD [es:di + FCLUSTER_ENTRY]
+	
+	mov 	ax, FAT_SEGMENT
+    mov 	gs, ax
+	xor 	bx, bx
+	xor 	cx, cx
+	
+Find_Cluster:
+	add 	bx, 2
+	inc 	cx
+	cmp 	bx, 0
+	jne 	Compare_Cluster
+	mov 	ax, gs
+	add 	ax, 0x1000
+	mov 	gs, ax
+Compare_Cluster:
+	cmp 	cx, dx
+	jne 	Find_Cluster
+Clear_Clusters: 
+    mov 	dx, WORD [gs:bx]		; Leia o próximo Cluster do FAT
+	mov 	WORD [gs:bx], 0x0000	; Zere o Cluster
+	cmp 	dx, END_OF_CLUSTER2
+	jne 	Find_Cluster
+	
+	pop 	dx
+	
+	pop 	cx
+	pop 	ax
+	pop 	di
+	pop 	bx
+	
+	; AINDA PENSANDO NO QUE FAZER AQUI NESTE ESPAÇO
+
+; AX = Segmento Diretório
+; CX = Quantidade de chars
+; DI = Endereço de entrada
+; SI = Nome do arquivo	
+CreateFile:
+	push 	bx		; Empilha BufferWrite
+	push 	di 		; Empilha endereço da entrada
+	push 	ax 		; Empilha segmento de dirs
+	push 	cx		; Empilha quantidade de chars
+	
+	
+; CRIANDO ENTRADA NA MEMÓRIA
+; 	NOME DE ARQUIVO
+	mov 	cx, 11
+	rep 	movsb   ; Move 11 caracteres de SI para DI
+	
+; 	ATRIBUINDO TIPO (ARCHIVE)
+	mov 	al, 0x20
+	stosb
+	
+; 	FLAG RESERVADA (ESPECIAL)
+	mov 	al, 0x00 	; Reservado para permissões futuras
+	stosb
+	stosb				; SEGUNDO DE CRIAÇÃO (NÃO ESQUECER DE AL)
+	
+;  	DEFININDO TEMPO E DATA DE CRIAÇÃO E DATA DE ACESSO (LER TEMPO ATUAL)
+	call 	GetSystemTimeEntry
+	stosw					; Tempo de criação
+	push 	ax
+	call 	GetSystemDateEntry
+	stosw					; Data de criação
+	push 	ax
+	stosw					; Data de acesso
+	
+	xor 	ax, ax
+	stosw				; Zerar Cluster Alto
+	
+; 	DEFININDO TEMPO E DATA DE MODIFICAÇÃO (APENAS EM CASOS DE CRIAÇÃO)
+	pop 	ax
+	shl 	eax, 16
+	pop 	ax
+	stosd
+
+; 	APÓS ENCONTRAR O CLUSTER VAZIO, AX VAI VALER O NÚMERO DO CLUSTER
+;	E ARMAZENAR NA ENTRADA
+	mov 	ax, FAT_SEGMENT
+    mov 	gs, ax
+	xor 	bx, bx
+	xor 	ax, ax
+	call 	FreeSpaceCluster
+	stosw
+	;Debugger:
+	;nop
+	;jmp 	Debugger
+	
+; 	TAMANHO DO ARQUIVO (CX -> AX)
+	xor 	eax, eax
+	pop 	ax 			 ; RECUPERA TAMANHO DE CX PARA AX
+	stosd 				 
+
+	
+; 	RECUPERA SEGMENTO E VERIFICA A CADEIA
+	pop 	ax 			  ; RECUPERAR SEGMENTO DE DIRETÓRIO ATUAL
+	pop 	di			  ; RECUPERAR ENTRADA INICIAL DO ARQUIVO
+	push 	di			  ; obs.: verificar necessidade
+	mov 	es, ax		  ; ES = SEGMENTO ATUAL
+	xor 	bx, bx		  ; ZERAR BX EM AMBOS OS CASOS (OFFSET 0)
+	cmp 	ax, 0x0200
+	jne 	Search_Cluster
+	
+; 	ESCREVER NO DISCO A ENTRADA RAIZ
+	mov 	ax, 499				; Setor inicial do diretório raíz
+	xor  	cx, cx				; Zera cx
+    mov  	cl, 2				; Setores Sequenciais do deslocamento de CD -> 0x40 = 0x400
+    call  	WriteLogicalSectors	; Escreve ES:BX (Dir. Raíz Adaptado) no setor 499 e 500
+	jmp 	WriteFAT			; Salta para escrita do FAT
+	
+; 	ESCREVER NO DISCO A ENTRADA DE FOLDER
+Search_Cluster:					; Procurar entrada com cluster da pasta atual
+	sub 	di, 32				; Volta uma entrada
+	cmp 	WORD[es:di], ". "	; Compare com o diretório atual
+	jne 	Search_Cluster		; Enquanto não for, continue procurando
+	
+	mov 	dx, WORD [es:di + FCLUSTER_ENTRY]	; Quando encontrado, armazene o cluster do dir. atual em dx
+	
+WriteEntry:
+	; escrever es:bx no setor lógico ax, convertido do cluster dx
+	; salvar no disco o diretório atualizado
+	mov 	[ClusterFile], dx
+	mov  	ax, [ClusterFile]   
+    call  	ClusterLBA
+	xor  	cx, cx
+    mov  	cl, SECTORS_PER_CLUSTER    ; 1 Setor para escrever
+    call  	WriteLogicalSectors
+	
+	push 	bx						  ; bx = bx + 512
+
+    mov 	ax, [ClusterFile]    	  ; Restaure o Cluster atual salvo
+    add 	ax, ax                	  ; Converta para bytes (ClusterFile * 2)
+    mov 	bx, 0x0000                ; Zere BX para a soma
+    add 	bx, ax                    ; Índice para o FAT: Some os bytes    
+    mov 	dx, WORD [gs:bx]          ; Leia o próximo Cluster do FAT
+    mov  	[ClusterFile], dx    	  ; DX está com o próximo Cluster
+	
+	pop 	bx						  ; bx = bx + 512
+	
+	cmp  	dx, END_OF_CLUSTER1    ; 0xFFF8
+    je  	WriteFAT
+	cmp  	dx, END_OF_CLUSTER2    ; 0xFFFF
+	je 		WriteFAT
+	jmp 	WriteEntry
+	
+WriteFAT:
+; 	CALCULA SETOR INICIAL DO FAT DO ARQUIVO E ENDEREÇO INICIAL
+	mov 	ax, [FreeCluster]		; Recupera número de cluster livre
+	shl 	ax, 1					; Multiplica por 2
+	mov 	bx, 512					; Define denominador 512 pra divisão
+	xor 	dx, dx					; Zera dx pra não causar conflitos
+	div 	bx						; Divide (FreeCluster * 2) por 512
+	add 	ax, 7					; Soma setor inicial do FAT mais resultado
+	mov 	[InitialFAT], ax		; Setor inicial do FAT do novo arquivo
+	mov 	ax, WORD [AddrCluster+2]	; Segmento do FAT Salvo
+	
+	pop 	di 							; Recupera entrada inicial
+	push 	di 							; Salva novamente a entrada inicial
+	push 	ax							; Salva o segmento atual do FAT na pilha
+	
+; 	CALCULA QUANTIDADE DE SETORES DE DADOS DO ARQUIVO
+	xor 	edx, edx							; Zera EDX pra não causar conflitos
+	xor 	ecx, ecx							; Zera ECX pra não causar discrepâncias
+	mov 	eax, DWORD[es:di + FSIZE_ENTRY]		; Recupera em EAX o tamanho do arquivo
+	mov 	ebx, 512							; Move denominador 512 pra EBX
+	div 	ebx									; Divide tamanho do arquivo por 512
+	cmp 	edx, 0								; Compare o resto com 0
+	setne 	cl									; Se não for, Defina CL para 1
+	add 	eax, ecx							; Adicione o resultado da div. por 1 ou 0
+	mov 	ecx, eax							; Coloque esta quantidade de setores de dados em ECX
+	
+; 	ESCREVER NO FAT OS CLUSTERS DO ARQUIVO
+	push 	ecx									; Salve o contador de setores de dados
+WriteFatMemory:
+	mov 	ax, WORD [AddrCluster+2]
+	mov 	gs, ax								; GS = Segmento do FAT Salvo
+	mov 	bx, WORD [AddrCluster]				; BX = Offset do Cluster Livre no FAT
+	mov 	ax, [FreeCluster]					; AX = Nº de Cluster Livre
+	
+	cmp 	ecx, 1								; Compare Quantidade de Setores com 1
+	je 		FatFileFinish						; Se for igual, finalize
+	
+	push 	bx									; Salve o offset do cluster livre
+	call 	FreeSpaceCluster					; Calcule o próximo cluster livre na cadeia
+	pop 	bx									; Recupere o offset do cluster livre
+	mov 	WORD [gs:bx], ax					; Escreva o próximo cluster livre no offset
+	jmp 	NextFat
+	
+FatFileFinish:
+	mov 	WORD [gs:bx], 0xFFFF				; Escreva END_OF_CLUSTER no Cluster Livre
+NextFat:
+	loop 	WriteFatMemory
+	
+	mov 	ax, [FreeCluster]		; Recupera número de cluster livre
+	shl 	ax, 1					; Multiplica por 2
+	mov 	bx, 512					; Define denominador 512 pra divisão
+	xor 	dx, dx					; Zera dx pra não causar conflitos
+	div 	bx						; Divide (FreeCluster * 2) por 512
+	add 	ax, 7					; Soma setor inicial do FAT mais resultado
+	sub 	ax, [InitialFAT]		; Calcule a diferença de setores FAT
+	add 	ax, 1					; Some +1 = Quantidade de Setores FAT para Escrever
+	
+	push 	es						; Salve Segmento Atual
+	pop 	fs						; Recupere este Segmento em FS
+	pop 	ecx						; Restaure o contador de setores de dados
+	pop 	es 						; Restaure o segmento do fat inicial para es
+	push 	ecx						; Salve novamente o contador de setores
+	
+	mov 	cx, [InitialFAT]		; CX é o setor de FAT inicial calculado
+	sub 	cx, 7					; Subtrair pelo setor inicial padrão
+	xor 	bx, bx					; Zere BX pra começar as somas de Offset
+	cmp 	cx, 0					; Compare CX com 0
+	jz 		WriteFatFile			; Se for igual, então Offset também será 0
+	
+SetRealOffset:						; Se for diferente, então BX tem que valer próximos offsets
+	add 	bx, 512					; Adicione BX pro próximo offset (próximo setor)
+	loop 	SetRealOffset			; Retorne CX vezes
+	; a partir daqui ES:BX contém os endereços corretos
+
+WriteFatFile:
+	mov 	cx, ax					; CX = Quantidade de setores FAT
+	mov 	ax, [InitialFAT]		; AX = Setor do FAT inicial pré-calculado
+	call  	WriteLogicalSectors		; Escreva CX setor(es) de ES:BX a partir do Setor AX
+	pop 	ecx						; Restaure o contador de setores de dados
+	
+; 	DEFINIR SEGMENTOS PRINCIPAIS
+	mov 	ax, es					; ES = Segmento do FAT do arquivo
+    mov 	gs, ax					; GS = Segmento da Tabela FAT
+	mov 	ax, word[FileSegments]
+    mov 	es, ax					; ES = Segmento de Arquivos
+	
+	xor 	eax, eax				; Zera EAX pra não causar conflitos
+	pop 	di 						; Restaure a entrada inicial do arquivo
+	pop 	bx						; Restaure o BufferWrite
+	mov 	dx, WORD [fs:di + FCLUSTER_ENTRY]	; Pegue o cluster do arquivo
+	
+; 	ESCREVER DADOS NO ARQUIVO
+WriteDataFile:
+	push 	ecx
+	
+	mov 	[ClusterFile], dx				; Salve o cluster do arquivo
+	mov  	ax, [ClusterFile]   			; Mova o Nº Cluster salvo para ax
+    call  	ClusterLBA						; Converta Nº Cluster para setor lógico
+	xor  	cx, cx							; Zera cx
+    mov  	cl, SECTORS_PER_CLUSTER    		; CX = 1 setor para escrever
+    call  	WriteLogicalSectors				; Escreva CX setor(es) a partir do setor lógico AX
+											; O dado que está em ES:BX = 0x3000:BufferWrite
+	
+	push 	bx						  ; Salve os próximos 512 bytes
+
+    mov 	ax, [ClusterFile]    	  ; Restaure o Cluster atual salvo
+    add 	ax, ax                	  ; Converta para bytes (ClusterFile * 2)
+    mov 	bx, 0x0000                ; Zere BX para a soma
+    add 	bx, ax                    ; Índice para o FAT: Some os bytes    
+    mov 	dx, WORD [gs:bx]          ; Leia o próximo Cluster do FAT
+    mov  	[ClusterFile], dx    	  ; DX está com o próximo Cluster
+	
+	pop 	bx						  ; Restaure os próximos 512 bytes
+	
+	pop 	ecx
+	loop 	WriteDataFile
+	
+RetCreateFile:
+	clc
+	ret
+
+InitialFAT dw 0x0000
+
+GetSystemTimeEntry:
+	mov 	ah, 02h
+	int 	1Ah
+	mov 	[hour], ch
+	mov 	[min],  cl
+	mov 	[sec], 	dh
+	
+	mov 	bx, 10
+	xor 	dx, dx
+	xor 	ax, ax
+	mov 	al, ch
+	shr 	al, 4
+	mul 	bx
+	and 	byte[hour], 0x0F
+	add 	al, [hour]
+	shl 	ax, 11
+	
+	push 	ax
+	
+	xor 	ax, ax
+	xor 	dx, dx
+	mov 	al, [min]
+	shr 	al, 4
+	mul 	bx
+	and 	byte[min], 0x0F
+	add 	al, [min]
+	shl 	ax, 5
+	
+	pop 	cx
+	or 		cx, ax
+	
+	xor 	ax, ax
+	xor 	dx, dx
+	mov 	al, [sec]
+	shr 	al, 4
+	mul 	bx
+	and 	byte[sec], 0x0F
+	add 	al, [sec]
+	
+	or 		ax, cx
+ret
+hour db 0
+min  db 0
+sec  db 0
+
+GetSystemDateEntry:
+	mov 	ah, 04h
+	int 	1Ah
+	mov 	[day], 	 dl
+	mov 	[month], dh
+	mov 	[year],  cl
+	
+	mov 	bx, 10
+	xor 	ax, ax
+	mov 	al, [year]
+	shr 	al, 4
+	mul 	bx
+	and 	byte[year], 0x0F
+	add 	al, [year]
+	add 	al, 20
+	shl 	ax, 9
+	
+	push 	ax
+	
+	xor 	ax, ax
+	mov 	al, [month]
+	shr 	al, 4
+	mul 	bx
+	and 	byte[month], 0x0F
+	add 	al, [month]
+	shl 	ax, 5
+	
+	pop 	cx
+	or 		cx, ax
+	
+	xor 	ax, ax
+	mov 	al, [day]
+	shr 	al, 4
+	mul 	bx
+	and 	byte[day], 0x0F
+	add 	al, [day]
+	or 		ax, cx
+ret
+year  db 0
+month db 0
+day   db 0
+
+FreeSpaceCluster:
+	add 	bx, 2
+	inc 	ax
+	cmp 	bx, 0
+	jne 	Check_Cluster
+	mov 	dx, gs
+	add 	dx, 0x1000			; Incrementa segmento +1
+	mov 	gs, dx
+Check_Cluster:
+	cmp 	WORD[gs:bx], 0x0000
+	jne 	FreeSpaceCluster
+	mov 	WORD [AddrCluster+2], gs
+	mov 	WORD [AddrCluster],   bx
+	mov 	WORD [FreeCluster],   ax
+ret
+FreeCluster 	dw 0x0000
+AddrCluster 	dd 0x00000000
+
+WriteLogicalSectors:
+    mov 	WORD [DAPBuffer]   ,bx
+    mov 	WORD [DAPBuffer+2] ,es  ; ES:BX de onde os dados serão lidos pra escrever
+    mov 	WORD [DAPStart]    ,ax  ; Setor lógico inicial para escrever
+_MAIN_WRITE:
+    mov 	di, 0x0005	  ; 5 tentativas de leitura
+_SECTORWRITE:
+    push  	ax
+    push  	bx
+    push  	cx
+
+    push 	si
+    mov 	ah, 0x43
+    mov 	dl, 0x80
+    mov 	si, DAPSizeOfPacket
+    int 	0x13
+    pop 	si
+    jnc  	_SUCCESS_WRITE
+    xor  	ax, ax
+    int  	0x13 
+    dec  	di
+    
+    pop  	cx
+    pop  	bx
+    pop  	ax
+	
+    jnz  	_SECTORWRITE   
+	jmp 	BOOT_FAILED
+	
+_SUCCESS_WRITE:
+    pop  	cx
+    pop  	bx
+    pop  	ax
+	
+    ; Queue next buffer.
+    add 	bx, BYTES_PER_SECTOR
+    cmp 	bx, 0x0000
+    jne 	_NEXTSECTORWRITE
+
+    ; Trocando de segmento.
+    push 	ax
+    mov  	ax, es
+    add  	ax, 0x1000
+    mov  	es, ax
+    pop  	ax
+	
+_NEXTSECTORWRITE:
+    inc  	ax                     	; Incrementa 1 setor
+    mov 	WORD [DAPBuffer], bx
+	mov 	WORD [DAPBuffer+2],es   ; ES:BX para onde os dados vão
+    mov 	WORD [DAPStart], ax
+    loop  	_MAIN_WRITE             ; Write next sector.
+ret
+
+; TODO:
+	; Criar entrada de diretórios na memória
+	; Procurar Cluster da entrada atual (Ponto .) se não for RAIZ
+	; Converter Cluster pra LBA (Área de dados)
+	; Escrever entrada de diretórios no LBA do Disco
 	
 	
 LoadFile:
@@ -251,6 +782,12 @@ IsNotADir:
 	mov 	ax, 0x04
 	jmp 	RetLoadFile
 IsNotAFile:
+	cmp 	byte[es:di + 11], 0x04
+	je 		ContinueLoad
+	cmp 	byte[es:di + 11], 0x02
+	je 		ContinueLoad
+	cmp 	byte[es:di + 11], 0x01
+	je 		ContinueLoad
 	mov 	byte[SHELL.ErrorFile], 1
 	mov 	ax, 0x03
 	jmp 	RetLoadFile
@@ -295,7 +832,7 @@ ReadDataFile:
     mov  	ax, WORD [ClusterFile]   
     call  	ClusterLBA          		 ; Conversão de Cluster para LBA.
     xor  	cx, cx
-    mov  	cl, SECTORS_PER_CLUSTER    ; 8 Setores para ler
+    mov  	cl, SECTORS_PER_CLUSTER    ; 1 Setores para ler
     call  	ReadLogicalSectors
 
     push 	bx
@@ -307,9 +844,6 @@ ReadDataFile:
     add 	bx, ax                    ; index into FAT    
     mov 	dx, WORD [gs:bx]          ; read two bytes from FAT
     mov  	WORD [ClusterFile], dx   ; DX está com o próximo Cluster
-	
-	cmp 	byte[SYS.VM], 1
-	je 		RetLoadFile
 	
     cmp  	dx, END_OF_CLUSTER1    ; 0xFFF8
     je  	EndOfFile
@@ -423,6 +957,7 @@ _NEXTSECTOR:
     mov 	WORD [DAPStart], ax
     loop  	_MAIN                 	; Read next sector.
 ret
+
 	
 BOOT_FAILED:
     int  	0x18

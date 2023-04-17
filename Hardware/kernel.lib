@@ -29,8 +29,9 @@
 %DEFINE  Print_Fat_Date 		0039h
 %DEFINE  Print_Fat_Time			003Ch
 %DEFINE  Calloc                 003Fh
-%DEFINE  _Free                  0042h  
-%DEFINE  Reboot_System          0045h
+%DEFINE  _Free                  0042h
+%DEFINE  Parse_Dec_Value		0045h
+%DEFINE  Reboot_System          0048h
 
 
 %ENDIF

@@ -28,7 +28,8 @@ OS_VECTOR_JMP:
 	jmp Print_Fat_Time		  ; 003Ch
 	jmp Calloc                ; 003Fh
 	jmp Free                  ; 0042h
-	jmp END                   ; 0045h
+	jmp Parse_Dec_Value		  ; 0045h
+	jmp END                   ; 0048h
 	
 ; _____________________________________________
 ; Directives and Inclusions ___________________
@@ -67,7 +68,7 @@ PressKey   db "Press any key to continue...",0
 %DEFINE PCI.Init_PCI 	PCI
 
 Shell.CounterFName  EQU  (SHELL16+6)
-FAT16.DirSegments 	EQU  (FAT16+20)   ; era 17
+FAT16.DirSegments 	EQU  (FAT16+23)   ; era 20
 
 ; _____________________________________________
 ; Starting the System _________________________
@@ -118,18 +119,18 @@ OSMain:
 	call 	PCI.Init_PCI
 	clc
 	
-	mov 	si, Command
-	call 	Shell.Execute
-	mov 	si, Command1
-	call 	Shell.Execute
-	mov 	si, Command2
-	call 	Shell.Execute
-	jmp 	Load_Menu
-Shell.Execute:
-	jmp 	SHELL16+3
-	Command db "cd kiddieos\users",0
-	Command1 db "k:\kiddieos\programs\procx86.kxe",0
-	Command2 db "..\programs\data.kxe",0
+	;mov 	si, Command
+	;call 	Shell.Execute
+	;mov 	si, Command1
+	;call 	Shell.Execute
+	;mov 	si, Command2
+	;call 	Shell.Execute
+	;jmp 	Load_Menu
+;Shell.Execute:
+	;jmp 	SHELL16+3
+	;Command db "cd kiddieos\users",0
+	;Command1 db "k:\kiddieos\programs\procx86.kxe",0
+	;Command2 db "..\programs\data.kxe",0
 	
 Load_Menu:
 	mov 	si, PressKey
@@ -375,6 +376,7 @@ NoTimeZero3:
 	popa
 ret
 
+
 Print_Fat_Date:
 	pusha
 	mov 	bx, ax
@@ -447,8 +449,11 @@ Display:
 NoPrintSpace:
 	cmp 	cx, 4
 	jne 	NoPrintDot
+	cmp 	dl, 0x08
+	jb 		PrintDot
 	cmp 	dl, 0x20
 	jne 	NoPrintDot
+PrintDot:
 	mov 	al, '.'
 	int 	10h
 NoPrintDot:
@@ -597,6 +602,53 @@ Ret_Dec32:
 	mov 	byte[Zero], 0
 	popad
 ret
+
+Parse_Dec_Value:
+	pusha
+	mov 	edx, 1
+	mov 	ebx, 10
+	
+	push 	ecx
+	dec 	si
+EndSI:
+	inc 	si
+	loop 	EndSI
+	pop 	ecx
+	
+Parsing:
+	push 	ecx
+	mov 	ecx, 10
+	std
+	lodsb
+	cld
+	mov 	di, VetorDec
+	repne 	scasb
+	
+	push 	ebx
+	inc 	ecx
+	sub 	ebx, ecx
+	
+	push 	edx
+	mov 	eax, edx
+	xor 	edx, edx
+	mul 	ebx
+	pop 	edx
+	
+	add 	[Number], eax
+	pop 	ebx
+	mov 	eax, edx
+	xor 	edx, edx
+	mul 	ebx
+	mov 	edx, eax
+	
+	pop 	ecx
+	loop 	Parsing
+	
+	popa
+	mov 	eax, [Number]
+	mov 	byte[Number], 0
+ret
+Number 	dd 	0
 
 Write_Info:
 	call	Move_Cursor

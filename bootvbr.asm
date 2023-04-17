@@ -95,7 +95,7 @@ LoadRootDirectory:
 	add  	ax, WORD [es:FATSTART]
     
 	;sub ax, 1 ; <- Setor Escondido da MBR
-    mov 	word [es:ROOTDIRSTART], ax   ; Setor 498
+    mov 	word [es:ROOTDIRSTART], ax   ; Setor 499
 	push 	ax
     add  	ax, cx
     mov  	WORD [es:DATASTART], ax     ; Setor 530
