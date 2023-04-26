@@ -661,7 +661,6 @@ Free:
 	mov 	eax, 0
 	mov 	ecx, dword[Size_Busy]
 	rep 	stosb
-	jmp 	$
 	
 	mov 	dword[Size_Busy], 0
 	mov 	dword[Return_Var_Calloc], 0

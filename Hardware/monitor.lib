@@ -25,8 +25,8 @@ BackWidth    dw 0000h
 BackHeight   dw 0000h
 BackColor    db 30
 Pagination   db 0
-CursorCol    db 30
-CursorRaw    db 12
+CursorCol    db 35
+CursorRaw    db 15
 State        db 0
 
 ; _______________________________________________
@@ -63,13 +63,13 @@ ret
 DrawBackground:
 	mov ax, 0xA000
 	mov es, ax
-	mov dx, 03C4h ; dx = Registro de Indice
-	mov ah, 0x01  ; Plano de bits azul
-	mov al, 0x02  ; Indice = Map Mask
-	out dx, ax    ; Escreve todos os planos de bits
+	;mov dx, 03C4h ; dx = Registro de Indice
+	;mov ah, 0x01  ; Plano de bits azul
+	;mov al, 0x02  ; Indice = Map Mask
+	;out dx, ax    ; Escreve todos os planos de bits
 	xor di, di
 	mov ecx, ((800*600)/8)/4  ; = 60000 -> 15000 vezes
-	mov eax, 0xFFFFFFFF  ; Escreva para cada 4 pixels
+	mov eax, 0x00FFFF00  ; Escreva para cada 4 pixels
 	;mov al, 0x02
 	rep stosd            ; Preenche a tela
 ret
@@ -100,11 +100,21 @@ ret
 
 EffectInit:
 	mov bl, 44
+	xor ax, ax
+	xor cx, cx
+	pusher:
+		mov word[Count], 0
+		push cx
+		push ax
 	start:
 		mov dh, byte[CursorRaw]
 		mov dl, byte[CursorCol]
 		call MoveCursor
-		mov si, NameSystem
+		pop ax
+		push bx
+		mov  bx, ax
+		mov si, [Vector + bx]
+		pop bx
 		call PrintString
 		push bx
 		mov bl, [State]
@@ -115,6 +125,7 @@ EffectInit:
 		pop bx
 		inc bl
 		call Waiting
+		push ax
 		cmp bl, 50
 		jne start
 		push bx
@@ -126,6 +137,7 @@ EffectInit:
 		pop bx
 		dec bl
 		call Waiting
+		push ax
 		cmp bl, 44
 		jne start
 		push bx               
@@ -142,6 +154,12 @@ EffectInit:
 		jmp start
 	ReturnProg:
 		pop bx
+		pop ax
+		pop cx
+		add ax, 2
+		inc cx
+		cmp cx, SIZE
+		jne pusher		
 ret
 
 Waiting:

@@ -41,7 +41,13 @@ OS_VECTOR_JMP:
 %INCLUDE "Hardware/win16.lib"
 %INCLUDE "Hardware/speaker.lib"
 
-NameSystem db "KiddieOS",0
+Vector:
+	dw 	NameSystem
+	dw 	Preparing
+SIZE EQU ($ - Vector) / 2
+	
+NameSystem db "Bem-vindo ao KiddieOS",0
+Preparing  db "Preparando o sistema...",0
 
 VetorHexa  db "0123456789ABCDEF",0
 VetorCharsLower db "abcdefghijklmnopqrstuvwxyz",0
@@ -67,8 +73,26 @@ PressKey   db "Press any key to continue...",0
 
 %DEFINE PCI.Init_PCI 	PCI
 
-Shell.CounterFName  EQU  (SHELL16+6)
-FAT16.DirSegments 	EQU  (FAT16+23)   ; era 20
+SHELL.Format_Command_Line EQU (SHELL16+6)
+SHELL.PrintData 	 EQU 	(SHELL16+9)
+SHELL.Copy_Buffers 	 EQU 	(SHELL16+12)
+SHELL.Load_File_Path EQU 	(SHELL16+15)
+SHELL.Store_Dir 	 EQU 	(SHELL16+18)
+SHELL.Restore_Dir 	 EQU 	(SHELL16+21)
+
+SHELL.CounterFName   EQU	(SHELL16+24)
+SHELL.IsCommand 	 EQU	(SHELL16+27)
+SHELL.CD_SEGMENT	 EQU	(SHELL16+28)
+
+SHELL.DOS_HEADER_BYTES EQU  (SHELL16+30)
+SHELL.BufferAux 	EQU 	(SHELL16+32)
+SHELL.BufferAux2 	EQU 	(SHELL16+152)
+SHELL.BufferArgs 	EQU 	(SHELL16+272)
+SHELL.BufferKeys 	EQU 	(SHELL16+392)
+
+
+FAT16.DirSegments 	EQU		(FAT16+29)
+FAT16.OpenThisFile 	EQU		(FAT16+24)
 
 ; _____________________________________________
 ; Starting the System _________________________
@@ -101,7 +125,10 @@ OSMain:
 	 
 	; ===============================================
 	
+	;call 	VGA.SetVideoMode
+	;call 	EffectInit
 	;call 	Play_Sound
+	
 	; Text Mode
 	mov 	ah, 00h
 	mov 	al, 03h
@@ -119,16 +146,16 @@ OSMain:
 	call 	PCI.Init_PCI
 	clc
 	
-	;mov 	si, Command
-	;call 	Shell.Execute
+	mov 	si, Command
+	call 	Shell.Execute
 	;mov 	si, Command1
 	;call 	Shell.Execute
 	;mov 	si, Command2
 	;call 	Shell.Execute
-	;jmp 	Load_Menu
-;Shell.Execute:
-	;jmp 	SHELL16+3
-	;Command db "cd kiddieos\users",0
+	jmp 	Load_Menu
+Shell.Execute:
+	jmp 	SHELL16+3
+	Command db "cd kiddieos\programs",0
 	;Command1 db "k:\kiddieos\programs\procx86.kxe",0
 	;Command2 db "..\programs\data.kxe",0
 	
@@ -445,7 +472,7 @@ ConvertCase:
 	mov 	al, byte[VetorCharsLower + bx]
 Display:
 	int 	0x10
-	inc 	byte[Shell.CounterFName]
+	inc 	byte[SHELL.CounterFName]
 NoPrintSpace:
 	cmp 	cx, 4
 	jne 	NoPrintDot
@@ -876,50 +903,329 @@ DOS_INT_21H:
 	
 DOS_SERVICES:
 	dw 0x0000                   ; Função 0 (0x00)
-	dw 0x0000                   ; Função 1 (0x01)
+	dw dos_read_input           ; Função 1 (0x01) com echo
 	dw dos_write_char           ; Função 2 (0x02)
 	dw 0x0000                   ; Função 3 (0x03)
 	dw 0x0000                   ; Função 4 (0x04)
-	dw 0x0000                   ; Função 5 (0x05)
-	dw 0x0000                   ; Função 6 (0x06)
-	dw 0x0000                   ; Função 7 (0x07)
+	dw dos_printer_output       ; Função 5 (0x05)
+	dw dos_input_output         ; Função 6 (0x06)
+	dw dos_char_input           ; Função 7 (0x07) sem echo
 	dw 0x0000                   ; Função 8 (0x08)
 	dw dos_write_string         ; Função 9 (0x09)
+	dw dos_read_string 			; Função 10 (0x0A)
+	times 0x32 dw 0x0000		; 0x0A - 0x3C (Reserved)
+	dw dos_open_file			; Função 0x3D
+	dw 0x0000					; Função 0x3E
+	dw 0x0000					; Função 0x3F
+	dw 0x0000					; Função 0x40
+	dw 0x0000					; Função 0x41
+	dw 0x0000					; Função 0x42
+	dw 0x0000					; Função 0x43
+	dw 0x0000
+	dw 0x0000
+	dw 0x0000
+	dw 0x0000
+	dw 0x0000
+	dw 0x0000
+	dw 0x0000
+	dw 0x0000
+	dw dos_exit_prog			; Função 0x4C
+	
+dos_read_input:
+	pop 	ax
+	pop 	bx
+	
+wait_key:
+	mov 	ah, 1
+	int 	0x16
+	jz 		wait_key
+	
+	pop 	ds
+iret
 	
 dos_write_char:
 	pop 	ax
 	pop 	bx
-	pusha
 	
-	mov 	ah, 0x0E
-	mov 	al, dl
-	int 	0x10
+	;mov 	ah, 0x0E
+	;mov 	al, dl
+	;int 	0x10
+	push 	es
+	mov 	ax, ds
+	mov 	es, ax
+	mov 	[character], dl
+	mov 	cx, 1
+	mov 	di, character
+	mov 	al, 0
+	call 	SHELL.PrintData
+	pop 	es
 	
-	popa
+	mov 	al, [character]
 	pop 	ds
 iret
 
+character db 0
+
+dos_printer_output:
+	pop 	ax
+	pop 	bx
+	
+	xor 	dh, dh
+	push 	dx
+	xor 	dx, dx
+	mov 	cx, 3
+search_printer:
+	mov 	ah, 0x01
+	int 	0x17
+	and 	ah, 00111111b
+	cmp 	ah, 0
+	jnz 	next_port
+	
+	pop 	ax
+	mov 	ah, 00h
+	int 	0x17
+	jmp 	return_printer
+	
+next_port:	
+	inc 	dx
+	loop 	search_printer
+	pop 	ax
+
+return_printer:
+	pop 	ds
+iret
+
+dos_input_output:
+	pop 	ax
+	pop 	bx
+	
+	cmp 	dl, 255
+	jne 	write_char
+	
+	mov 	ah, 1
+	int 	0x16
+	jz 		error_no_char
+	
+	pop 	ds
+	push 	bp
+	mov 	bp, sp
+	and	 	WORD [bp + 6], 0xFFBF
+	pop 	bp
+	mov 	ah, 0x00
+	int 	0x16
+	jmp 	return_in_out
+	
+error_no_char:
+	pop 	ds
+	push 	bp
+	mov 	bp, sp
+	or	 	WORD [bp + 6], 0x40
+	pop 	bp
+	xor 	ax, ax
+	jmp 	return_in_out
+	
+write_char:
+	mov 	ah, 2
+	int 	0x21
+	;mov 	ah, 0x0E
+	mov 	al, dl
+	;int 	0x10
+	pop 	ds
+	
+return_in_out:
+	iret
+	
+
+
+dos_char_input:
+	pop 	ax
+	pop 	bx
+	
+wait_echo:
+	mov 	ah, 1
+	int 	0x16
+	jz 		wait_echo
+	
+no_echo:
+	mov 	ax, 0x00
+	int 	0x16
+	
+	pop 	ds
+iret
 
 dos_write_string:
 	pop 	ax
 	pop 	bx
-	pop 	ds
 	pusha
 	
-	add 	dx, (0x1C << 4)
-	mov 	si, dx
-	mov 	ah, 0eh
-	dos_prints:
-		mov 	al, [si]
-		cmp 	al, '$'
-		jz		dos_ret_print
-		inc 	si
-		int 	10h
-		jmp 	dos_prints
-	dos_ret_print:
+	;add 	dx, [SHELL.DOS_HEADER_BYTES]
+	mov 	di, dx
+	mov 	al, 1
+	call 	SHELL.PrintData
 	
 	popa
+	pop 	ds
 iret
+
+dos_read_string:
+	pop 	ax
+	pop 	bx
+	
+	xor 	bx, bx
+	xor 	cx, cx
+	
+	mov 	ax, es
+	mov 	ds, ax
+	
+	mov 	di, dx
+	mov 	byte[di + 1], 0
+	cmp 	byte[di], 0
+	jz 		return_read_str
+read_str:
+	push 	di
+	push 	cx
+	mov 	ah, 07h
+	int 	0x21
+	cmp 	al, 0x08
+	jz 		back_char
+	mov 	ah, 02h
+	mov 	dl, al
+	int 	0x21
+	cmp 	al, 0x0D
+	jz 		return_read_wpop
+	pop 	cx
+	pop 	di
+	xor 	bx, bx
+	mov 	bl, [offset_char]
+	mov 	[es:di + bx + 2], al
+	inc 	cl
+	mov 	[es:di + 1], cl
+	inc 	bl
+	mov 	[offset_char], bl
+	cmp 	byte[es:di], bl
+	jnz 	read_str
+	push 	di
+	push 	cx
+is_major:
+	mov 	ah, 07h
+	int 	0x21
+	cmp 	al, 0x08
+	jne 	is_major
+back_char:
+	pop 	cx
+	pop 	di
+	cmp 	byte[offset_char], 0
+	jz 		read_str
+	mov 	ah, 0Eh
+	mov 	al, 0x08
+	int 	0x10
+	mov 	ah, 0Eh
+	mov 	al, 0
+	int 	0x10
+	mov 	ah, 0Eh
+	mov 	al, 0x08
+	int 	0x10
+	mov 	al, 0
+	xor 	bx, bx
+	dec 	byte[offset_char]
+	mov 	bl, [offset_char]
+	mov 	[es:di + bx + 2], al
+	dec 	byte[es:di + 1]
+	dec 	cx
+	jmp 	read_str
+	
+return_read_wpop:
+	pop 	cx
+	pop 	di
+
+return_read_str:
+	mov 	byte[offset_char], 0
+	pop 	ds
+	iret
+
+offset_char db 0
+
+dos_open_file:
+	pop 	ax
+	pop 	bx
+	
+	;add 	dx, [SHELL.DOS_HEADER_BYTES]
+	mov 	si, dx
+	
+	mov 	bx, ds
+	mov 	gs, bx
+	mov 	bx, SHELL.CD_SEGMENT
+	
+	pop 	ds
+	
+	push 	es
+	push 	WORD[gs:bx]
+	push 	ax
+	
+	mov 	ax, 0x3000
+	mov 	es, ax
+	
+	mov 	di, SHELL.BufferAux2
+	call 	SHELL.Copy_Buffers
+	
+	mov 	ds, ax
+	mov 	si, SHELL.BufferAux2
+	mov 	di, SHELL.BufferKeys
+	mov 	byte[SHELL.IsCommand], 0
+	call 	SHELL.Format_Command_Line
+	
+	call 	SHELL.Store_Dir
+	
+	mov 	cx, 1
+	call 	SHELL.Load_File_Path
+	mov 	ax, 03h
+	pop 	dx
+	jc 		open_error
+	
+	mov 	dh, 2
+	mov 	ax, [SHELL.CD_SEGMENT]
+	call 	FAT16.OpenThisFile
+	jc 		open_error
+	
+	clc
+	jmp 	return_dos_open
+	
+open_error:
+	mov 	[handler], ax
+	pop 	WORD[SHELL.CD_SEGMENT]
+	call 	SHELL.Restore_Dir
+	mov 	ax, [handler]
+	pop 	es
+	mov 	bx, es
+	mov 	ds, bx
+	push 	bp
+	mov 	bp, sp
+	or	 	WORD [bp + 6], 1
+	pop 	bp
+	iret
+return_dos_open:
+	mov 	[handler], ax
+	pop 	WORD[SHELL.CD_SEGMENT]
+	call 	SHELL.Restore_Dir
+	mov 	ax, [handler]
+	pop 	es
+	mov 	bx, es
+	mov 	ds, bx
+	push 	bp
+	mov 	bp, sp
+	and	 	WORD [bp + 6], 0xFFFE
+	pop 	bp
+	iret
+handler dw 0x0000
+
+dos_exit_prog:
+	pop 	ax
+	pop 	bx
+	pop 	ds
+	
+	add 	sp, 6
+retf
+
 ; ---------------------------------------------------------
 
 ; --------------------------------------------------------

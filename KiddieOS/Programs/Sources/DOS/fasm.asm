@@ -25,6 +25,7 @@ start:
   mov  ah,9
   int  21h
 
+  jmp $
   cld
 
   call  go32

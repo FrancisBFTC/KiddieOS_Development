@@ -50,27 +50,52 @@
 ;	  	  Because we inserts this instructions inside to new routines! (Exec.SearchToFileExec, CMD.READ, etc...)
 ;	 8.3. Exec.SearchToFileExec run now directory browsing before to run programs!
 
-jmp Os_Shell_Setup
-jmp Os_Inter_Shell
+jmp 	Os_Shell_Setup	; SHELL16+0
+jmp 	Os_Inter_Shell	; SHELL16+3
 
+jmp 	Format_Command_Line	; SHELL16+6
+jmp 	PrintData			; SHELL16+9
+jmp 	Copy_Buffers		; SHELL16+12
+jmp 	Load_File_Path 		; SHELL16+15
+jmp 	Store_Dir 			; SHELL16+18
+jmp 	Restore_Dir 		; SHELL16+21
+
+Shell.CounterFName db 0		; SHELL16+24
+ErrorDir           db 0		; SHELL16+25
+ErrorFile          db 0		; SHELL16+26
+IsCommand 		   db 0		; SHELL16+27
+
+CD_SEGMENT         dw 0x0200	; SHELL16+28
+
+; -- VALORES DE PROGRAMAS MZ EM EXECUÇÃO -----------------
+DOS_HEADER_BYTES   dw 0x0000	; SHELL16+30
+
+; --------------------------------------------------------
+
+BufferAux 		   times 120 db 0	;SHELL16+32
+BufferAux2 		   times 120 db 0	;SHELL16+152
+BufferArgs         times 120 db 0	;SHELL16+272
+BufferKeys 	       times 120 db 0	;SHELL16+392
+
+DOS_EXTRA_BYTES 	dw 0x0000
 
 %DEFINE FAT16.LoadDirectory (FAT16+3)
 %DEFINE FAT16.LoadFAT       (FAT16+6)
 %DEFINE FAT16.LoadThisFile  (FAT16+9)
 %DEFINE FAT16.WriteThisFile (FAT16+12)
 %DEFINE FAT16.WriteThisEntry (FAT16+18)
+%DEFINE FAT16.DeleteThisFile (FAT16+21)
+%DEFINE FAT16.OpenThisFile 	 (FAT16+24)
 
-FAT16.FileSegments    EQU   (FAT16+21)
-FAT16.DirSegments 	  EQU   (FAT16+23)
-FAT16.LoadingDir      EQU   (FAT16+25)
+FAT16.FileSegments    EQU   (FAT16+27)
+FAT16.DirSegments 	  EQU   (FAT16+29)
+FAT16.LoadingDir      EQU   (FAT16+31)
 
 %DEFINE A3_TONE  1355
 %DEFINE F3_TONE  1715
 %DEFINE B3_TONE  1207
 
-Shell.CounterFName db 0
-ErrorDir           db 0
-ErrorFile          db 0
+
 IsFile             db 0
 IsHexa             db 0
 
@@ -79,9 +104,6 @@ ArgFile 	 db 0
 ArgData 	 db 0
 WriteCounter dw 0
 
-BufferAux 		   times 120 db 0
-BufferKeys 	       times 120 db 0
-BufferArgs         times 120 db 0
 
 InitB 			   dd 0x0D0D0D0D
 BufferWrite 	   times 100 db 0
@@ -111,19 +133,18 @@ CmdWrite  db 0
 SaveAddressString dw 0x0000
 SavePositionLeft  dw 0x0000
 SavePositionRight dw 0x0000
-Background_Color  db 0001_1111b
-Borderpanel_Color db 0010_1111b
-Backeditor_Color  db 0000_1111b 
-Backpanel_Color   db 0111_0000b
+Background_Color  db 0010_1111b		;0001_1111b
+Borderpanel_Color db 0010_1111b		;0010_1111b
+Backeditor_Color  db 0111_0000b 	;0000_1111b
+Backpanel_Color   db 0000_1111b		;0111_0000b
 
 PointerBuffer     dd 0x00000000
 SavePointerArgs   dw 0x0000
 
 OffsetNextFile    dw 0x0000
-CD_SEGMENT        dw 0x0200   ; 0x07C0, start in root directory
 
 Out_Of_Shell 	  db 0
-IsCommand 		  db 0
+
 
 ; Buffer to Disk Drive Parameters (Pointer = DS:SI)
 ; ------------------------------------------------
@@ -171,7 +192,7 @@ Os_Shell_Setup:
 		mov 	dx, cx
 		mov 	byte[CounterList], 0
 		mov 	byte[Selection], ch
-		mov 	cx, COUNT_COMMANDS
+		mov 	cx, 18  ;COUNT_COMMANDS
 		mov 	si, Vector.CMD_Names
 		call 	Write_Info
 	Back_White_Right:
@@ -518,6 +539,9 @@ List_Commands:
 	call 	Hide_Cursor
 	mov 	cx, word[SavePositionLeft]
 	mov 	byte[CounterList], 0
+	mov 	byte[LimitPanel], 0
+	mov 	byte[SaveCountBelow], 0
+	mov 	byte[SaveCountAbove], 0
 	mov 	byte[Selection], ch
 	mov 	dx, word[SavePositionLeft]
 	call	Focus_Select
@@ -525,8 +549,13 @@ List_Commands:
 	WriteOp:
 		push 	cx
 		mov 	dx, word[SavePositionLeft]
-		mov 	cx, COUNT_COMMANDS
-		mov 	si, Vector.CMD_Names
+		mov 	cx, 18 ;COUNT_COMMANDS
+		mov 	si, Vector.CMD_Addrs
+		xor 	ax, ax
+		mov 	al, byte[LimitPanel]
+		shl 	al, 1
+		add 	si, ax
+		mov 	si, [si]
 		call 	Write_Info
 		pop 	cx
 		mov 	ax, A3_TONE
@@ -549,13 +578,39 @@ List_Commands:
 		cmp		byte[CounterList], COUNT_COMMANDS-1
 		jne		IncNow
 		mov 	byte[CounterList], 0
+		mov 	byte[LimitPanel], 0
+		mov 	byte[SaveCountBelow], 0
+		mov 	byte[SaveCountAbove], 0
+		push 	cx
+		push 	dx
+		mov     bh, [Backpanel_Color]      
+		mov     cx, 0x0500         ; CH = 5, CL = 0                          
+		mov     dx, 0x160A         ; DH = 22, DL = 10
+		call    Create_Panel
+		pop 	dx
+		pop 	cx
 		call 	Erase_Select
-		sub		ch, COUNT_COMMANDS-1
+		sub		ch, 17  ;COUNT_COMMANDS-1
 		call	Focus_Select
 		call 	Show_Information
 		jmp 	WriteOp
 		IncNow:
 			inc 	byte[CounterList]
+			cmp 	byte[CounterList], 18
+			jb		SelectOpInc
+			mov 	al, [CounterList]
+			cmp 	byte[SaveCountBelow], al
+			jae 	SelectOpInc
+			
+			mov 	[SaveCountBelow], al
+			inc 	byte[LimitPanel]
+			call 	Erase_Select
+			call 	RollPanelToUp
+			call	Focus_Select
+			call 	Show_Information
+			jmp 	WriteOp
+			
+		SelectOpInc:
 			call 	Erase_Select
 			inc 	ch
 			call	Focus_Select
@@ -565,13 +620,44 @@ List_Commands:
 		cmp		byte[CounterList], 0
 		jne		DecNow
 		mov 	byte[CounterList], COUNT_COMMANDS-1
+		mov 	byte[LimitPanel], COUNT_COMMANDS-18
+		mov 	byte[SaveCountBelow], COUNT_COMMANDS-1
+		mov 	byte[SaveCountAbove], 0
+		push 	cx
+		push 	dx
+		mov     bh, [Backpanel_Color]      
+		mov     cx, 0x0500         ; CH = 5, CL = 0                          
+		mov     dx, 0x160A         ; DH = 22, DL = 10
+		call    Create_Panel
+		pop 	dx
+		pop 	cx
 		call 	Erase_Select
-		add		ch, COUNT_COMMANDS-1
+		add		ch, 17 ;COUNT_COMMANDS-1
 		call	Focus_Select
 		call 	Show_Information
 		jmp 	WriteOp
 		DecNow:
 			dec 	byte[CounterList]
+			mov 	al, byte[LimitPanel]
+			sub 	al, 1
+			cmp 	byte[CounterList], al  ;2
+			ja		SelectOpDec
+			cmp 	byte[LimitPanel], 0
+			je 		SelectOpDec
+			mov 	al, [CounterList]
+			cmp 	byte[SaveCountAbove], al
+			je	 	SelectOpDec
+			
+			mov 	[SaveCountAbove], al
+		
+			dec 	byte[LimitPanel]
+			call 	Erase_Select
+			call 	RollPanelToDown
+			call	Focus_Select
+			call 	Show_Information
+			jmp 	WriteOp
+			
+		SelectOpDec:
 			call 	Erase_Select
 			dec 	ch
 			call	Focus_Select
@@ -579,8 +665,12 @@ List_Commands:
 			jmp 	WriteOp
 	UnSelectExit:
 		call 	Erase_Select
+		mov     bh, [Backpanel_Color]      
+		mov     cx, 0x0500         ; CH = 5, CL = 0                          
+		mov     dx, 0x160A         ; DH = 22, DL = 10
+		call    Create_Panel
 		mov 	dx, word[SavePositionLeft]
-		mov 	cx, COUNT_COMMANDS
+		mov 	cx, 18 ;COUNT_COMMANDS
 		mov 	si, Vector.CMD_Names
 		call 	Write_Info
 		mov     bh, [Backpanel_Color]      
@@ -628,7 +718,10 @@ List_Commands:
 	RetWrite:
 		ret
 			
-
+	LimitPanel db 0
+	SaveCountBelow db 0
+	SaveCountAbove db 0
+	
 Erase_Select:
 	mov  	ch, byte[Selection]
 	mov 	dh, ch
@@ -717,16 +810,24 @@ ret
 	
 PrintData:
 	pusha
+	mov 	[ascii_dolar], al
 	mov 	ah, 0x0E
 	dec 	byte[LimitCursorFinalY]
 	xor		bl, bl
 Display:
 	mov 	al, byte[es:di]
+	cmp 	byte[ascii_dolar], 1
+	jne 	JumpCheckDolar
+	cmp 	al, '$'
+	je 		DONE
+JumpCheckDolar:
 	cmp 	byte[IsHexa], 1
 	je      DisplayHex
 DisplayText:
 	cmp		al, 0x0D
 	je 		IsEnter
+	cmp 	al, 0x0A
+	je 		IsEnter2
 	cmp 	al, 0x09
 	je 		DisplayTab
 	int 	0x10
@@ -750,25 +851,30 @@ JumpDisplayHex:
 	inc 	di
 	jmp 	Continue
 	IsEnter:
-		cmp 	byte[es:di+1], 0x0A
-		jne 	NoSkip0A
+		mov 	dh, byte[CursorRaw]
+		mov 	dl, byte[CursorCol]
+		call 	Move_Cursor
 		inc 	di
-	NoSkip0A:
+		jmp 	Continue
+	IsEnter2:
 		inc 	bl
 		cmp 	bl, 17
 		jne 	LineBreak
 		call 	Wait_Key
 		xor 	bl, bl
 		LineBreak:
-			;inc 	byte[CursorRaw]
 			call 	Cursor.CheckToRollEditor
 			inc 	di
 	Continue:
+		cmp 	byte[ascii_dolar], 1
+		je 		Display
 		loop 	Display
 DONE:
 	inc 	byte[LimitCursorFinalY]
+	mov 	byte[ascii_dolar], 0
 	popa
 RET
+ascii_dolar db 0
 
 PrintDataHex16:
 	pusha
@@ -871,6 +977,28 @@ RollingEditor_Out:
 	popa
 ret
 
+RollPanelToUp:
+	pusha
+	mov 	ah, 06h
+	mov 	al, 1
+	mov 	bh, [ds:Backpanel_Color]
+	mov     cx, 0x0500                         
+	mov     dx, 0x160A
+	int 	10h
+	popa
+ret
+
+RollPanelToDown:
+	pusha
+	mov 	ah, 07h
+	mov 	al, 1
+	mov 	bh, [ds:Backpanel_Color]
+	mov     cx, 0x0500                         
+	mov     dx, 0x160A
+	int 	10h
+	popa
+ret
+
 Show_Information:
 	pusha
 	mov     bh, [Backpanel_Color]      
@@ -956,6 +1084,24 @@ RetErase:
 ret
 
 CountExec db 0
+
+; MZ EXECUTABLE HEADER OFFSETS
+SIGNATURE		EQU 0x00
+EXTRA_BYTES		EQU 0x02
+PAGES			EQU 0x04
+RELOC_ITEMS		EQU 0x06
+HEADER_SIZE		EQU 0x08
+MIN_ALLOC 		EQU 0x0A
+MAX_ALLOC		EQU 0x0C
+INITIAL_SS		EQU 0x0E
+INITIAL_SP		EQU 0x10
+CHECKSUM		EQU 0x12
+INITIAL_IP		EQU 0x14
+INITIAL_CS		EQU 0x16
+RELOC_TABLE 	EQU 0x18
+OVERLAY			EQU 0x1A
+OVERLAY_INF 	EQU 0x1C
+
 Exec:
 
 .SearchFileToExec:
@@ -973,15 +1119,16 @@ Exec:
 	
 	;inc 	byte[CountExec]
 	
-	push 	di
+	push 	di				; Nome do arquivo na CLI não-formatado, Ex.: prog.exe
 	
 	;mov  	ax, word[CD_SEGMENT]
 	mov 	ax, word[BROWSING_EX]
 	mov 	es, ax
 	xor 	di, di
 	
-	push 	si
-	push 	di
+	push 	si		; DS:SI = NOME DO ARQUIVO FORMATADO
+	push 	di		; ES:DI = PRIMEIRA ENTRADA NO DIRETÓRIO
+	
 	
 	TryFind:
 		cmp 	byte[es:di + 11], 0x0F   ; LFN ATTRIB
@@ -995,19 +1142,37 @@ Exec:
 		mov 	cx, 8
 		repe 	cmpsb
 		jne 	TryNextFile
-
+		
+		cmp 	byte[si], 0x20
+		je 		JumpCheck2
+		
+		; Segunda verificação pra ter absolutamente certeza
+		; que a extensão é a mesma (Se não houver ext. esta etapa é ignorada)
+		mov 	cx, 3
+		repe 	cmpsb
+		jne 	TryNextFile
+			
+	JumpCheck2:
 		pop 	di
 		pop 	si
-		push 	si
-		push 	di
+		push 	si			; Nome formatado na CLI, Ex.: PROG    EXE
+		push 	di			; Nome do arquivo encontrado na Entrada FAT, Ex.: PROG    EXE
 		
+			
 		add 	di, 8
 		mov 	si, ProgExtension
+		mov 	cx, EXTENSIONS_COUNT
 	FindExtension:
+		push 	cx
 		mov 	cx, 3
 		repe 	cmpsb
 		je 		ExtensionFound
-		sub 	di, 3
+		mov 	bx, 3
+		sub 	bx, cx
+		sub 	di, bx
+		sub 	si, bx
+		add 	si, 3
+		pop 	cx
 		loop 	FindExtension
 		
 	TryNextFile:
@@ -1024,6 +1189,7 @@ Exec:
 		jmp 	TryFind
 		
 	ExtensionFound:
+		pop 	cx
 		sub 	si, 3
 		;call 	Cursor.CheckToRollEditor
 		
@@ -1032,9 +1198,9 @@ Exec:
 		; Conversão de argumento para nome de arquivo na entrada
 		; EXEMPLO: PROG       => PROG    KXE | PROG    EXE
 		; ======================================================
-		mov 	bx, si    		; BX = Endereço da Extensão KXE
-		pop 	di
-		pop 	si       		; Nome do arquivo com espaços
+		mov 	bx, si    		; BX = Endereço da Extensão KXE,EXE,...
+		pop 	di				; ENTRADA FAT
+		pop 	si       		; NOME FORMATADO
 		push 	si
 		push 	di
 		mov 	di, si    		; DI = Nome de arquivo com espaços
@@ -1053,7 +1219,7 @@ Exec:
 		
 		
 	LoadProgInMemory:
-		mov 	ax, 0x5000 ; segmento de processos
+		mov 	ax, 0x5000 ; segmento de processos 0x5000
 		mov 	word[FAT16.FileSegments], ax
 		mov 	ax, word[CD_SEGMENT]
 		mov 	word[FAT16.DirSegments], ax
@@ -1078,7 +1244,7 @@ Exec:
 	; do programa MZ em modo real
 	
 	Detect_MZ:
-		mov 	ax, 0x5000
+		mov 	ax, 0x5000		; 0x5000
 		mov 	es, ax
 		
 		cmp 	WORD[es:0x0], "MZ"
@@ -1091,27 +1257,87 @@ Exec:
 		call 	Restore_Dir
 		; -------------------------------
 		
-		mov 	cx, WORD [es:0x0 + 0x06]  ; Numero de entradas na tabela de realocação
-		mov 	bx, WORD [es:0x0 + 0x18] ; Deslocamento para tabela de realocação
-		
-	addic_entry_offset:
-		mov 	dx, [es:bx]
-		mov 	ax, [es:bx + 2]
-		shl 	ax, 4
-		add 	ax, dx
-		push 	bx
-		mov 	bx, ax
-		mov 	ax, es
-		xor 	dx, dx
-		mov 	es, dx
-		add 	[es:bx], ax
+		mov 	ax, 0x5000
 		mov 	es, ax
+		
+		call 	Exec_DOS
+		jmp 	RetSFTE
+		
+	Exec_DOS:
+		push 	ebp
+		mov 	bp, ss
+		shl 	ebp, 16
+		mov 	bp, sp
+		
+		;	ENDEREÇO DE PILHA DO DOS SERÁ: 0x6xxxx -> Máximo STACK 8000H
+		mov 	ax, 0x0006
+		mov 	ss, ax
+		mov 	ax, WORD [es:0 + INITIAL_SP]
+		mov 	sp, ax
+		push 	ebp
+		
+		xor 	dx, dx
+		mov 	ax, 16
+		mov 	bx, word[es:0x0 + HEADER_SIZE]
+		mul 	bx
+		mov 	bx, ax
+		mov 	[DOS_HEADER_BYTES], ax
+		
+		mov 	ax, word[es:0x0 + EXTRA_BYTES]
+		mov 	[DOS_EXTRA_BYTES], ax
+		
+		mov 	bx, word[es:0x0 + RELOC_TABLE]		; Valor Absoluto da tabela de realocação
+		mov 	cx, WORD [es:0x0 + RELOC_ITEMS]		; Quantidade de entradas de realocação
+		cmp 	cx, 0x0000
+		jz 		no_realloc_table
+		
+		push 	di
+		mov 	dx, es
+		mov 	ax, [DOS_HEADER_BYTES]
+		shr 	ax, 4
+		add 	ax, dx
+	addic_entry_offset:
+		push 	bx
+		mov 	di, word[es:0x0 + bx]		; OFFSET
+		mov 	bx, [DOS_HEADER_BYTES]
+		add 	word[es:di + bx], ax
 		pop 	bx
 		add 	bx, 4
 		loop 	addic_entry_offset
+		pop 	di
 		
+	no_realloc_table:
+		mov 	ax, 0x3000
+		mov 	ds, ax
+		
+		push 	ds
+		push 	word 0x5000
+		mov 	bx, word[es:0x0 + INITIAL_CS]
 		shl 	bx, 4
-		jmp 	0x5000:0x01C0
+		add 	bx, [DOS_HEADER_BYTES]
+		push	bx
+		mov 	bp, sp
+		
+		mov 	ax, es
+		mov 	ds, ax
+		
+		call 	WORD FAR[bp]
+		
+		add 	sp, 4
+		pop 	ds
+		
+	clear_program:
+		xor 	di, di
+		mov 	cx, [DOS_EXTRA_BYTES]
+		xor 	ax, ax
+		rep 	stosb
+		
+		pop 	ebp
+		mov 	sp, bp
+		shr 	ebp, 16
+		mov 	ss, bp
+		pop 	ebp
+	ret
 	
 	Run_32BIT_Prog:
 	; ----------------------------------------------------------
@@ -1246,6 +1472,7 @@ ShowErrorFound:
 		
 	mov 	ax, ds
 	mov 	es, ax
+	mov 	al, 0
 	mov 	di, ErrorFound
 	mov 	cx, word[ErrorFound.LenghtError0]
 	call 	PrintData
@@ -1256,6 +1483,7 @@ ShowErrorFound:
 	mov 	byte[si], 0
 	pop 	si
 	call 	Print_String
+	mov 	al, 0
 	mov 	di, ErrorProg
 	mov 	cx, word[ErrorProg.LenghtError1]
 	call 	PrintData
@@ -1559,6 +1787,7 @@ Cmd.READ:
 		mov 	cx, dx
 		mov 	ax, 0x6800
 		mov 	es, ax
+		mov 	al, 0
 		xor 	di, di
 		call	PrintData
 		
@@ -1707,6 +1936,9 @@ ProcessFile:
 	push 	ax
 	push 	bx
 	push 	cx
+	
+	call 	Reload_Directory
+	
 	cmp 	cx, 1
 	je 		Ret.LoadPath
 	mov 	word[FAT16.FileSegments], ax
@@ -1873,6 +2105,346 @@ Ret.ATTR:
 	mov 	byte[Flag_File], 0
 ret
 
+Cmd.CHMOD:
+	push 	word[CD_SEGMENT]
+	call 	Store_Dir
+	
+	mov 	si, BufferArgs
+	call 	SkipSI_To_Arguments
+	
+	xor 	bx, bx
+	xor 	cx, cx
+	xor 	ax, ax
+	
+NextFlags:
+	cmp 	word[si], "u="
+	je 		UsersAndAdmin
+	cmp 	word[si], "a="
+	je 		Admins
+	cmp 	word[si], "g="
+	je 		Groups
+	cmp 	word[si], "o="
+	je 		Others
+	cmp 	word[si], "-O"
+	je 		Octal
+CheckToFile:
+	cmp 	byte[si], 0
+	jz 		Err.CHMOD2
+	cmp 	byte[HasPermission], 0
+	jz 		Err.CHMOD3
+	jmp 	AttribFile
+	
+UsersAndAdmin:
+	inc 	si
+	or 		bx, (1 << 5)
+	mov 	cx, 0
+	mov 	byte[HasPermission], 1
+CheckFlags:
+	inc 	si
+	cmp 	byte[si], "m"
+	je 		AttribModify
+	cmp 	byte[si], "d"
+	je 		AttribDelete
+	cmp 	byte[si], "x"
+	je 		AttribExec
+	cmp 	byte[si], "r"
+	je 		AttribRead
+	cmp 	byte[si], "w"
+	je 		AttribWrite
+	cmp 	byte[si], ","
+	je	 	CheckNextUser
+	cmp 	byte[si], " "
+	je 		CheckNextUser
+	jmp 	Err.CHMOD
+	
+Octal:
+	add 	si, 2
+	mov 	byte[HasPermission], 1
+CheckOctal:
+	inc 	si
+	xor 	ax, ax
+	cmp 	byte[si], " "
+	je 		CheckTheFile
+	cmp 	byte[si], 0
+	jz 		Err.CHMOD2
+	cmp 	byte[si], 0x30
+	jb 		Err.CHMOD
+	cmp 	byte[si], 0x37
+	ja 		Err.CHMOD
+	mov 	al, byte[si]
+	sub 	al, 0x30
+	inc 	cx
+	cmp 	cx, 1
+	je 		OctalUserMD
+	cmp 	cx, 2
+	je 		OctalUserXRW
+	cmp 	cx, 3
+	je 		OctalGroupMD
+	cmp 	cx, 4
+	je 		OctalGroupXRW
+	cmp 	cx, 5
+	je 		OctalOtherMD
+	cmp 	cx, 6
+	je 		OctalOtherXRW
+	jmp 	Err.CHMOD
+	
+OctalUserMD:
+	cmp 	ax, 7
+	ja 		Err.CHMOD
+	shl 	ax, 3
+	or 		bx, ax
+	jmp 	CheckOctal
+OctalUserXRW:
+	cmp 	ax, 7
+	ja 		Err.CHMOD
+	or 		bx, ax
+	jmp 	CheckOctal
+OctalGroupMD:
+	cmp 	ax, 3
+	ja 		Err.CHMOD
+	shl 	ax, 9
+	or 		bx, ax
+	jmp 	CheckOctal
+OctalGroupXRW:
+	cmp 	ax, 7
+	ja 		Err.CHMOD
+	shl 	ax, 6
+	or 		bx, ax
+	jmp 	CheckOctal
+OctalOtherMD:
+	cmp 	ax, 3
+	ja 		Err.CHMOD
+	shl 	ax, 14
+	or 		bx, ax
+	jmp 	CheckOctal
+OctalOtherXRW:
+	cmp 	ax, 7
+	ja 		Err.CHMOD
+	shl 	ax, 11
+	or 		bx, ax
+	jmp 	CheckOctal
+	
+Admins:
+	mov 	byte[HasPermission], 1
+	inc 	si
+	and 	bx, 0xFFDF 	; 1111111111011111b = Only ADMIN
+	mov 	cx, 0
+	jmp 	CheckFlags
+	
+Groups:
+	mov 	byte[HasPermission], 1
+	inc 	si
+	mov 	cx, 6
+	jmp 	CheckFlags
+	
+Others:
+	mov 	byte[HasPermission], 1
+	inc 	si
+	mov 	cx, 11
+	jmp 	CheckFlags
+	
+AttribModify:
+	add 	cx, 4
+	mov 	ax, 1
+	shl		ax, cl
+	sub 	cx, 4
+	or 		bx, ax
+	jmp 	CheckFlags
+AttribDelete:
+	add 	cx, 3
+	mov 	ax, 1
+	shl		ax, cl
+	sub 	cx, 3
+	or 		bx, ax
+	jmp 	CheckFlags
+AttribExec:
+	add 	cx, 2
+	mov 	ax, 1
+	shl		ax, cl
+	sub 	cx, 2
+	or 		bx, ax
+	jmp 	CheckFlags
+AttribRead:
+	add 	cx, 1
+	mov 	ax, 1
+	shl		ax, cl
+	sub 	cx, 1
+	or 		bx, ax
+	jmp 	CheckFlags
+AttribWrite:
+	mov 	ax, 1
+	shl		ax, cl			; CX = 0
+	or 		bx, ax
+	jmp 	CheckFlags
+CheckNextUser:
+	inc 	si
+	jmp 	NextFlags
+CheckTheFile:
+	cmp 	cx, 6
+	jb 		Err.CHMOD
+	inc 	si
+	jmp 	CheckToFile
+	
+Err.CHMOD:
+	mov 	si, ErrorChmod
+	call 	Print_String
+	jmp 	Ret.CHMOD
+	
+Err.CHMOD2:
+	mov 	si, ErrorChmod2
+	call 	Print_String
+	jmp 	Ret.CHMOD
+	
+Err.CHMOD3:
+	mov 	si, ErrorChmod3
+	call 	Print_String
+	jmp 	Ret.CHMOD
+	
+AttribFile:
+	push 	bx
+	mov 	di, BufferKeys
+	mov 	byte[IsCommand], 0
+	call 	Format_Command_Line
+	
+	mov 	cx, 1
+	call 	Load_File_Path
+	pop 	bx
+	jc 		Ret.CHMOD
+	
+	mov 	ax, [CD_SEGMENT]
+	mov 	[FAT16.DirSegments], ax		; AX = Segmento de Diretório
+	mov 	[FAT16.FileSegments], ax
+	mov 	byte[FAT16.LoadingDir], 0
+	
+	mov 	dx, 12					; Offset 12 para attributo para permissão			
+	push 	di						; SI = Nome do Arquivo Formatado; DI = ... Não-Formatado
+	call 	FAT16.WriteThisEntry
+	pop 	di
+	
+Ret.CHMOD:
+	pop 	word[CD_SEGMENT]
+	call 	Restore_Dir
+	
+	mov 	byte[HasPermission], 0
+	mov 	byte[IsFile], 0
+	mov 	byte[Dirs_Count], 0
+	mov 	byte[Browse_Count], 0
+	mov 	byte[Flag_File], 0
+ret
+
+ErrorChmod 	db "Erro: Formato de permissao invalida!",0
+ErrorChmod2 db "Erro: Nenhum arquivo especificado!",0
+ErrorChmod3 db "Erro: Nenhuma permissao especificada!",0
+HasPermission db 0
+
+Cmd.DEL:
+	mov 	si, BufferArgs
+	mov 	di, BufferKeys
+	call 	Format_Command_Line
+	
+	push 	WORD[CD_SEGMENT]
+	call 	Store_Dir
+	
+	mov 	cx, 1
+	call 	Load_File_Path
+	jc 	 	Ret.DEL
+	
+	mov 	ax, [CD_SEGMENT]
+	mov 	[FAT16.DirSegments], ax		; AX = Segmento de Diretório
+	mov 	[FAT16.FileSegments], ax
+	mov 	byte[FAT16.LoadingDir], 0
+	
+	push 	di
+	call 	FAT16.DeleteThisFile
+	pop 	di
+	
+	
+Ret.DEL:
+	clc
+	pop 	WORD[CD_SEGMENT]
+	call 	Restore_Dir
+	
+	mov 	byte[ErrorFile], 0
+	mov 	byte[ErrorDir], 0
+	mov 	byte[IsFile], 0
+	mov 	byte[Dirs_Count], 0
+	mov 	byte[Browse_Count], 0
+	mov 	byte[Flag_File], 0
+ret
+
+Cmd.MKDIR:
+	mov 	si, BufferArgs
+	mov 	di, BufferKeys
+	call 	Format_Command_Line
+	
+	push 	word[CD_SEGMENT]
+	call 	Store_Dir
+
+	push 	si
+	push 	di
+	push 	es
+	
+	mov 	ax, word[CD_SEGMENT]
+	mov 	es, ax
+	cmp 	ax, 0x0200
+	je 		ClearClusterFolder
+	
+	xor 	di, di
+	mov 	ax, word[es:di + 0x1A]
+	jmp 	ClusterFolder
+	
+ClearClusterFolder:
+	mov 	ax, 0
+
+ClusterFolder:
+	push 	ax
+
+	mov 	si, Folder_Struct
+	mov 	ax, 0x6800
+	mov 	es, ax
+	xor 	di, di
+	pop 	ax
+	mov 	word[si + 0x3A], ax		; 0x20(32) + 0x1A(cluster)
+	mov 	cx, 64
+	rep 	movsb
+	
+	pop 	es
+	pop 	di
+	pop 	si
+	
+	mov 	cx, 1 	   ; Status
+	call 	Load_File_Path
+	
+	mov 	cx, 64
+	mov 	ax, 0x6800
+	mov 	[FAT16.FileSegments], ax
+	mov 	ax, [CD_SEGMENT]
+	mov 	[FAT16.DirSegments], ax		; AX = Segmento de Diretório
+	mov 	byte[FAT16.LoadingDir], 1
+	xor 	bx, bx						; BX = Buffer com Dados para Escrever
+	push 	di							; SI = Nome do Arquivo Formatado; DI = ... Não-Formatado
+	call 	FAT16.WriteThisFile
+	pop 	di
+	
+Ret.MKDIR:
+	clc
+	pop 	WORD[CD_SEGMENT]
+	call 	Restore_Dir
+	
+	mov 	byte[ErrorFile], 0
+	mov 	byte[ErrorDir], 0
+	mov 	byte[IsFile], 0
+	mov 	byte[Dirs_Count], 0
+	mov 	byte[Browse_Count], 0
+	mov 	byte[Flag_File], 0
+ret
+
+Folder_Struct:
+	db ".          ",0x10
+	times 32 - 12 db 0
+	db "..         ",0x10
+	times 32 - 12 db 0
+
 Store_Dir:
 	pusha
 	mov 	ecx, 256
@@ -1914,6 +2486,7 @@ ret
 Cmd.FAT:
 	mov 	ax, 0x1000
 	mov 	es, ax
+	mov 	al, 0
 	mov 	di, 0x0000
 	mov 	cx, 1024
 	call 	PrintDataHex16
@@ -2139,7 +2712,7 @@ Format_Loop:
 	ret
 
 Cmd.CD:
-	;call 	Reload_Directory
+	call 	Reload_Directory
 	
 	mov 	si, BufferArgs
 	mov 	di, BufferKeys
@@ -2592,7 +3165,8 @@ EndTransfer:
 EndTransfer2:
 	cmp 	byte[ArgFile], 1
 	je 		WriteFile
-
+	
+	mov 	al, 0
 	mov 	di, 0x0004
 	dec 	cx
 	call 	PrintData
@@ -2676,6 +3250,7 @@ FindSpaceZero2:
 	push 	di
 	mov 	ax, 0x6800
 	mov 	es, ax
+	mov 	al, 0
 	mov 	di, 0x0004
 	mov 	cx, dx 				; Tamanho do arquivo lido
 	call 	PrintData
@@ -2749,6 +3324,8 @@ FileEditor:
 	je 		WriteEditor.BackSpace
 	cmp 	al, 0x0D
 	je		WriteEditor.Enter
+	cmp 	al, 0x09
+	je 		WriteEditor.TAB
 	cmp 	al, 0x13		; CTRL + S = Salvar
 	je 		WriteFile
 	cmp 	al, 0x18 		; CTRL + X = Cancelar
@@ -2886,11 +3463,108 @@ WriteEditor.BackSpace:
 
 WriteEditor.Enter:
 	stosb
+	mov 	al, 0x0A
+	stosb
+	call 	Cursor.CheckToRollEditor
+	add 	word[WriteCounter], 2
+	jmp 	FileEditor
+
+	
+WriteEditor.TAB:
+	stosb
+	mov 	al, " "
 	mov 	ah, 0x0E
 	int 	0x10
-	call 	Cursor.CheckToRollEditor
+	int 	0x10
 	inc 	word[WriteCounter]
 	jmp 	FileEditor
+
+Cmd.OPEN:
+	mov 	si, BufferArgs
+	mov 	di, BufferKeys
+	call 	Format_Command_Line
+	
+	push 	WORD[CD_SEGMENT]
+	call 	Store_Dir
+	
+	mov 	cx, 1
+	call 	Load_File_Path
+	mov 	ax, 03h
+	jc 		ErrorOpen
+	
+	mov 	ax, [CD_SEGMENT]
+	mov 	dl, 00000010b
+	mov 	dh, 2
+	call 	FAT16.OpenThisFile
+	jc 		ErrorOpen
+	
+	mov 	si, OpenSuccess
+	call 	Print_String
+	call 	Print_Hexa_Value16
+	jmp 	Ret.OPEN
+	
+ErrorOpen:
+	cmp 	ax, 01h
+	je 		NotAbled
+	cmp 	ax, 02h
+	je 		NotFound
+	cmp 	ax, 03h
+	je 		PathNotFound
+	cmp 	ax, 04h
+	je 		NoHandler
+	cmp 	ax, 05h
+	je 		DeniedAccess
+	cmp 	ax, 0Ch
+	je 		NotAllowed
+UnknownError:
+	mov 	si, UnknownMsg
+	call 	Print_String
+	clc
+	jmp 	Ret.OPEN
+NotAllowed:
+	mov 	si, NotAllowedMsg
+	call 	Print_String
+	clc
+	jmp 	Ret.OPEN
+DeniedAccess:
+	mov 	si, DeniedMsg
+	call 	Print_String
+	clc
+	jmp 	Ret.OPEN
+NoHandler:
+	mov 	si, NoHandlerMsg
+	call 	Print_String
+	clc
+	jmp 	Ret.OPEN
+PathNotFound:
+	call 	Cursor.CheckToRollEditor
+	mov 	si, PathNFMsg
+	call 	Print_String
+	clc
+	jmp 	Ret.OPEN
+NotFound:
+	mov 	si, NotFoundMsg
+	call 	Print_String
+	clc
+	jmp 	Ret.OPEN
+NotAbled:
+	mov 	si, NotAbleMsg
+	call 	Print_String
+	clc
+	
+Ret.OPEN:
+	pop 	WORD[CD_SEGMENT]
+	call 	Restore_Dir
+	ret
+	
+UnknownMsg db "Error: Erro desconhecido ao abrir o arquivo!",0
+DeniedMsg  db "Error: Acesso Negado!",0
+NoHandlerMsg db "Error: Nenhum manipulador disponivel!",0
+PathNFMsg 	 db "Error: Caminho nao encontrado!",0
+NotFoundMsg	 db "Error: Arquivo nao encontrado!",0
+NotAbleMsg	 db "Error: Compartilhamento nao habilitado",0
+NotAllowedMsg db "Error: Modo de acesso nao permitido!",0
+OpenSuccess   db "O arquivo foi aberto! Handler: ",0
 
 Cmd.DIVS:
 	pusha
@@ -2960,6 +3634,7 @@ Decimals    dq 0
 
 Reload_Directory:
 	pusha
+	push 	es
 	mov		ax, word[CD_SEGMENT]
 	cmp 	ax, 0x0200
 	je 		ReLoadDir
@@ -2977,6 +3652,7 @@ Reload_Directory:
 ReLoadDir:
 	call 	FAT16.LoadDirectory
 Ret.Reload:
+	pop 	es
 	popa
 	ret
 
@@ -3010,6 +3686,7 @@ ShowInConsole:
 	mov 	cx, ax
 	inc 	di
 	
+	mov 	al, 0
 	call 	PrintData
 	add 	di, cx
 	
@@ -3097,7 +3774,9 @@ DiskParameter:
 	.NumberOfSectors     db "Number Of Sectors   : 0x",0
 	
 
-ProgExtension   db "KXE", "EXE", "APP",0   ; Adicionar .APP
+ProgExtension   db "KXE", "EXE", "APP"
+EXTENSIONS_COUNT EQU ($ - ProgExtension) / 3
+
 ProgTerminate1: db "Process exited after 0x"
 .SizeTerm1      dw ($-ProgTerminate1)
 ProgTerminate2: db " milliseconds with return value 0x"
@@ -3106,27 +3785,65 @@ ProgTerminate2: db " milliseconds with return value 0x"
 WriteCanceled 	db "canceled by the user.",0
 StringSave 	   db "This sequence save the data: ",0
 
-COUNT_COMMANDS    EQU 17  ; <- A cada comando alterar
+COUNT_COMMANDS    EQU 21  ; <- A cada comando alterar
 
 Vector:
 
-.CMD_Names:
-	db "exit"  ,0,   "reboot"  ,0,  "start"   ,0,  "bpb"    ,0,  "lf"  ,0 
-	db "clean" ,0,   "read "   ,0,  "cd "     ,0,  "assign ",0, "help" ,0
-	db "fat"   ,0,   "hex"     ,0,  "disk"    ,0,  "write"  ,0, "div"  ,0
-	db "ren"   ,0,	 "attrib"  ,0
-	
 .CMD_Funcs:
 	dw Cmd.EXIT, Cmd.REBOOT, Cmd.START, Cmd.BPB, Cmd.LF, Cmd.CLEAN, Cmd.READ
 	dw Cmd.CD, Cmd.ASSIGN, Cmd.HELP,  Cmd.FAT, Cmd.HEX, Cmd.DISK, Cmd.WRITE
-	dw Cmd.DIVS, Cmd.REN, Cmd.ATTRIB
+	dw Cmd.DIVS, Cmd.REN, Cmd.ATTRIB, Cmd.DEL, Cmd.MKDIR, Cmd.OPEN, Cmd.CHMOD
 	
 .CMD_Infos:
 	dw Inf.EXIT, Inf.REBOOT, Inf.START, Inf.BPB, Inf.LF, Inf.CLEAN, Inf.READ
     dw Inf.CD, Inf.ASSIGN, Inf.HELP, Inf.FAT, Inf.HEX, Inf.DISK, Inf.WRITE
-	dw Inf.DIVS, Inf.REN, Inf.ATTRIB
+	dw Inf.DIVS, Inf.REN, Inf.ATTRIB, Inf.DEL, Inf.MKDIR, Inf.OPEN, Inf.CHMOD
 	
+.CMD_Addrs:
+	dw 	ADDR.EXIT
+	dw	ADDR.REBOOT
+	dw	ADDR.START
+	dw 	ADDR.BPB
+	dw 	ADDR.LF
+	dw 	ADDR.CLEAN
+	dw 	ADDR.READ
+	dw 	ADDR.CD
+	dw 	ADDR.ASSIGN
+	dw 	ADDR.HELP
+	dw 	ADDR.FAT
+	dw 	ADDR.HEX
+	dw 	ADDR.DISK
+	dw 	ADDR.WRITE
+	dw 	ADDR.DIV
+	dw 	ADDR.REN
+	dw 	ADDR.ATTRIB
+	dw 	ADDR.DEL
+	dw 	ADDR.MKDIR
+	dw 	ADDR.OPEN
+	dw 	ADDR.CHMOD
 	
+.CMD_Names:
+	ADDR.EXIT 	db "exit",0   
+	ADDR.REBOOT db "reboot",0
+	ADDR.START  db "start",0
+	ADDR.BPB 	db "bpb",0
+	ADDR.LF		db "lf",0 
+	ADDR.CLEAN	db "clean",0
+	ADDR.READ	db "read ",0
+	ADDR.CD		db "cd ",0
+	ADDR.ASSIGN db "assign ",0
+	ADDR.HELP	db "help",0
+	ADDR.FAT	db "fat",0
+	ADDR.HEX	db "hex",0
+	ADDR.DISK 	db "disk",0
+	ADDR.WRITE 	db "write",0
+	ADDR.DIV 	db "div",0
+	ADDR.REN 	db "ren",0
+	ADDR.ATTRIB db "attrib",0
+	ADDR.DEL 	db "del",0
+	ADDR.MKDIR 	db "mkdir",0
+	ADDR.OPEN 	db "open",0
+	ADDR.CHMOD 	db "chmod",0
 	
 Inf:
    
@@ -3164,6 +3881,14 @@ Inf:
 	db 1, "REN command",0
 .ATTRIB:
 	db 1, "ATT command",0
+.DEL:
+	db 1, "DEL command",0
+.MKDIR:
+	db 1, "MKD command",0
+.OPEN:
+	db 1, "OPN command",0
+.CHMOD:
+	db 1, "CHM command",0
 	
 END_OF_FILE:
 	db 'EOF'

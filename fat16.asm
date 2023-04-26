@@ -9,16 +9,18 @@ jmp 	LoadFAT					; FAT16+6
 jmp 	LoadThisFile			; FAT16+9
 jmp 	WriteThisFile 			; FAT16+12
 jmp 	LoadStartData			; FAT16+15
-jmp 	WriteThisEntry			; FAT16+18 
+jmp 	WriteThisEntry			; FAT16+18
+jmp 	DeleteThisFile 			; FAT16+21
+jmp 	OpenThisFile 			; FAT16+24 
 
 
-FileSegments    dw 0x0000		; FAT16+21
-DirSegments     dw 0x0000		; FAT16+23
-LoadingDir      db 0			; FAT16+25
+FileSegments    dw 0x0000		; FAT16+27
+DirSegments     dw 0x0000		; FAT16+29
+LoadingDir      db 0			; FAT16+31
 	
-SYS.VM db 0						; FAT16+26
-FileVM  times 11 db 0			; FAT16+27
-ClusterFile     dw  0x0000		; FAT16+38
+SYS.VM db 0						; FAT16+32
+FileVM  times 11 db 0			; FAT16+33
+ClusterFile     dw  0x0000		; FAT16+44
 
 DAPSizeOfPacket db 10h
 DAPReserved     db 00h
@@ -26,8 +28,8 @@ DAPTransfer     dw 0001h
 DAPBuffer       dd 00000000h
 DAPStart        dq 0000000000000000h
 
-SHELL.ErrorDir   EQU  (SHELL16+7)
-SHELL.ErrorFile  EQU  (SHELL16+8)
+SHELL.ErrorDir   EQU  (SHELL16+25)
+SHELL.ErrorFile  EQU  (SHELL16+26)
 
 DATASTART            DW   0x0000
 FATSTART             DW   0x0000 
@@ -44,6 +46,8 @@ END_OF_CLUSTER1  EQU 0xFFF8
 END_OF_CLUSTER2  EQU 0xFFFF
 FCLUSTER_ENTRY   EQU 0x001A
 FSIZE_ENTRY      EQU 0x001C
+FPERM_ENTRY 	 EQU 0x000C
+FPERM_ENTRY2 	 EQU 0x0014
 ROOT_SEGMENT     EQU 0x0200	  ; era 0x07C0
 FAT_SEGMENT      EQU 0x1000   ; era 0x17C0
 KERNEL_SEGMENT   EQU 0x3000   ; era 0x0C00
@@ -171,6 +175,219 @@ RetLoadThis:
 	ret
 	
 ; AX = Segmento de Diretório Atual
+; DL = Flag do Tipo de Abertura
+;	MODO DE ACESSO:
+;		BIT<2-0> = 000 = pra leitura
+;		BIT<2-0> = 001 = pra escrita
+;		BIT<2-0> = 010 = pra escrita/leitura
+; 	MODO DE COMPARTILHAMENTO:
+;		BIT<5-4> = 00  = Não negar
+;		BIT<5-4> = 01  = Negar tudo
+;		BIT<5-4> = 10  = Negar escrita
+;		BIT<5-4> = 11  = Negar leitura
+; DH = Tipo de usuário
+;	0 = convidado/outros; 1 = grupos de usuários;
+;	2 = usuário; 3 = admin; 4 = sistema;
+; SI = Nome do arquivo formatado
+OpenThisFile:
+	push 	es
+	clc
+; --------------------------------------------------------------------
+; VERIFICAÇÃO DE ERROS INICIAIS DE PERMISSÃO
+	mov 	cx, dx
+	and 	dl, 00000111b	; Isolar bits do modo de acesso
+	cmp 	dl, 2			; Compare com o último modo
+	ja 		ERR.NotAllowed	; Se for maior, é um erro "Access Mode Not Allowed"
+	mov 	dx, cx
+	and 	dl, 01110000b 	; Isolar bits do modo de compatibilidade
+	shr 	dl, 4 			; Move para o LSB
+	cmp 	dl, 4			; Compare com o último modo
+	ja 		ERR.NotAllowed	; Se for maior, é um erro "Access Mode Not Allowed"
+	mov 	dx, cx
+; --------------------------------------------------------------------
+	
+	mov 	es, ax 		; ES = CD_SEGMENT
+	xor 	di, di		; ES:DI = CD_SEGMENT:0x0000
+OpenSearch:
+	push 	cx			; Empilha algum contador se houver
+	mov 	cx, 11 		; 11 caracteres do nome de arquivo na entrada
+	push 	si			; Empilha nome de arquivo a ser buscado
+	push 	di			; Empilha nome de arquivo da entrada
+	rep 	cmpsb		; Compare os 2 nomes de arquivos
+	pop 	di			; Desempilha nome de arquivo da entrada
+	pop 	si			; Desempilha nome de arquivo a ser buscado
+	pop 	cx			; Desempilha algum contador
+	jne 	NextEntry	; Caso os nomes não forem iguais, procure a próxima entrada
+
+; Rotina que cria a estrutura de referência do arquivo 	
+	; Verificar se é permissão do sistema,usuário ou admin
+; -----------------------------------------------------------------
+	mov 	ax, word[es:di + FPERM_ENTRY2]
+	and 	ax, 0x003F
+	
+	cmp 	ch, 0
+	je 		CheckOthers
+	cmp 	ch, 1
+	je 		CheckGroups
+	cmp 	ch, 2
+	je 		CheckUsers
+	cmp 	ch, 3
+	je	 	CheckAdmin
+	cmp 	ch, 4
+	je 		FindOpened
+	jmp 	ERR.Denied
+	
+CheckOthers:
+	mov 	ax, word[es:di + FPERM_ENTRY2]
+	and 	ax, 0xF800
+	shr 	ax, 11
+	jmp 	CheckUsers
+CheckGroups:
+	mov 	ax, word[es:di + FPERM_ENTRY2]
+	and 	ax, 0x07C0
+	shr 	ax, 6
+	
+CheckUsers:
+	mov 	dl, byte[es:di + FPERM_ENTRY]	; Restaura as permissões
+	and 	dl, (1 << 5)					; Isola o bit 5 (admin)
+	shr 	dl, 5							; Desloca pro início
+	cmp 	dl, 0							; Compare com 0
+	jz 		ERR.Denied						; Se for 0, contém apenas permissão de admin
+CheckAdmin:
+	mov 	dl, al							; Pega os bits de permissão
+	mov 	bl, cl							; Coloque o modo de abertura em BL
+	and 	bl, 00000011b 					; Isola os 2 últimos bits
+	cmp 	bl, 0							; É pra leitura?
+	je 		OpenToRead
+	cmp 	bl, 1							; É pra escrita?
+	je 		OpenToWrite
+	cmp 	bl, 2							; É pra leitura/escrita
+	je 		OpenToRW
+	jmp 	ERR.NotAllowed					; Caso não for nenhum, é erro não permitido
+	
+OpenToRead:
+	and 	dl, (1 << 1)				; Isola o bit 1 de leitura
+	jmp 	CheckPermission
+OpenToWrite:
+	and 	dl, (1 << 0)				; Isola o bit 0 de escrita
+	jmp 	CheckPermission
+OpenToRW:
+	and 	dl, 00000011b				; Isola o bit 0 e 1 de leitura/escrita
+	cmp 	dl, 3
+	jne 	ERR.Denied
+	mov 	si, OpenBuffer
+	jmp 	FindOpened
+CheckPermission:
+	cmp 	dl, 0						; Compare DL com 0
+	jz 		ERR.Denied 					; Se for, não tem permissão de leitura
+
+FindOpened:
+	mov 	si, OpenBuffer
+	mov 	dx, word[es:di + FCLUSTER_ENTRY]
+	push 	cx
+	mov  	cx, (512 / 32)		; Máximo 16 entradas
+IsOpenFile:
+	cmp 	word[si + FCLUSTER_ENTRY], dx
+	jne 	NextOpenFile
+	jmp 	CheckIfSystem
+NextOpenFile:
+	cmp 	word[si], 0x0000
+	je 		CheckIfSystem
+	add 	si, 32
+	loop 	IsOpenFile
+	pop 	cx
+	jmp 	ERR.NoHandler
+	
+CheckIfSystem:
+	pop 	cx
+	cmp 	ch, 4
+	je 		CreateStruct
+	
+CheckShare:
+	mov 	dl, byte[si + FPERM_ENTRY]		; Pega os bits de permissão/compartilhamento
+	and 	dl, 11000000b 					; Isola os 2 bits MSBs (Share mode)
+	cmp 	dl, 0
+	jnz 	CheckShareType
+	mov 	dl, cl
+	and 	dl, 00110000b
+	shl 	dl, 2
+	or 		byte[es:di + FPERM_ENTRY], dl 	; Define os bits de compartilhamento
+	jmp 	CreateStruct
+	
+CheckShareType:
+	shr 	dl, 6
+	cmp 	dl, 1
+	je 		ERR.NotAble
+	cmp 	dl, 2
+	je 		WriteDenied
+	jmp 	ReadDenied
+	
+WriteDenied:
+	mov 	bl, cl
+	and 	bl, 00000011b
+	cmp 	bl, 1
+	je 		ERR.Denied
+	cmp 	bl, 2
+	je 		ERR.Denied
+	jmp 	CreateStruct
+
+ReadDenied:
+	mov 	bl, cl
+	and 	bl, 00000011b
+	cmp 	bl, 0
+	je 		ERR.Denied
+	cmp 	bl, 2
+	je 		ERR.Denied
+	
+CreateStruct:
+	push 	ds
+	push 	es
+	pop 	ds
+	pop 	es
+	xchg 	di, si
+	mov 	cx, 32
+	rep 	movsb
+	xchg 	di, si
+	push 	ds
+	push 	es
+	pop 	ds
+	pop 	es
+	sub 	si, 32
+	mov 	ax, si
+; -----------------------------------------------------------------
+	
+	jmp 	RetOpen 	; Retorne a rotina de abertura
+NextEntry:
+	add  	di, DIRECTORY_SIZE		; Desloca para próxima entrada
+	cmp 	word[es:di], 0x0000		; Verifique se a entrada é zerada
+	jne 	OpenSearch 				; Caso não for, continue buscando arquivo
+FileNotFound:
+	mov 	ax, 02h			; Código de Erro: Arquivo não encontrado
+OpenErr:
+	pop 	es
+	stc
+	ret
+RetOpen:
+	pop 	es
+	clc
+ret
+
+ERR:
+.NotAllowed:
+	mov 	ax, 0Ch			; Código de Erro: Modo de acesso não permitido
+	jmp 	OpenErr
+.Denied:
+	mov 	ax, 05h			; Código de Erro: Acesso negado
+	jmp 	OpenErr
+.NotAble:
+	mov 	ax, 01h			; Código de Erro: Compartilhamento não habilitado
+	jmp 	OpenErr
+.NoHandler:
+	mov 	ax, 04h			; Código de Erro: Nenhum manipulador disponível
+	jmp 	OpenErr
+
+	
+; AX = Segmento de Diretório Atual
 ; BX = Buffer que contém os dados
 ; CX = Quantidade de Dados
 ; DX = Flag de Criação/Acréscimo
@@ -234,6 +451,97 @@ RetWriteEnt:
 	pop 	es
 ret
 
+
+; AX = Segmento de Diretório Atual
+; SI = Nome do arquivo formatado
+DeleteThisFile:
+	push 	es
+	clc
+	mov 	es, ax 		; ES = CD_SEGMENT
+	xor 	di, di		; ES:DI = 0x0200:0x0000 = 0x2000
+SearchToDel:
+	push 	cx			; Empilha a quantidade de chars
+	mov 	cx, 11 		; 11 caracteres do nome de arquivo na entrada
+	push 	si			; Empilha nome de arquivo a ser buscado
+	push 	di			; Empilha nome de arquivo da entrada
+	rep 	cmpsb		; Compare os 2 nomes de arquivos
+	pop 	di			; Desempilha nome de arquivo da entrada
+	pop 	si			; Desempilha nome de arquivo a ser buscado
+	pop 	cx			; Desempilha a quantidade de chars
+	jne 	NextToDel	; Caso os nomes não forem iguais, procure a próxima entrada
+	call 	DeleteFile  ; Altera entrada
+	jmp 	RetDelFile 	; Retorne a rotina de escrita
+NextToDel:
+	add  	di, DIRECTORY_SIZE		; Desloca para próxima entrada
+	cmp 	word[es:di], 0x0000		; Verifique se a entrada é zerada
+	jne 	SearchToDel 			; Caso não for, continue buscando arquivo
+	stc
+	ret
+RetDelFile:
+	clc
+	pop 	es
+ret
+
+DeleteFile:
+	push 	ax
+	
+	mov 	dx, WORD [es:di + FCLUSTER_ENTRY]
+	call 	ClearFATClusters		; Limpa clusters
+	
+	push 	bx
+	mov 	ax, dx					; Recupera número de cluster livre
+	shl 	ax, 1					; Multiplica por 2
+	mov 	bx, 512					; Define denominador 512 pra divisão
+	xor 	dx, dx					; Zera dx pra não causar conflitos
+	div 	bx						; Divide (FreeCluster * 2) por 512
+	add 	ax, 7					; Soma setor inicial do FAT mais resultado
+	mov 	[InitialFAT], ax		; Setor inicial do FAT do novo arquivo
+	
+	pop 	ax						; Recupera BX em AX
+	mov 	bx, 512					; Define denominador 512 pra divisão
+	xor 	dx, dx					; Zera dx pra não causar conflitos
+	div 	bx						; Divide (FreeCluster * 2) por 512
+	add 	ax, 7					; Soma setor inicial do FAT mais resultado
+	sub 	ax, [InitialFAT]		; Calcule a diferença de setores FAT
+	add 	ax, 1					; Some +1 = Quantidade de Setores FAT para Escrever
+	
+	push 	di
+	push 	es
+	
+	mov 	cx, [InitialFAT]		; CX é o setor de FAT inicial calculado
+	sub 	cx, 7					; Subtrair pelo setor inicial padrão
+	xor 	bx, bx					; Zere BX pra começar as somas de Offset
+	cmp 	cx, 0					; Compare CX com 0
+	jz 		ClearFatFile			; Se for igual, então Offset também será 0
+	
+AddOffset:							; Se for diferente, então BX tem que valer próximos offsets
+	add 	bx, 512					; Adicione BX pro próximo offset (próximo setor)
+	loop 	AddOffset				; Retorne CX vezes
+	
+ClearFatFile:
+	mov 	cx, ax					; CX = Quantidade de setores FAT
+	mov 	ax, FAT_SEGMENT			; Defina Segmento do FAT
+	mov 	es, ax					; Para o Registrador ES = ES:BX
+	mov 	ax, [InitialFAT]		; AX = Setor do FAT inicial pré-calculado
+	call  	WriteLogicalSectors		; Escreva CX setor(es) de ES:BX a partir do Setor AX
+	
+	pop 	es
+	pop 	di
+	
+	push 	di
+	mov 	cx, 32
+	mov 	ax, 0
+	rep 	stosb
+	pop 	di
+	
+	pop 	ax
+	
+	call 	Save_Entry
+ret
+	
+	
+	
+	
 ; ALTERAR ENTRADAS/PROPRIEDADES DO ARQUIVO
 ; ROTINA QUE PODE ALTERAR QUAISQUER VALORES
 ChangeEntry:
@@ -242,6 +550,8 @@ ChangeEntry:
 	jz 		ChangeName
 	cmp 	dx, 11
 	jz 		ChangeAttrib
+	cmp 	dx, 12
+	jz 		ChangePermission
 	jmp 	Ret.ChEntry
 	
 ChangeName:
@@ -255,7 +565,17 @@ ChangeName:
 ChangeAttrib:
 	mov 	byte[es:di], bl
 	sub 	di, 11
+	jmp 	Save_Entry
 	
+ChangePermission:
+	push 	bx
+	and 	bx, 0x003F
+	mov 	byte[es:di], bl
+	add 	di, 8
+	pop 	bx
+	mov 	word[es:di], bx
+	sub 	di, 20
+
 Save_Entry:
 	mov 	es, ax		  ; ES = SEGMENTO ATUAL
 	xor 	bx, bx		  ; ZERAR BX EM AMBOS OS CASOS (OFFSET 0)
@@ -307,21 +627,11 @@ Write_Entry:
 Ret.ChEntry:
 	ret
 
-; AX = Segmento Diretório
-; DX = Flag de escrita
-; CX = Quantidade de chars
-; DI = Endereço de entrada
-; SI = Nome do arquivo
-WriteFile:
-	push 	bx		; Empilha BufferWrite
-	push 	di 		; Empilha endereço da entrada
-	push 	ax 		; Empilha segmento de dirs
-	push 	cx		; Empilha quantidade de chars
-	
-; 	ZERAR CLUSTERS NAS DUAS SITUAÇÕES
+ClearFATClusters:
 	push 	dx
-	mov 	dx, WORD [es:di + FCLUSTER_ENTRY]
 	
+	mov 	dx, WORD [es:di + FCLUSTER_ENTRY]
+
 	mov 	ax, FAT_SEGMENT
     mov 	gs, ax
 	xor 	bx, bx
@@ -345,13 +655,26 @@ Clear_Clusters:
 	jne 	Find_Cluster
 	
 	pop 	dx
+ret
+
+; AX = Segmento Diretório
+; DX = Flag de escrita
+; CX = Quantidade de chars
+; DI = Endereço de entrada
+; SI = Nome do arquivo
+WriteFile:
+	push 	bx		; Empilha BufferWrite
+	push 	di 		; Empilha endereço da entrada
+	push 	ax 		; Empilha segmento de dirs
+	push 	cx		; Empilha quantidade de chars
+	
+; 	ZERAR CLUSTERS NAS DUAS SITUAÇÕES
+	call 	ClearFATClusters
 	
 	pop 	cx
 	pop 	ax
 	pop 	di
 	pop 	bx
-	
-	; AINDA PENSANDO NO QUE FAZER AQUI NESTE ESPAÇO
 
 ; AX = Segmento Diretório
 ; CX = Quantidade de chars
@@ -363,7 +686,6 @@ CreateFile:
 	push 	ax 		; Empilha segmento de dirs
 	push 	cx		; Empilha quantidade de chars
 	
-	
 ; CRIANDO ENTRADA NA MEMÓRIA
 ; 	NOME DE ARQUIVO
 	mov 	cx, 11
@@ -371,10 +693,14 @@ CreateFile:
 	
 ; 	ATRIBUINDO TIPO (ARCHIVE)
 	mov 	al, 0x20
+	cmp 	byte[LoadingDir], 1
+	jne 	AttribType
+	mov 	al, 0x30
+AttribType:
 	stosb
 	
 ; 	FLAG RESERVADA (ESPECIAL)
-	mov 	al, 0x00 	; Reservado para permissões futuras
+	mov 	al, 00111111b 	; Reservado para permissões futuras
 	stosb
 	stosb				; SEGUNDO DE CRIAÇÃO (NÃO ESQUECER DE AL)
 	
@@ -387,8 +713,8 @@ CreateFile:
 	push 	ax
 	stosw					; Data de acesso
 	
-	xor 	ax, ax
-	stosw				; Zerar Cluster Alto
+	mov 	ax, 0xFFFF	; Todas as permissões, sendo administrador
+	stosw				; permissões de 3 usuários (KFAT Permissions -> HighCluster)
 	
 ; 	DEFININDO TEMPO E DATA DE MODIFICAÇÃO (APENAS EM CASOS DE CRIAÇÃO)
 	pop 	ax
@@ -404,20 +730,24 @@ CreateFile:
 	xor 	ax, ax
 	call 	FreeSpaceCluster
 	stosw
-	;Debugger:
-	;nop
-	;jmp 	Debugger
+	
+	call 	CheckIsFolder
 	
 ; 	TAMANHO DO ARQUIVO (CX -> AX)
 	xor 	eax, eax
 	pop 	ax 			 ; RECUPERA TAMANHO DE CX PARA AX
-	stosd 				 
+	mov 	cx, ax
+	cmp 	byte[LoadingDir], 1
+	jne 	NoClearSize
+	xor 	eax, eax
+NoClearSize:
+	stosd 
 
-	
 ; 	RECUPERA SEGMENTO E VERIFICA A CADEIA
 	pop 	ax 			  ; RECUPERAR SEGMENTO DE DIRETÓRIO ATUAL
 	pop 	di			  ; RECUPERAR ENTRADA INICIAL DO ARQUIVO
-	push 	di			  ; obs.: verificar necessidade
+	push 	di			  ; Salva entrada inicial
+	push 	cx 			  ; Salva tamanho
 	mov 	es, ax		  ; ES = SEGMENTO ATUAL
 	xor 	bx, bx		  ; ZERAR BX EM AMBOS OS CASOS (OFFSET 0)
 	cmp 	ax, 0x0200
@@ -476,14 +806,16 @@ WriteFAT:
 	mov 	[InitialFAT], ax		; Setor inicial do FAT do novo arquivo
 	mov 	ax, WORD [AddrCluster+2]	; Segmento do FAT Salvo
 	
+	xor 	ecx, ecx
+	pop 	cx 							; Recupera tamanho do arquivo
 	pop 	di 							; Recupera entrada inicial
 	push 	di 							; Salva novamente a entrada inicial
 	push 	ax							; Salva o segmento atual do FAT na pilha
 	
 ; 	CALCULA QUANTIDADE DE SETORES DE DADOS DO ARQUIVO
 	xor 	edx, edx							; Zera EDX pra não causar conflitos
+	mov 	eax, ecx							; Recupera em EAX o tamanho do arquivo
 	xor 	ecx, ecx							; Zera ECX pra não causar discrepâncias
-	mov 	eax, DWORD[es:di + FSIZE_ENTRY]		; Recupera em EAX o tamanho do arquivo
 	mov 	ebx, 512							; Move denominador 512 pra EBX
 	div 	ebx									; Divide tamanho do arquivo por 512
 	cmp 	edx, 0								; Compare o resto com 0
@@ -491,6 +823,7 @@ WriteFAT:
 	add 	eax, ecx							; Adicione o resultado da div. por 1 ou 0
 	mov 	ecx, eax							; Coloque esta quantidade de setores de dados em ECX
 	
+
 ; 	ESCREVER NO FAT OS CLUSTERS DO ARQUIVO
 	push 	ecx									; Salve o contador de setores de dados
 WriteFatMemory:
@@ -587,6 +920,41 @@ RetCreateFile:
 	ret
 
 InitialFAT dw 0x0000
+
+CheckIsFolder:
+	pusha
+	push 	es
+	cmp 	byte[LoadingDir], 1
+	jne 	Ret.CheckIsFolder
+	
+	push 	ax
+	mov 	ax, word[FileSegments]
+	mov 	es, ax
+	xor 	di, di
+	pop 	ax
+	mov 	word[es:di + 0x1A], ax
+	
+	call 	GetSystemTimeEntry
+	mov 	word[es:di + 0x0E], ax
+	mov 	word[es:di + 0x20 + 0x0E], ax
+	push 	ax
+	call 	GetSystemDateEntry
+	mov 	word[es:di + 0x10], ax
+	mov 	word[es:di + 0x20 + 0x10], ax
+	push 	ax
+	mov 	word[es:di + 0x12], ax
+	mov 	word[es:di + 0x20 + 0x12], ax
+	
+	pop 	ax
+	shl 	eax, 16
+	pop 	ax
+	mov 	dword[es:di + 0x16], eax
+	mov 	dword[es:di + 0x20 + 0x16], eax
+	
+Ret.CheckIsFolder:
+	pop 	es
+	popa
+ret
 
 GetSystemTimeEntry:
 	mov 	ah, 02h
@@ -962,3 +1330,5 @@ ret
 BOOT_FAILED:
     int  	0x18
 
+OpenBuffer times 512 db 0
+DataBuffer times 512 db 0
