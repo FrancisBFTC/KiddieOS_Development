@@ -1,3 +1,4 @@
+<a name="v1.3.9"></a>
 # KiddieOS v1.3.9: Gerenciamento de Permissões, Abertura de Arquivos, Criação de Diretórios, Serviços DOS e Loader MZ.
 
 # Features/Funcionalidades
