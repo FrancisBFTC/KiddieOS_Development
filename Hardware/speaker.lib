@@ -1,0 +1,110 @@
+; ==================================================================
+; MikeOS -- The Mike Operating System kernel
+; Copyright (C) 2006 - 2019 MikeOS Developers -- see doc/LICENSE.TXT
+;
+; PC SPEAKER SOUND ROUTINES
+; ==================================================================
+
+; ------------------------------------------------------------------
+; os_speaker_tone -- Generate PC speaker tone (call os_speaker_off to turn off)
+; IN: AX = note frequency; OUT: Nothing (registers preserved)
+
+%DEFINE C1 	9121
+%DEFINE C1# 8609
+%DEFINE D1  8126
+%DEFINE D1# 7670
+%DEFINE E1 	7239
+%DEFINE F1 	6833
+%DEFINE F1# 6449
+%DEFINE G1 	6087
+%DEFINE G1# 5746
+%DEFINE A1 	5423
+%DEFINE A1# 5119
+%DEFINE B1  4831
+%DEFINE C2 	4560
+%DEFINE C2# 4304
+%DEFINE D2 	4063
+%DEFINE D2# 3834
+%DEFINE E2 	3619
+%DEFINE F2 	3416
+%DEFINE F2# 3224
+%DEFINE G2 	3043
+%DEFINE G2# 2873
+%DEFINE A2 	2711
+%DEFINE A2# 2559
+%DEFINE B2 	2415
+%DEFINE C3 	2280
+%DEFINE C3# 2152
+%DEFINE D3 	2031
+%DEFINE D3# 1917
+%DEFINE E3 	1809
+%DEFINE F3 	1715
+%DEFINE F3# 1612
+%DEFINE G3 	1521
+%DEFINE G3# 1436
+%DEFINE A3 	1355
+%DEFINE A3# 1292
+%DEFINE B3 	1207
+%DEFINE C4 	1140
+
+Play_Speaker_Tone:
+	pusha
+
+	mov 	cx, ax			; Store note value for now
+
+	mov 	al, 182
+	out 	0x43, al
+	mov 	ax, cx			; Set up frequency
+	out 	0x42, al
+	mov 	al, ah
+	out 	0x42, al
+
+	in 		al, 0x61			; Switch PC speaker on
+	or 		al, 00000011b
+	out 	0x61, al
+	
+	call 	Waiting
+	call 	Off_Speaker_Tone
+	
+	popa
+ret
+
+
+; ------------------------------------------------------------------
+; os_speaker_off -- Turn off PC speaker
+; IN/OUT: Nothing (registers preserved)
+
+Off_Speaker_Tone:
+	pusha
+
+	in 		al, 0x61
+	and 	al, 11111100b
+	out 	0x61, al
+
+	popa
+ret
+	
+;Play_Sound:
+;	IN AL, 61h  ;Save state
+;	PUSH AX  
+;	MOV BX, 6818; 1193180/175
+;	MOV AL, 6Bh  ; Select Channel 2, write LSB/BSB mode 3
+;	OUT 43h, AL 
+;	MOV AX, BX 
+;	OUT 24h, AL  ; Send the LSB
+;	MOV AL, AH  
+;	OUT 42h, AL  ; Send the MSB
+;	IN AL, 61h   ; Get the 8255 Port Contence
+;	OR AL, 3h      
+;	OUT 61h, AL  ;End able speaker and use clock channel 2 for input
+;	MOV CX, 03h ; High order wait value
+;	MOV DX, 0D04h; Low order wait value
+;	MOV AX, 86h;Wait service
+;	INT 15h        
+;	POP AX;restore Speaker state
+;	OUT 61h, AL
+;RET
+
+
+; ==================================================================
+

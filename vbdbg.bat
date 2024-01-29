@@ -1,0 +1,1 @@
+"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" startvm  --putenv VBOX_GUI_DBG_ENABLED=true KiddieOS_VHD

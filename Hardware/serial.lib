@@ -1,0 +1,51 @@
+; ===================================================
+; KiddieOS - Serial Driver Library
+; Created by Francis
+; Version 1.0.0
+; ===================================================
+
+%IFNDEF _SERIAL_LIB_
+%DEFINE _SERIAL_LIB_
+
+%DEFINE SERIAL_COM1 0x3F8
+%DEFINE SERIAL_COM2 0x2F8
+%DEFINE SERIAL_COM3 0x3E8
+%DEFINE SERIAL_COM4 0x2E8
+
+%DEFINE FIFO_CONFIG 11000111b 	;0xC7 Acesso ao FIFO
+%DEFINE BAUD_RATE   10000000b   ;0x80 DLAB - Habilita o divisor de Baud Rate
+%DEFINE DIVISOR     00000011b   ;0x03 (38400) BAUD_RATE x DIVISOR = TAXA_DE_TRANSMISSÃO
+%DEFINE HIGH_BYTE   00000000b   ;0x00 byte mais significativo do divisor
+%DEFINE NO_PARITY   00000011b  	;0x03 (8N1) 8 bits, sem paridade, 1 stop bit
+%DEFINE IRQ_DISABLE 00000000b  	;0x00 desabilita interrupções
+%DEFINE IRQ_ENABLE  00001011b  	;0x0B habilita interrupções
+%DEFINE DR          00000001b  	;0x01 Data Ready - se há dados pra ser lidos
+%DEFINE THRE        00100000b  	;0x20 Verifica se o buffer de transmissão está vazio
+
+%DEFINE SERIAL_PORT      SERIAL_COM4
+%DEFINE DIV_PORT1        SERIAL_PORT
+%DEFINE DIV_PORT         SERIAL_PORT+1
+%DEFINE FIFO_PORT        SERIAL_PORT+2
+%DEFINE LCR_PORT         SERIAL_PORT+3
+%DEFINE IRQ_PORT         SERIAL_PORT+4
+%DEFINE LSR_PORT         SERIAL_PORT+5
+%DEFINE IRQ_PORT1        SERIAL_PORT+1
+%DEFINE SERIAL_INSTALL   SERIAL
+%DEFINE SERIAL_HANDLER   SERIAL+2
+%DEFINE SERIAL_WRITE     SERIAL+4
+%DEFINE SERIAL_READ      SERIAL+6
+
+SerialData  db 0
+StopRead    db 0
+
+%MACRO __Serial_Driver_Load 0
+	mov byte[Sector], SERIAL_SECTOR
+	mov byte[Drive], 80h
+	mov byte[NumSectors], SERIAL_NUM_SECTORS
+	mov word[SegmentAddr], 0x800
+	mov word[OffsetAddr], SERIAL
+	call ReadDisk
+%ENDMACRO
+
+
+%ENDIF

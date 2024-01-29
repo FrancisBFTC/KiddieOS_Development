@@ -1,7 +1,7 @@
 ; ===============================================
 ; KiddieOS - Kernel Sub-routines Address
 ; Created by Francis
-; Version 1.2.0
+; Version 1.3.5
 ; ===============================================
 
 %IFNDEF __KERNEL_LIB__
@@ -21,8 +21,17 @@
 %DEFINE  Kernel_Menu			0021h
 %DEFINE  Write_Info 			0024h
 %DEFINE  Print_Name_File        0027h
-%DEFINE  Wmanager_Start         002Ah     
-%DEFINE  Reboot_System          002Dh
+%DEFINE  Wmanager_Start         002Ah 
+%DEFINE  Print_Hexa_Value8      002Dh
+%DEFINE  Play_Sound             0030h
+%DEFINE  Print_Dec_Value32      0033h
+%DEFINE  Print_Hexa_Value32 	0036h
+%DEFINE  Print_Fat_Date 		0039h
+%DEFINE  Print_Fat_Time			003Ch
+%DEFINE  Calloc                 003Fh
+%DEFINE  _Free                  0042h
+%DEFINE  Parse_Dec_Value		0045h
+%DEFINE  Reboot_System          0048h
 
 
 %ENDIF

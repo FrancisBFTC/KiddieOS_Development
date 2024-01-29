@@ -1,0 +1,21 @@
+PIC master
+
+    IRQ0 = temporizador de intervalos 8253/8254 (temporizador do sistema)
+    IRQ1 = teclado
+    IRQ2 = reservada para a 8259B (amarrada ao IRQ 9)
+    IRQ3 = COM2 e COM4
+    IRQ4 = COM1 e COM3
+    IRQ5 = LPT2 ou placa de som
+    IRQ6 = disquetes
+    IRQ7 = LPT1
+
+PIC secundário
+
+    IRQ8 = relógio de tempo real (real time clock, RTC)
+    IRQ9 = amarrada ao IRQ2
+    IRQ10 = indefinido
+    IRQ11 = indefinido
+    IRQ12 = mouse PS/2
+    IRQ13 = co-processador matemático
+    IRQ14 = Drives IDE primários
+    IRQ15 = Drives IDE secundários
