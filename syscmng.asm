@@ -384,6 +384,7 @@ MonitorRoutines:
 	dd Get_Dec_Value32          ; Função 30 (0x1E)
 	dd Malloc		            ; Função 31 (0x1F)
 	dd Free 		            ; Função 32 (0x20)
+	dd Float_To_String 			; Função 33 (0x21)
 	
 Print_String32:
 	pop 	ebx
@@ -596,6 +597,72 @@ Ret_Dec32:
 iretd
 Zero db 0
 VetorDec db "0123456789",0
+
+Float_To_String:
+	pop 	ebx
+	pushad
+	mov 	esi, VetorDec
+	mov 	eax, ebx
+	cmp 	eax, 0
+	je      ZeroAndExit_1
+	mov 	[commacount], edx
+	xor 	edx, edx
+	mov 	ebx, 10
+	mov 	ecx, 1000000000
+DividePerECX_1:
+	cmp 	eax, ecx
+	jb      VerifyZero_1
+	mov 	byte[Zero], 1
+	push 	eax
+	div 	ecx
+	xor 	edx, edx
+	push 	eax
+	push 	ebx
+	mov 	ebx, eax
+	mov 	al, byte[esi + ebx]
+	stosb
+	pop 	ebx
+	pop 	eax
+	mul 	ecx
+	mov 	edx, eax
+	pop 	eax
+	sub 	eax, edx
+	xor 	edx, edx
+DividePer10_1:
+	cmp 	ecx, 1
+	je      Ret_Dec32_1
+	push 	eax
+	mov 	eax, ecx
+	div 	ebx
+	mov 	ecx, eax
+	pop 	eax
+	jmp 	DividePerECX_1
+VerifyZero_1:
+	cmp 	byte[Zero], 0
+	je      ContDividing_1
+	push 	eax
+	mov 	al, '0'
+	stosb
+	pop 	eax
+ContDividing_1:
+	jmp 	DividePer10_1
+ZeroAndExit_1:
+	mov 	al, '0'
+	stosb
+Ret_Dec32_1:
+	mov 	byte[Zero], 0
+	mov 	ecx, [commacount]
+findpoint:
+	dec 	edi
+	mov 	al, [es:edi]
+	mov 	[es:edi + 1], al
+	loop 	findpoint
+	mov 	al, '.'
+	stosb
+	
+	popad
+iretd
+commacount dd 0
 
 
 ; ==============================================================

@@ -4,7 +4,7 @@
 ORG   0
 ALIGN 4
 
-WINMNG1 EQU 0x114000
+WINMNG1 EQU 0x104000
 WinMng32: 
 
 BITS 32
@@ -29,7 +29,7 @@ jmp 	Show_Window
 ; Endereços de valores de interface gráfica (Janelas, Resolução, Mouse, etc..)
 ; & Estados de propriedades e Eventos.
 
-%DEFINE  GUI_VARS    			WINMNG+0C000h ;Info GUI Address
+%DEFINE  GUI_VARS    			WINMNG+30003h ;Info GUI Address
 %DEFINE  SCREEN_X    			GUI_VARS+5   ; word
 %DEFINE  SCREEN_Y               GUI_VARS+7   ; word
 %DEFINE  BPP_MODE    			GUI_VARS+9   ; byte
@@ -110,8 +110,8 @@ FRAMES_BUF:
 ; ************************************************************************
 ; Variáveis para Imagens do KiddieOS
 FORMAT_IMG  dw 0x0000      ; Formato de imagem (BMP ou ICN)
-MEMORY_BMP  dd 0x50000     ; Memória inicial de imagens BMP
-MEMORY_ICN  dd 0x30000     ; Memória inicial de imagens ICN
+MEMORY_BMP  dd 0x60000     ; Memória inicial de imagens BMP
+MEMORY_ICN  dd 0x60000     ; Memória inicial de imagens ICN
 
 BMP_LENGTH    EQU  2       ;BMP -> (DimX x DimY)
 BMP_DIMENS_X  EQU  18      ;BMP -> Offset of Dimension X
@@ -961,17 +961,17 @@ MainProperty dw 0
 
 BMPImageLoad:
 	mov 	ebx, esi
-	add 	esi, DWORD [ebx+BMP_LENGTH]
+	add 	esi, DWORD [ebx+BMP_LENGTH]  ;2
 	add 	esi, (24/8)            ; 24 BPP / 8 = 3 Bytes
-	mov 	cx, WORD [ebx+BMP_DIMENS_X]
-	mov 	eax, (24/8)        	   ; 244 BPP / 8 = 3 Bytes
+	mov 	cx, WORD [ebx+BMP_DIMENS_X] ;18
+	mov 	eax, (24/8)        	   ; 24 BPP / 8 = 3 Bytes
 	mul 	cx
 	xor 	edx, edx
 	mov 	dx, ax
-	mov 	cx, WORD [ebx+BMP_DIMENS_Y]
+	mov 	cx, WORD [ebx+BMP_DIMENS_Y] ;22
 PaintImg:
 	push 	cx
-	mov 	cx, WORD [ebx+BMP_DIMENS_X]
+	mov 	cx, WORD [ebx+BMP_DIMENS_X] ;18
 	push 	edi
 LoopPaint: 
  	sub  	esi, (24/8)  
@@ -1029,7 +1029,7 @@ CopyLine:	movsd
 RetShow_Window:
 	retf
 	
-Os_WinMng_Setup:
+Os_WinMng_Setup:	
 	xor 	eax, eax
 	xor 	ebx, ebx
 	mov 	al, BYTE [BPP_MODE]
@@ -1051,15 +1051,34 @@ InitConfig:
 	sub 	eax, [MVIDEO_BUF]
 	mov     [FRAMES_BUF + ebx], eax
 	
+Load1stAddr:
+	mov 	esi, 0x6A000   ; Image Buffer
+	mov 	edi, DWORD [MSPACE_BUF]   ; Double_Buffer
+	push 	edi
+	mov 	ecx, 64018
+	rep 	movsb
+Load2ndAddr:
+	mov 	esi, 0x7A000   ; Image Buffer
+	mov 	ecx, 64018
+	rep 	movsb
+Load3thAddr:
+	mov 	esi, 0x8A000   ; Image Buffer
+	mov 	ecx, 64018
+	rep 	movsb
+	pop 	edi
 	
-	mov 	dword[MEMORY_BMP], 0x500000
+	mov 	DWORD [MEMORY_BMP], 0x6A000
+	mov 	esi, DWORD [MSPACE_BUF]
+	mov 	edi, DWORD [MEMORY_BMP]
+	mov 	ecx, 64018 * 3
+	rep 	movsb
 	
-	mov 	eax, 0x0A
-	mov 	edi, DWORD[MEMORY_BMP]
-	mov 	esi, WallPaper1
-	int 	0xCE
-	jnc 	PaintWallPaper
-	jmp 	CreateObjects
+	;mov 	eax, 0x0A
+	;mov 	edi, DWORD[MEMORY_BMP]
+	;mov 	esi, WallPaper1
+	;int 	0xCE
+	;jnc 	PaintWallPaper
+	;jmp 	CreateObjects
 PaintWallPaper:
 	mov 	esi, DWORD [MEMORY_BMP]   ; Image Buffer
 	mov 	edi, DWORD [MSPACE_BUF]   ; Double_Buffer
@@ -1067,7 +1086,14 @@ PaintWallPaper:
 	mov 	esi, DWORD [MSPACE_BUF]
 	mov 	edi, DWORD [MVIDEO_BUF]
 	call 	ImageDraw
-	
+WaitKey:
+	xor 	ax, ax
+	mov 	dx, 0x60
+	in 		al, dx
+	cmp 	al, K_F1
+	jne 	WaitKey
+	jmp 	ReturnF
+
 
 CreateObjects:
 	push 	dword COLORS     ; Top, Borders, Back	
@@ -1104,44 +1130,44 @@ CreateObjects:
 	pop 	edi
 	
 	; First Window Image
-	mov 	eax, 0x0A
-	mov 	edi, DWORD[MEMORY_BMP]
-	mov 	esi, Flowers
-	int 	0xCE ; Load BMP File
+	;mov 	eax, 0x0A
+	;mov 	edi, DWORD[MEMORY_BMP]
+	;mov 	esi, Flowers
+	;int 	0xCE ; Load BMP File
 	mov 	eax, 1
 	mov 	ebx, [Win1]
 	int 	0xCD ; Show Window
-	mov 	esi, DWORD [MEMORY_BMP]   ; Image Buffer
-	mov 	edi, DWORD [MSPACE_BUF]   ; Double_Buffer
-	call 	BMPImageLoad ; Create Image
-	mov 	esi, DWORD [MSPACE_BUF]
-	mov 	edi, DWORD [MVIDEO_BUF]
-	add 	edi, 13 * 4
-	mov 	eax, [ScreenXTotal]
-	mov 	ecx, 29
-	mul 	ecx
-	add 	edi, eax
-	call 	ImageDraw ; Show Image
+	;mov 	esi, DWORD [MEMORY_BMP]   ; Image Buffer
+	;mov 	edi, DWORD [MSPACE_BUF]   ; Double_Buffer
+	;call 	BMPImageLoad ; Create Image
+	;mov 	esi, DWORD [MSPACE_BUF]
+	;mov 	edi, DWORD [MVIDEO_BUF]
+	;add 	edi, 13 * 4
+	;mov 	eax, [ScreenXTotal]
+	;mov 	ecx, 29
+	;mul 	ecx
+	;add 	edi, eax
+	;call 	ImageDraw ; Show Image
 	
 ; 	Second Window Image
-	mov 	eax, 0x0A
-	mov 	edi, DWORD[MEMORY_BMP]
-	mov 	esi, GoogleImg
-	int 	0xCE
+	;mov 	eax, 0x0A
+	;mov 	edi, DWORD[MEMORY_BMP]
+	;mov 	esi, GoogleImg
+	;int 	0xCE
 	mov 	eax, 1
 	mov 	ebx, [Win2]
 	int 	0xCD
-	mov 	esi, DWORD [MEMORY_BMP]   ; Image Buffer
-	mov 	edi, DWORD [MSPACE_BUF]   ; Double_Buffer
-	call 	BMPImageLoad
-	mov 	esi, DWORD [MSPACE_BUF]
-	mov 	edi, DWORD [MVIDEO_BUF]
-	add 	edi, 0x15D * 4
-	mov 	eax, [ScreenXTotal]
-	mov 	ecx, 29
-	mul 	ecx
-	add 	edi, eax
-	call 	ImageDraw
+	;mov 	esi, DWORD [MEMORY_BMP]   ; Image Buffer
+	;mov 	edi, DWORD [MSPACE_BUF]   ; Double_Buffer
+	;call 	BMPImageLoad
+	;mov 	esi, DWORD [MSPACE_BUF]
+	;mov 	edi, DWORD [MVIDEO_BUF]
+	;add 	edi, 0x15D * 4
+	;mov 	eax, [ScreenXTotal]
+	;mov 	ecx, 29
+	;mul 	ecx
+	;add 	edi, eax
+	;call 	ImageDraw
 	
 ReturnF:
 	retf

@@ -5,8 +5,7 @@
 format MZ
 entry code_seg:_start 	; entry point
 stack 256
-
-
+	
 segment data_seg
 
 	ErrorMsgs 	dw 0xFFFF
@@ -31,12 +30,17 @@ segment data_seg
 	buffer db 10,?, 10 dup(' ')
 	
 segment code_seg
-
+print_buffer:
+	mov 	dx, buffer + 2
+	mov 	ah, 9
+	int 	21h
+ret
+	
 _start:
-	mov ax, data_seg
-	mov ds, ax
-	mov es, ax
-
+	mov 	ax, data_seg
+	mov 	ds, ax
+	mov 	es, ax
+	
 	mov		ah, 09h
 	mov 	dx, msg
 	int 	0x21
@@ -84,10 +88,12 @@ wait_key:
 	xor 	bx, bx
 	mov 	bl,	[buffer + 1]
 	mov 	byte[buffer + bx + 2], '$'
-	mov 	dx, buffer + 2
-	mov 	ah, 9
-	int 	21h
+	call 	print_buffer
+	;mov 	dx, buffer + 2
+	;mov 	ah, 9
+	;int 	21h
 	
 EXIT:
 	mov 	ax, 0x4C00
 	int 	0x21
+	

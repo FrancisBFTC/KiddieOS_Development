@@ -283,6 +283,7 @@ init_error:
 	int	21h
 	mov	dx,init_error_suffix
 	int	21h
+	add sp, 8
 	mov	ax,04CFFh
 	int	21h
 

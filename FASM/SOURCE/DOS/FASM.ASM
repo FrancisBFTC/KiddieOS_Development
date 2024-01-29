@@ -8,18 +8,45 @@
 	stack	8000h
 	entry	main:start
 
-include 'modes.inc'
+segment datas
+include '..\version.inc'
 
-segment main use16
+_logo db 'flat assembler  version ',VERSION_STRING,0Dh,0Ah,'$'
+_copyright db 'Copyright (c) 1999-2022, Tomasz Grysztar',0Dh,0Ah,'$'
+
+_usage db 0Dh,0Ah
+       db 'usage: fasm <source> [output]',0Dh,0Ah
+       db 'optional settings:',0Dh,0Ah
+       db ' -m <limit> set the limit in kilobytes for the available memory',0Dh,0Ah
+       db ' -p <limit> set the maximum allowed number of passes',0Dh,0Ah
+       db ' -d <name>=<value>  define symbolic variable',0Dh,0Ah
+       db ' -s <file>  dump symbolic information for debugging',0Dh,0Ah,'$'
+_memory_prefix db '  (',0
+_memory_suffix db ' kilobytes memory)',0Dh,0Ah,0
+_passes_suffix db ' passes, ',0
+_seconds_suffix db ' seconds, ',0
+_bytes_suffix db ' bytes.',0Dh,0Ah,0
+
+error_prefix db 'error: ',0
+error_suffix db '.'
+cr_lf db 0Dh,0Ah,0
+line_number_start db ' [',0
+line_data_start db ':',0Dh,0Ah,0
+preprocessed_instruction_prefix db 'processed: ',0
+
+segment main
 
 start:
-
+	mov 	ax, datas
+	mov 	ds, ax
+	mov 	es, ax
+	
 	mov	ax,ds
-	mov	dx,[2Ch]
-	push	cs cs
-	pop	ds es
+	;mov	dx,[2Ch]
+	;push	cs cs
+	;pop	ds es
 	mov	[psp_segment],ax
-	mov	[environment_segment],dx
+	mov	[environment_segment],ax
 
 	mov	dx,_logo
 	mov	ah,9
@@ -27,12 +54,14 @@ start:
 
 	cld
 
-	call	go32
+	;call	go32
 	use32
 
-	call	get_params
-	jc	information
+	;call	get_params
+	;jc	information
 
+	jmp information
+	
 	call	init_memory
 
 	mov	esi,_memory_prefix
@@ -102,13 +131,19 @@ finish:
 	mov	esi,_bytes_suffix
 	call	display_string
 	xor	al,al
-	jmp	exit_program
+	mov	ah,4Ch
+	int	21h
+	;jmp	exit_program
 
 information:
-	mov	esi,_usage
-	call	display_string
+	mov		dx,_usage
+	mov 	ah, 09h
+	int 	21h
+	;call	display_string
 	mov	al,1
-	jmp	exit_program
+	mov	ah,4Ch
+	int	21h
+	;jmp	exit_program
 
 get_params:
 	mov	[input_file],0
@@ -333,32 +368,8 @@ get_params:
 	clc
 	ret
 
-include '..\version.inc'
 
-_logo db 'flat assembler  version ',VERSION_STRING,24h
-_copyright db 'Copyright (c) 1999-2022, Tomasz Grysztar',0Dh,0Ah,0
-
-_usage db 0Dh,0Ah
-       db 'usage: fasm <source> [output]',0Dh,0Ah
-       db 'optional settings:',0Dh,0Ah
-       db ' -m <limit>         set the limit in kilobytes for the available memory',0Dh,0Ah
-       db ' -p <limit>         set the maximum allowed number of passes',0Dh,0Ah
-       db ' -d <name>=<value>  define symbolic variable',0Dh,0Ah
-       db ' -s <file>          dump symbolic information for debugging',0Dh,0Ah
-       db 0
-_memory_prefix db '  (',0
-_memory_suffix db ' kilobytes memory)',0Dh,0Ah,0
-_passes_suffix db ' passes, ',0
-_seconds_suffix db ' seconds, ',0
-_bytes_suffix db ' bytes.',0Dh,0Ah,0
-
-error_prefix db 'error: ',0
-error_suffix db '.'
-cr_lf db 0Dh,0Ah,0
-line_number_start db ' [',0
-line_data_start db ':',0Dh,0Ah,0
-preprocessed_instruction_prefix db 'processed: ',0
-
+include 'modes.inc'
 include 'dpmi.inc'
 
 align 16

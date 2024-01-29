@@ -122,6 +122,7 @@ START_PROG:
 %DEFINE HEX.ToString(ARG1, ARG2)  STR.Get_Hexa_32 ARG1, ARG2
 %DEFINE Get_Dec32(ARG1, ARG2)     STR.Get_Dec_32 ARG1, ARG2
 %DEFINE INT.ToString(ARG1, ARG2)  STR.Get_Dec_32 ARG1, ARG2
+%DEFINE FLOAT.ToString(ARG1, ARG2, ARG3, ARG4)  STR.Get_Float_32 ARG1, ARG2, ARG3, ARG4
 %DEFINE Malloc(ARG1, ARG2)        VEC.Malloc_Func ARG1, ARG2
 %DEFINE Free(ARG1)                VEC.Free_Func ARG1
 
@@ -202,6 +203,18 @@ START_PROG:
 	push 	DWORD %2
 	push 	DWORD %1
 	call 	__SYS_GET_DEC_32
+%ENDMACRO
+
+%MACRO STR.Get_Float_32 4
+	push 	DWORD %4
+	push 	DWORD %3
+	push 	DWORD %2
+	push 	DWORD %1
+	call 	__SYS_FLOAT_DEC_32
+	pop 	eax
+	pop 	eax
+	pop 	eax
+	pop 	eax
 %ENDMACRO
 
 %MACRO VEC.Malloc_Func 2
@@ -292,6 +305,47 @@ __SYS_GET_DEC_32:
 	
 	pop ebp
 ret
+
+; Fill a buffer with a 32-bit float value
+; void SYS_GET_DEC_32(int number, char* String, int count)
+; number  = 8
+; String  = 12
+; ebp
+__SYS_FLOAT_DEC_32:
+	push 	ebp
+    mov 	ebp,esp
+	
+	mov 	ecx, [ebp + 20]
+	dec 	ecx
+	fld 	qword [fconst]
+	fst 	qword [inte]
+loop_mul:
+	fmul 	qword [inte]
+	loop 	loop_mul
+	
+	fst 	qword [inte]
+	
+	mov 	eax, [ebp + 8]
+	mov 	[fvalue], eax
+	mov 	eax, [ebp + 12]
+	mov 	[fvalue+4], eax
+	
+	fld 	qword [fvalue]
+	fmul 	qword [inte]
+	fistp 	qword [fresul]
+	
+	mov 	eax, 0x21
+	mov 	ebx, [fresul]
+	mov 	edi, DWORD [ebp + 16]
+	mov 	edx, DWORD [ebp + 20]
+	int 	0xCE
+	
+	pop ebp
+ret
+inte: 	dq 0
+fvalue: dq 0
+fresul: dq 0
+fconst: dq 10.0
 
 ; Allocation of Memory Buffer
 ; void* SYS_MALLOC_FUNC(int size, int sizeof)

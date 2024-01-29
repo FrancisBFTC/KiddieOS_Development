@@ -31,8 +31,30 @@ OS_VECTOR_JMP:
 	jmp Parse_Dec_Value		  ; 0045h
 	jmp END                   ; 0048h
 	
+; --------------------------------------------------
+; Saltos para serem chamados por CALL FAR
+; Por programas em outros segmentos, Ex.: DOS
+	jmp syscall.prog			; 004Bh
+	jmp winmng.video			; 004Eh
+	jmp shell.cmd				; 0051h
+	;jmp win.prog 				; 0054h
+	
+syscall.prog: 	call SYSCMNG
+				retf
+winmng.video:	call WINMNG+3
+				retf
+shell.cmd:		call SHELL16+3
+				retf
+;win.prog:		call WINMNG+6
+;				retf
+; --------------------------------------------------
+
 ; _____________________________________________
 ; Directives and Inclusions ___________________
+
+Vector:
+	dw 	NameSystem
+SIZE EQU ($ - Vector) / 2
 
 %INCLUDE "Hardware/monitor.lib"
 %INCLUDE "Hardware/disk.lib"
@@ -41,13 +63,8 @@ OS_VECTOR_JMP:
 %INCLUDE "Hardware/win16.lib"
 %INCLUDE "Hardware/speaker.lib"
 
-Vector:
-	dw 	NameSystem
-	dw 	Preparing
-SIZE EQU ($ - Vector) / 2
 	
-NameSystem db "Bem-vindo ao KiddieOS",0
-Preparing  db "Preparando o sistema...",0
+NameSystem db "KiddieOS",0
 
 VetorHexa  db "0123456789ABCDEF",0
 VetorCharsLower db "abcdefghijklmnopqrstuvwxyz",0
@@ -65,6 +82,10 @@ PressKey   db "Press any key to continue...",0
 %DEFINE DRIVERS_OFFSET  	  KEYBOARD
 %DEFINE FAT16.LoadAllFiles    FAT16
 %DEFINE FAT16.LoadFatVbrData  FAT16+15
+%DEFINE FAT16.OpenThisFile 	  FAT16+24
+%DEFINE FAT16.LoadFile 		  FAT16+27
+%DEFINE FAT16.SetSeek 		  FAT16+30
+%DEFINE FAT16.CloseFile 	  FAT16+33
 %DEFINE MEMX86.Detect_Low_Memory 	MEMX86+0
 %DEFINE KEYBOARD.Initialize 		KEYBOARD+0
 %DEFINE KEYBOARD.Enable_Scancode 	KEYBOARD+3
@@ -89,10 +110,13 @@ SHELL.BufferAux 	EQU 	(SHELL16+32)
 SHELL.BufferAux2 	EQU 	(SHELL16+152)
 SHELL.BufferArgs 	EQU 	(SHELL16+272)
 SHELL.BufferKeys 	EQU 	(SHELL16+392)
+SHELL.CursorRaw 	EQU 	(SHELL16+512)
+SHELL.CursorCol 	EQU 	(SHELL16+513)
 
-
-FAT16.DirSegments 	EQU		(FAT16+29)
-FAT16.OpenThisFile 	EQU		(FAT16+24)
+FAT16.FileSegments    EQU   (FAT16+36)
+FAT16.DirSegments 	  EQU   (FAT16+38)
+FAT16.LoadingDir      EQU   (FAT16+40)
+			  
 
 ; _____________________________________________
 ; Starting the System _________________________
@@ -141,23 +165,21 @@ OSMain:
 	mov 	word[FAT16.DirSegments], 0x0200	; era 0x07C0
 	
 	call 	FAT16.LoadAllFiles
-	call 	KEYBOARD.Initialize
+	;call 	KEYBOARD.Initialize
 	call 	MEMX86.Detect_Low_Memory
 	call 	PCI.Init_PCI
 	clc
 	
-	mov 	si, Command
-	call 	Shell.Execute
-	;mov 	si, Command1
+	;mov 	si, permission
 	;call 	Shell.Execute
-	;mov 	si, Command2
-	;call 	Shell.Execute
-	jmp 	Load_Menu
-Shell.Execute:
-	jmp 	SHELL16+3
-	Command db "cd kiddieos\programs",0
-	;Command1 db "k:\kiddieos\programs\procx86.kxe",0
-	;Command2 db "..\programs\data.kxe",0
+	
+	;jmp 	Load_Menu
+	
+;Shell.Execute: jmp 	SHELL16+3
+;	nop
+;	nop
+;	permission db "chmod u=mdxrw kiddieos\system16\winmng32.kxe",0
+
 	
 Load_Menu:
 	mov 	si, PressKey
@@ -307,10 +329,14 @@ Kernel_Menu:
 		
 		call 	WINMNG
 		
-		xor 	ax, ax
-		int 	16h
+		mov 	ah, 00h
+		mov 	al, 03h
+		int 	10h
 		
-		jmp 	OSMain
+		mov 	byte[SHELL.CursorRaw], 0
+		mov 	byte[SHELL.CursorCol], 0
+		jmp 	Kernel_Menu
+		;jmp 	OSMain
 		
 		
 	SHELL16_INIT:
@@ -915,11 +941,11 @@ DOS_SERVICES:
 	dw dos_read_string 			; Função 10 (0x0A)
 	times 0x32 dw 0x0000		; 0x0A - 0x3C (Reserved)
 	dw dos_open_file			; Função 0x3D
-	dw 0x0000					; Função 0x3E
-	dw 0x0000					; Função 0x3F
+	dw dos_close_file			; Função 0x3E
+	dw dos_read_file			; Função 0x3F
 	dw 0x0000					; Função 0x40
 	dw 0x0000					; Função 0x41
-	dw 0x0000					; Função 0x42
+	dw dos_seek_file			; Função 0x42
 	dw 0x0000					; Função 0x43
 	dw 0x0000
 	dw 0x0000
@@ -1217,6 +1243,85 @@ return_dos_open:
 	pop 	bp
 	iret
 handler dw 0x0000
+
+dos_read_file:
+	pop 	ax
+	pop 	bx
+	
+	mov 	ax, es
+	mov 	[FAT16.DirSegments], ax
+	mov 	ax, 0x6800
+	mov 	[FAT16.FileSegments], ax
+	mov 	byte[FAT16.LoadingDir], 0
+	
+	push 	es
+	call 	FAT16.LoadFile
+	pop 	es
+	jc 		read_error
+	
+	pop 	ds
+	push 	bp
+	mov 	bp, sp
+	and	 	WORD [bp + 6], 0xFFFE
+	pop 	bp
+	iret
+	
+read_error:
+	pop 	ds
+	push 	bp
+	mov 	bp, sp
+	or	 	WORD [bp + 6], 1
+	pop 	bp
+	iret
+	
+dos_seek_file:
+	pop 	ax
+	pop 	bx
+	
+	call 	FAT16.SetSeek
+	jc 		seek_error
+	
+	pop 	ds
+	push 	bp
+	mov 	bp, sp
+	and	 	WORD [bp + 6], 0xFFFE
+	pop 	bp
+	iret
+	
+seek_error:
+	pop 	ds
+	push 	bp
+	mov 	bp, sp
+	or	 	WORD [bp + 6], 1
+	pop 	bp
+	iret
+	
+dos_close_file:
+	pop 	ax
+	pop 	bx
+	
+	mov 	WORD [FAT16.FileSegments], 0x6800
+	call 	FAT16.CloseFile
+	jc 		close_error
+	
+	pop 	ds
+	push 	bp
+	mov 	bp, sp
+	and	 	WORD [bp + 6], 0xFFFE
+	pop 	bp
+	iret
+	
+close_error:
+	pop 	ds
+	push 	bp
+	mov 	bp, sp
+	or	 	WORD [bp + 6], 1
+	pop 	bp
+	iret
+	
+	
+	
+	
 
 dos_exit_prog:
 	pop 	ax

@@ -57,15 +57,15 @@ VESA_Info:		                                          ;
     .Signature		    db "VBE2"                         ;
     .Version		    dw	0200h                         ;
     .OEMStringPtr		dd	1                             ;
-    .Capabilities 		TIMES 4 db 0                      ;
+    .Capabilities: 		times 4 db 0                      ;
     .VideoModePtr		dd	1                             ;
     .TotalMemory		dw	1                             ;
     .OEMSoftwareRev 	dw	1                             ;
     .OEMVendorNamePtr	dd	1                             ;
     .OEMProductNamePtr	dd	1                             ;
     .OEMProductRevPtr	dd	1                             ;
-    .Reserved  			TIMES 222 db 0                    ;
-    .OEMData   			TIMES 256 db 0                    ;
+    .Reserved:  		times 222 db 0                    ;
+    .OEMData:   		times 256 db 0                    ;
 ; ========================================================;
 
 ;=========================================================;
@@ -126,7 +126,7 @@ Mode_Info:	                                              ;
     .LinRsvdMaskSize	  db	1                         ;
     .LinRsvdFieldPos	  db	1                         ;
     .MaxPixelClock		  dd	1                         ;
-	.Reserved1			  TIMES 190 db 0	              ;
+	.Reserved1:			  times 190 db 0	              ;
 ; ========================================================;
         
 ; END DATA STRUCTURES **************************************************
@@ -194,15 +194,22 @@ Mode_Info:	                                              ;
 ; Final da lista especial
 ; ====================================================================
 
-
+SHELL.PrintData 	 EQU 	(SHELL16+9)
 
 ; Inicializa um modo especial (32bpp)
 Set_Video_Mode:
     pusha
+	push 	ds
+	push 	es
+	
+	mov 	ax, 0x3000
+	mov 	ds, ax
 	
 	call 	Search_Mode
 	call 	VESA.GetInfo
 	
+	pop 	es
+	pop 	ds
 	popa	
 ret
 
@@ -318,26 +325,36 @@ ret
 
 ; Pegar Bits Por Pixel.	
 VESA.GetBPP:
+	xor eax, eax
+	mov es, ax
     mov al, byte [es:Mode_Info.BitsPerPixel]
 ret
 
 ; Pegar largura da tela em pixels.		
 VESA.GetWidth:
+	xor eax, eax
+	mov es, ax
     mov ax, word [es:Mode_Info.XResolution] 
 ret
 	
 ; Pegar altura da tela em pixels.	
 VESA.GetHeight:
+	xor eax, eax
+	mov es, ax
     mov ax, word [es:Mode_Info.YResolution]
 ret
 
 ; Pegar o Linear Frame Buffer.	
 VESA.GetLFB:
+	xor eax, eax
+	mov es, ax
     mov eax, dword [es:Mode_Info.PhysBasePtr]
 ret
 
 ; Pegar o modo gráfico de vídeo.	
 VESA.GetMode:
+	xor eax, eax
+	mov es, ax
     mov ax, word[GUI.Video_Mode]
 ret
 
@@ -358,51 +375,76 @@ ret
 
 ; Mostrar as informações gráficas atuais na tela
 ShowGraphicConfig:
-	mov 	si, LoadingVesa
-	call 	Print_String
-	mov 	si, ResX
-	call 	Print_String
+	push 	es
+	mov 	ax, ds
+	mov 	es, ax
+	push 	es
+	
+	mov 	al, 0
+	mov 	di, LoadingVesa
+	mov 	cx, size.LoadingVesa
+	call 	SHELL.PrintData
+	
+	mov 	al, 0
+	mov 	di, ResX
+	mov 	cx, size.ResX
+	call 	SHELL.PrintData
+	
+	
 	call 	VESA.GetWidth
-	call 	Print_Hexa_Value16
-	mov 	si, ResY
-	call 	Print_String
+	call 	Print_Dec_Value32
+	
+	pop 	es
+	push 	es
+	mov 	al, 0
+	mov 	di, ResY
+	mov 	cx, size.ResY
+	call 	SHELL.PrintData
+	
 	call 	VESA.GetHeight
-	call 	Print_Hexa_Value16
-	mov 	si, Bpp
-	call 	Print_String
+	call 	Print_Dec_Value32
+	
+	pop 	es
+	push 	es
+	mov 	al, 0
+	mov 	di, Bpp
+	mov 	cx, size.Bpp
+	call 	SHELL.PrintData
+	
 	call 	VESA.GetBPP
-	call 	Print_Hexa_Value16
-	mov 	si, ModeN
-	call 	Print_String
+	call 	Print_Dec_Value32
+	
+	pop 	es
+	push 	es
+	mov 	al, 0
+	mov 	di, ModeN
+	mov 	cx, size.ModeN
+	call 	SHELL.PrintData
+	
 	call 	VESA.GetMode
-	call 	Print_Hexa_Value16
-	mov 	si, LFBA
-	call 	Print_String
+	call 	Print_Dec_Value32
+	
+	pop 	es
+	push 	es
+	mov 	al, 0
+	mov 	di, LFBA
+	mov 	cx, size.LFBA
+	call 	SHELL.PrintData
+	
 	call 	VESA.GetLFB
-	push 	eax
-	shr 	eax, 16
-	call 	Print_Hexa_Value16
-	pop 	eax
-	call 	Print_Hexa_Value16
-	mov 	si, Press
-	call 	Print_String
+	call 	Print_Hexa_Value32
+	
+	pop 	es
+	push 	es
+	mov 	al, 0
+	mov 	di, Press
+	mov 	cx, size.Press
+	call 	SHELL.PrintData
+	
+	pop 	es
+	pop 	es
 ret
 
-
-;NumberVersion:     
-;Prepara a string para apresentar o número da versão.
-;	mov ax, word [di+4]
-;   mov dx, ax
-;   add ax, word 48*256+48   
-;	mov word [Version], ax
-; Mostra número da versão.
-;	pusha
-;   mov si, msg_ver_vesa
-;   call Print_String
-;	mov ax, word[Version]
-;   call Print_Hexa_Value16
-;   popa
-;ret
 
 ; Video modes:
 ; ============
@@ -426,20 +468,27 @@ ret
 
 VESAVersion    dw 0x0000
 BPP_Required   db 32   ; BPP Desejado
-ReX_Required   dw 640  ; Resolução X Desejada
-ReY_Required   dw 480  ; Resolução Y Desejada
+ReX_Required   dw 320 ;640  ; Resolução X Desejada
+ReY_Required   dw 200 ;480  ; Resolução Y Desejada
 
 No_Machine: 	db 0x0d,0x0a," Error: No Machine",0		
 No_Vesa_Msg:    db 0x0d,0x0a," Error: No VESA Here!",0
 Mode_No_Found:  db 0x0d,0x0a," Error: Resolution Mode Not Found!",0
 Vesa_Ver_Msg:   db 0x0d,0x0a," Vesa Version : ",0
 
-LoadingVesa: db "Loading VESA Driver...",0
-ResX:        db 0x0d,0x0a," ResolutionX  : 0x",0
-ResY:        db 0x0d,0x0a," ResolutionY  : 0x",0
-Bpp:         db 0x0d,0x0a," BitsPerPixel : 0x",0
-ModeN:       db 0x0d,0x0a," Mode Number  : 0x",0
-LFBA         db 0x0d,0x0a," LFB Address  : 0x",0
-Press:       db 0x0d,0x0a," Press Enter To Continue...",0
+LoadingVesa: db 0x0d,0x0a,"Loading VESA Driver..."
+size.LoadingVesa EQU ($ - LoadingVesa)
+ResX:        db 0x0d,0x0a," ResolutionX  : "
+size.ResX EQU ($ - ResX)
+ResY:        db 0x0d,0x0a," ResolutionY  : "
+size.ResY EQU ($ - ResY)
+Bpp:         db 0x0d,0x0a," BitsPerPixel : "
+size.Bpp EQU ($ - Bpp)
+ModeN:       db 0x0d,0x0a," Mode Number  : "
+size.ModeN EQU ($ - ModeN)
+LFBA         db 0x0d,0x0a," LFB Address  : 0x"
+size.LFBA EQU ($ - LFBA)
+Press:       db 0x0d,0x0a," Press Enter To Continue..."
+size.Press EQU ($ - Press)
 
 ; ********************************************************************

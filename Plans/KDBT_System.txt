@@ -1,0 +1,19 @@
+KDBT System = KiddieOS Dynamic Blocks Table
+
+04000002 FFFF 00640005 FFFF 08000008 FFFF 0000 0000 0000 0000 0000 00000000 0000 0000 0000 0000 0000
+
+file1.txt 2048 bytes
+file2.txt 200 bytes
+file3.txt 4096 bytes
+
+malloc -> file1.txt  -> BLOCK: 1024 (2048 / 2)  -> 400h
+malloc -> file2.txt  -> BLOCK: 100  (200 / 2)   -> 64h
+malloc -> file3.txt  -> BLOCK: 2.048 (4096 / 2) -> 800h
+
+file1.txt -> 0000 (block number)
+file2.txt -> 0003 (block number)
+file3.txt -> 0006 (block number)
+
+0000 = 5000:0000 = 0x50000 (+0000h)
+0003 = 5000:0800 = 0x50800 (+0800h)
+0004 = 5000:08C8 = 0x508C8 (+00C8h)

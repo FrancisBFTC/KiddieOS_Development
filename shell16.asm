@@ -77,6 +77,9 @@ BufferAux2 		   times 120 db 0	;SHELL16+152
 BufferArgs         times 120 db 0	;SHELL16+272
 BufferKeys 	       times 120 db 0	;SHELL16+392
 
+CursorRaw          db 0	;5 			SHELL16+512
+CursorCol          db 0	;12			SHELL16+513
+
 DOS_EXTRA_BYTES 	dw 0x0000
 
 %DEFINE FAT16.LoadDirectory (FAT16+3)
@@ -86,10 +89,14 @@ DOS_EXTRA_BYTES 	dw 0x0000
 %DEFINE FAT16.WriteThisEntry (FAT16+18)
 %DEFINE FAT16.DeleteThisFile (FAT16+21)
 %DEFINE FAT16.OpenThisFile 	 (FAT16+24)
+%DEFINE FAT16.LoadFile 		 (FAT16+27)
+%DEFINE FAT16.SetSeek 		 (FAT16+30)
+%DEFINE FAT16.CloseFile 	 (FAT16+33)
 
-FAT16.FileSegments    EQU   (FAT16+27)
-FAT16.DirSegments 	  EQU   (FAT16+29)
-FAT16.LoadingDir      EQU   (FAT16+31)
+
+FAT16.FileSegments    EQU   (FAT16+36)
+FAT16.DirSegments 	  EQU   (FAT16+38)
+FAT16.LoadingDir      EQU   (FAT16+40)
 
 %DEFINE A3_TONE  1355
 %DEFINE F3_TONE  1715
@@ -110,12 +117,11 @@ BufferWrite 	   times 100 db 0
 FolderAccess:
 	db '\'
 	times 150 db 0
+AddressArgs 	times 20 dd 0
 CounterAccess      dw 0x0001
 CmdCounter 	       db 0
 ExtCounter         db 0
 Quant              db 0
-CursorRaw          db 5
-CursorCol          db 12
 LimitCursorBeginX  db 0
 LimitCursorBeginY  db 0
 LimitCursorFinalX  db 68
@@ -135,7 +141,7 @@ SavePositionLeft  dw 0x0000
 SavePositionRight dw 0x0000
 Background_Color  db 0010_1111b		;0001_1111b
 Borderpanel_Color db 0010_1111b		;0010_1111b
-Backeditor_Color  db 0111_0000b 	;0000_1111b
+Backeditor_Color  db 0000_0010b 	;0000_1111b
 Backpanel_Color   db 0000_1111b		;0111_0000b
 
 PointerBuffer     dd 0x00000000
@@ -161,7 +167,10 @@ EDDParameters     dd 0x00000000
 ; Create_Panel Routine :
 ; 		CH -> First Line ; CL -> First Column ; DH -> Last Line ; DL -> Last Column
 Os_Shell_Setup:
-	
+	cmp 	ax, 0x4C02
+	jz 		Back_Blue_Screen
+	mov 	byte[CursorRaw], 5
+	mov 	byte[CursorCol], 12
 	Back_Blue_Screen:
 		mov     bh, [Background_Color]     
 		mov     cx, 0x0000         ; CH = 0, CL = 0     
@@ -444,16 +453,22 @@ RetConv:
 ret
 	
 Os_Inter_Shell:
-	mov 	byte[Out_Of_Shell], 1
-	call 	AssignDriveLetter
+	push 	es
 	push 	ds
-	pop 	es
+	mov 	ax, 0x3000
+	mov 	es, ax
+	mov 	byte[es:Out_Of_Shell], 1
+	call 	AssignDriveLetter
+	;push 	ds
+	;pop 	es
 	mov 	di, BufferArgs
 	mov 	cx, 120
 	call 	Zero_Buffer
 	call 	Copy_Buffers
 	push 	di
 	mov 	si, Vector.CMD_Names
+	mov 	ax, es
+	mov 	ds, ax
 	jmp 	Os_Inter_Shell1
 Shell_Interpreter:
 	;add 	byte[CursorRaw], 1
@@ -526,11 +541,15 @@ Shell_Interpreter:
 		call 	Exec.SearchFileToExec     ; Tentar encontrar programa operável
 		cmp 	byte[Out_Of_Shell], 1
 		je 		Ret_OutOfShell0
+		cmp 	ax, 0x4C02
+		jz 		Os_Shell_Setup
 		jmp 	Cursor_Commands
 	Ret_OutOfShell0:
 		call 	Cursor.CheckToRollEditor
 	Ret_OutOfShell:
 		mov 	byte[Out_Of_Shell], 0
+		pop 	ds
+		pop 	es
 	ret
 			
 		
@@ -807,7 +826,8 @@ Zero_Buffer:
 		loop 	Zero
 	popa
 ret
-	
+
+
 PrintData:
 	pusha
 	mov 	[ascii_dolar], al
@@ -847,7 +867,7 @@ DisplayHex:
 JumpDisplayHex:
 	call 	Get_Cursor
 	cmp 	dl, 67
-	ja 		IsEnter
+	ja 		IsEnter2
 	inc 	di
 	jmp 	Continue
 	IsEnter:
@@ -1087,8 +1107,8 @@ CountExec db 0
 
 ; MZ EXECUTABLE HEADER OFFSETS
 SIGNATURE		EQU 0x00
-EXTRA_BYTES		EQU 0x02
-PAGES			EQU 0x04
+EXTRA_BYTES		EQU 0x02		; Byte baixo da quantidade de bytes do programa
+PAGES			EQU 0x04		; Byte alto da quantidade de bytes do programa
 RELOC_ITEMS		EQU 0x06
 HEADER_SIZE		EQU 0x08
 MIN_ALLOC 		EQU 0x0A
@@ -1101,6 +1121,8 @@ INITIAL_CS		EQU 0x16
 RELOC_TABLE 	EQU 0x18
 OVERLAY			EQU 0x1A
 OVERLAY_INF 	EQU 0x1C
+
+SIZE_DATA_PROG 	dw 0x0000
 
 Exec:
 
@@ -1244,6 +1266,8 @@ Exec:
 	; do programa MZ em modo real
 	
 	Detect_MZ:
+		mov 	[SIZE_DATA_PROG], dx
+		
 		mov 	ax, 0x5000		; 0x5000
 		mov 	es, ax
 		
@@ -1257,8 +1281,34 @@ Exec:
 		call 	Restore_Dir
 		; -------------------------------
 		
+		call 	Count_Ammount_Args		; RETURN: ECX, EDI
+		
+		push 	ds
+		pop 	es
+		push 	ecx
+		push 	edi
+		
+		call 	Transfer_Args			; ENTRY: ESI
+		
+		pop 	esi
+		pop 	ecx
+		add 	esi, 0x30000
+		
+		; Carrega dados de 5000 para 4000 para programas DOS
+		; 5000 -> Endereço para programas 32-bit
+		; 4000 -> Endereço para programas 16-bit
+		pusha
+		push 	ds
+		mov 	cx, [SIZE_DATA_PROG]
 		mov 	ax, 0x5000
+		mov 	ds, ax
+		xor 	si, si
+		mov 	ax, 0x4000
 		mov 	es, ax
+		xor 	di, di
+		rep 	movsb
+		pop 	ds
+		popa
 		
 		call 	Exec_DOS
 		jmp 	RetSFTE
@@ -1286,6 +1336,7 @@ Exec:
 		mov 	ax, word[es:0x0 + EXTRA_BYTES]
 		mov 	[DOS_EXTRA_BYTES], ax
 		
+		push 	ecx
 		mov 	bx, word[es:0x0 + RELOC_TABLE]		; Valor Absoluto da tabela de realocação
 		mov 	cx, WORD [es:0x0 + RELOC_ITEMS]		; Quantidade de entradas de realocação
 		cmp 	cx, 0x0000
@@ -1307,30 +1358,40 @@ Exec:
 		pop 	di
 		
 	no_realloc_table:
+		pop 	ecx
 		mov 	ax, 0x3000
 		mov 	ds, ax
 		
 		push 	ds
-		push 	word 0x5000
+		push 	esi			; EBP + 12
+		push 	ecx			; EBP + 8
+		
+		mov 	ax, [DOS_HEADER_BYTES]
+		shr 	ax, 4
+		mov 	bx, es
+		add 	ax, bx
+		push 	ax		; ENDEREÇO 0x5002
 		mov 	bx, word[es:0x0 + INITIAL_CS]
 		shl 	bx, 4
-		add 	bx, [DOS_HEADER_BYTES]
-		push	bx
+		add 	bx, word[es:0x0 + INITIAL_IP]
+		push	bx		; ENDEREÇO (CS << 4 + IP)
 		mov 	bp, sp
 		
 		mov 	ax, es
 		mov 	ds, ax
 		
-		call 	WORD FAR[bp]
+		call 	WORD FAR[bp]		; CHAMA 0x5002:(CS << 4 + IP)
 		
-		add 	sp, 4
+		add 	sp, 12 		; 4 + 4 + 4 (CS:IP + ESI + ECX on STACK)
 		pop 	ds
 		
 	clear_program:
+		push 	ax
 		xor 	di, di
-		mov 	cx, [DOS_EXTRA_BYTES]
+		mov 	cx, [SIZE_DATA_PROG]
 		xor 	ax, ax
 		rep 	stosb
+		pop 	ax
 		
 		pop 	ebp
 		mov 	sp, bp
@@ -1352,79 +1413,20 @@ Exec:
 		call 	Restore_Dir
 		; -------------------------------
 		
-		;cmp 	byte[Out_Of_Shell], 1
-		;je 		RetentionSI
-		xor 	esi, esi
-		;mov 	si, BufferArgs
-		mov 	si, di  	; Recupera arquivo do BufferArgs
-	RetentionSI:
-	    mov 	ecx, 1
-		push 	si
-	CheckCountArgs:
-		lodsb
-		cmp 	al, 0
-		je 		CountSuccess
-		cmp 	al, 0x20
-		jne 	CheckCountArgs
-	SkipSpace:
-		lodsb
-		cmp 	al, 0
-		je 		CountSuccess
-		cmp 	al, 0x20
-		je 		SkipSpace
-		inc 	ecx
-		dec 	si
-		jmp 	CheckCountArgs
-
-	CountSuccess:
-		pop 	si
-		mov 	ebx, 4
-		call 	Calloc
-		mov 	dword[PointerBuffer], eax
-		mov 	edi, dword[PointerBuffer]
+		call 	Count_Ammount_Args		; RETURN: ECX, EDI
+		
 		push 	ds
 		pop 	es
 		push 	ecx
 		push 	edi
 		
-	TransferArgs:
-		mov 	eax, esi
-		add 	eax, 0x30000	; 0xC000
-		stosd
-	OffsetToSpace:
-		lodsb
-		cmp 	al, 0
-		je 		ReplaceSpaceToZero
-		cmp 	al, 0x20
-		jne 	OffsetToSpace
-	OffsetToExitSpace:
-		lodsb
-		cmp 	al, 0
-		je 		ReplaceSpaceToZero
-		cmp 	al, 0x20
-		je 		OffsetToExitSpace
-		dec 	esi
-		jmp 	TransferArgs
-	
-	ReplaceSpaceToZero:
-		mov 	si, BufferArgs
-		ReplaceSpace:
-			lodsb
-			cmp 	al, 0
-			je 		Load_Program
-			cmp 	al, 0x20
-			jne 	ReplaceSpace
-			dec 	si
-			mov 	byte[si], 0
-			inc 	si
-			jmp 	ReplaceSpace
+		call 	Transfer_Args			; ENTRY: ESI
 			
-	
 	; ----------------------------------------------------------	
 
 	Load_Program:
 		pop 	esi
-		add 	esi, 0x30000		; 0xC000
+		add 	esi, 0x30000
 		pop 	ecx
 		
 		
@@ -1493,6 +1495,75 @@ RetSFTE:
 		
 	push 	ds
 	pop 	es
+	ret
+	
+Count_Ammount_Args:
+	int3
+	xor 	esi, esi
+	mov 	si, di  	; Recupera arquivo do BufferArgs
+	RetentionSI:
+	    mov 	ecx, 1
+		push 	si
+	CheckCountArgs:
+		lodsb
+		cmp 	al, 0
+		je 		CountSuccess
+		cmp 	al, 0x20
+		jne 	CheckCountArgs
+	SkipSpace:
+		lodsb
+		cmp 	al, 0
+		je 		CountSuccess
+		cmp 	al, 0x20
+		je 		SkipSpace
+		inc 	ecx
+		dec 	si
+		jmp 	CheckCountArgs
+
+	CountSuccess:
+		pop 	si
+		mov 	eax, AddressArgs
+		mov 	edi, eax
+		;mov 	ebx, 4
+		;call 	Calloc
+		;mov 	dword[PointerBuffer], eax
+		;mov 	edi, dword[PointerBuffer]
+Ret.CountAmountArgs:
+	ret
+	
+Transfer_Args:
+		int3
+		mov 	eax, esi
+		add 	eax, 0x30000	; 0xC000
+		stosd
+	OffsetToSpace:
+		lodsb
+		cmp 	al, 0
+		je 		ReplaceSpaceToZero
+		cmp 	al, 0x20
+		jne 	OffsetToSpace
+	OffsetToExitSpace:
+		lodsb
+		cmp 	al, 0
+		je 		ReplaceSpaceToZero
+		cmp 	al, 0x20
+		je 		OffsetToExitSpace
+		dec 	esi
+		jmp 	Transfer_Args
+	
+	ReplaceSpaceToZero:
+		mov 	si, BufferArgs
+		ReplaceSpace:
+			lodsb
+			cmp 	al, 0
+			je 		Ret.Transfer_Args
+			cmp 	al, 0x20
+			jne 	ReplaceSpace
+			dec 	si
+			mov 	byte[si], 0
+			inc 	si
+			jmp 	ReplaceSpace
+Ret.Transfer_Args:
 	ret
 		
 
@@ -3494,10 +3565,11 @@ Cmd.OPEN:
 	
 	mov 	ax, [CD_SEGMENT]
 	mov 	dl, 00000010b
-	mov 	dh, 2
+	mov 	dh, 2			; Usuário padrão
 	call 	FAT16.OpenThisFile
 	jc 		ErrorOpen
 	
+	mov 	[HandlerF], ax
 	mov 	si, OpenSuccess
 	call 	Print_String
 	call 	Print_Hexa_Value16
@@ -3631,6 +3703,33 @@ Ret.DIVS:
 Numerator 	dd 0
 Denominator dd 0
 Decimals    dq 0
+
+Cmd.TEST:
+	mov 	ax, 0x3000
+	mov 	[FAT16.DirSegments], ax
+	mov 	ax, 0x6800
+	mov 	[FAT16.FileSegments], ax
+	mov 	byte[FAT16.LoadingDir], 0
+	
+	mov 	bx, [HandlerF]
+	mov 	dx, BufferFile
+	mov 	cx, SIZE_BUFFER
+	call 	FAT16.LoadFile
+	call 	Print_Hexa_Value16
+	push 	ds
+	pop 	es
+	mov 	bx, ax
+	mov 	byte[BufferFile + bx], '$'
+	mov 	al, 1
+	mov 	di, BufferFile
+	call 	PrintData
+	
+Ret.TEST:
+	ret
+	
+	BufferFile: times 101 db 0
+	SIZE_BUFFER EQU ($ - BufferFile) - 1
+	HandlerF 	dw 0x0000
 
 Reload_Directory:
 	pusha
@@ -3785,7 +3884,7 @@ ProgTerminate2: db " milliseconds with return value 0x"
 WriteCanceled 	db "canceled by the user.",0
 StringSave 	   db "This sequence save the data: ",0
 
-COUNT_COMMANDS    EQU 21  ; <- A cada comando alterar
+COUNT_COMMANDS    EQU 22  ; <- A cada comando alterar era 21
 
 Vector:
 
@@ -3793,11 +3892,13 @@ Vector:
 	dw Cmd.EXIT, Cmd.REBOOT, Cmd.START, Cmd.BPB, Cmd.LF, Cmd.CLEAN, Cmd.READ
 	dw Cmd.CD, Cmd.ASSIGN, Cmd.HELP,  Cmd.FAT, Cmd.HEX, Cmd.DISK, Cmd.WRITE
 	dw Cmd.DIVS, Cmd.REN, Cmd.ATTRIB, Cmd.DEL, Cmd.MKDIR, Cmd.OPEN, Cmd.CHMOD
+	dw Cmd.TEST
 	
 .CMD_Infos:
 	dw Inf.EXIT, Inf.REBOOT, Inf.START, Inf.BPB, Inf.LF, Inf.CLEAN, Inf.READ
     dw Inf.CD, Inf.ASSIGN, Inf.HELP, Inf.FAT, Inf.HEX, Inf.DISK, Inf.WRITE
 	dw Inf.DIVS, Inf.REN, Inf.ATTRIB, Inf.DEL, Inf.MKDIR, Inf.OPEN, Inf.CHMOD
+	dw Inf.TEST
 	
 .CMD_Addrs:
 	dw 	ADDR.EXIT
@@ -3821,6 +3922,7 @@ Vector:
 	dw 	ADDR.MKDIR
 	dw 	ADDR.OPEN
 	dw 	ADDR.CHMOD
+	dw 	ADDR.TEST
 	
 .CMD_Names:
 	ADDR.EXIT 	db "exit",0   
@@ -3844,6 +3946,7 @@ Vector:
 	ADDR.MKDIR 	db "mkdir",0
 	ADDR.OPEN 	db "open",0
 	ADDR.CHMOD 	db "chmod",0
+	ADDR.TEST 	db "test",0
 	
 Inf:
    
@@ -3889,6 +3992,8 @@ Inf:
 	db 1, "OPN command",0
 .CHMOD:
 	db 1, "CHM command",0
+.TEST:
+	db 1, "TST command",0
 	
 END_OF_FILE:
 	db 'EOF'

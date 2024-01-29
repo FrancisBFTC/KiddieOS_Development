@@ -11,16 +11,22 @@ jmp 	WriteThisFile 			; FAT16+12
 jmp 	LoadStartData			; FAT16+15
 jmp 	WriteThisEntry			; FAT16+18
 jmp 	DeleteThisFile 			; FAT16+21
-jmp 	OpenThisFile 			; FAT16+24 
+jmp 	OpenThisFile 			; FAT16+24
+jmp 	LoadFile 				; FAT16+27
+jmp 	SetSeekFile				; FAT16+30
+jmp 	CloseFile 				; FAT16+33
 
 
-FileSegments    dw 0x0000		; FAT16+27
-DirSegments     dw 0x0000		; FAT16+29
-LoadingDir      db 0			; FAT16+31
+FileSegments    dw 0x0000		; FAT16+36
+DirSegments     dw 0x0000		; FAT16+38
+LoadingDir      db 0			; FAT16+40
 	
 SYS.VM db 0						; FAT16+32
 FileVM  times 11 db 0			; FAT16+33
 ClusterFile     dw  0x0000		; FAT16+44
+
+kernel_call 	db 0
+file_pointer 	dd 0
 
 DAPSizeOfPacket db 10h
 DAPReserved     db 00h
@@ -52,6 +58,28 @@ ROOT_SEGMENT     EQU 0x0200	  ; era 0x07C0
 FAT_SEGMENT      EQU 0x1000   ; era 0x17C0
 KERNEL_SEGMENT   EQU 0x3000   ; era 0x0C00
 FILE_SEGMENT     EQU 0x6800   ; 
+
+; CAMPOS DA ENTRADA PARA ARQUIVOS ABERTOS
+; FILE_NAME    -> "AAAAAAAABBB" A = name, B = extension 	 (0x00)
+; ATTRIB       -> 0x00			(0x0B)
+; ACCESS_MODE  -> 00yy0xxxb  y = share mode, x = access mode (0x0C)
+; OPS_FLAGS    -> 00000000b		(0x0D)
+; SAVE_LOADED  -> 0x0000		(0x0E)
+; POINTER_FILE -> 0x00000000	(0x10)
+; PERMISSIONS  -> 0x0000		(0x14)
+; ID_FILE 	   -> 0x0000		(0x16)
+; CLUSTER_INI  -> 0x0000		(0x18)
+; CLUSTER_CHG  -> 0x0000		(0x1A)
+; SIZE_BYTES   -> 0x00000000	(0x1C)
+
+ACCESS_MODE		 EQU 0x000C
+OPS_FLAG 		 EQU 0x000D
+SAVE_LOADED  	 EQU 0x000E
+POINTER_FILE 	 EQU 0x0010
+CLUSTER_INI 	 EQU 0x0018
+CLUSTER_CHG 	 EQU 0x001A
+ID_FILE 		 EQU 0x0016
+SIZE_BYTES 		 EQU 0x001C
 
 DIRECTORY_SIZE   EQU 32
 EXT_LENGTH       EQU 3
@@ -110,6 +138,7 @@ LoadAllExtensionFiles:
     mov  	cx, MAX_ROOT_ENTRIES    ; Instrução LOOP decrementa 512 até 0
     mov  	di, 0x0000              ; Determinando o offset do root carregado
 	add 	di, NAME_LENGTH
+	mov 	byte[kernel_call], 1
 _Loop:
     push  	cx
     mov  	cx, EXT_LENGTH       ; 0x000B Eleven character name.
@@ -127,12 +156,14 @@ NoFounded:
 	cmp 	byte[FileFound], 0
 	je 		BOOT_FAILED
 	mov 	byte[FileFound], 0
+	mov 	byte[kernel_call], 0
 ret
 
 
 LoadThisFile:
 	push 	es
 	clc
+	mov 	byte[kernel_call], 1
 	mov 	es, ax
     mov  	cx, MAX_ROOT_ENTRIES    ; Instrução LOOP decrementa CX até 0
     mov  	di, 0x0000              ; Determinando o offset do root carregado
@@ -153,6 +184,7 @@ NoFoundedThis:
 	je 		RetLoadThis
 	xor 	ax, ax
     loop 	FLoop
+	mov 	byte[kernel_call], 0
 	mov 	al, byte[LoadingDir]
 	inc 	al
 	pop 	es
@@ -161,6 +193,7 @@ NoFoundedThis:
 	stc
 	ret
 ProcessErrorCode:
+	mov 	byte[kernel_call], 0
 	pop 	es
 	stc
 	ret
@@ -170,6 +203,7 @@ RetLoadThis:
 	je 		ProcessErrorCode
 	cmp 	byte[SHELL.ErrorFile], 1
 	je 		ProcessErrorCode
+	mov 	byte[kernel_call], 0
 	clc
 	pop 	es
 	ret
@@ -282,18 +316,20 @@ CheckPermission:
 	jz 		ERR.Denied 					; Se for, não tem permissão de leitura
 
 FindOpened:
+	xor 	ax, ax
 	mov 	si, OpenBuffer
 	mov 	dx, word[es:di + FCLUSTER_ENTRY]
 	push 	cx
 	mov  	cx, (512 / 32)		; Máximo 16 entradas
 IsOpenFile:
-	cmp 	word[si + FCLUSTER_ENTRY], dx
+	cmp 	word[si + CLUSTER_INI], dx
 	jne 	NextOpenFile
 	jmp 	CheckIfSystem
 NextOpenFile:
 	cmp 	word[si], 0x0000
 	je 		CheckIfSystem
 	add 	si, 32
+	inc 	ax
 	loop 	IsOpenFile
 	pop 	cx
 	jmp 	ERR.NoHandler
@@ -311,7 +347,11 @@ CheckShare:
 	mov 	dl, cl
 	and 	dl, 00110000b
 	shl 	dl, 2
-	or 		byte[es:di + FPERM_ENTRY], dl 	; Define os bits de compartilhamento
+	or 		[es:di + FPERM_ENTRY], dl 	; Define os bits de compartilhamento
+	and 	byte[es:di + FPERM_ENTRY], 11000000b
+	mov 	dl, cl
+	and 	dl, 0x03
+	or 		[es:di + FPERM_ENTRY], dl
 	jmp 	CreateStruct
 	
 CheckShareType:
@@ -344,15 +384,23 @@ CreateStruct:
 	push 	es
 	pop 	ds
 	pop 	es
+	push 	cx
 	xchg 	di, si
 	mov 	cx, 32
 	rep 	movsb
 	xchg 	di, si
+	pop 	cx
 	push 	ds
 	push 	es
 	pop 	ds
 	pop 	es
 	sub 	si, 32
+	mov 	[si + ID_FILE], ax
+	mov 	DWORD[si + POINTER_FILE], 0x00000000
+	mov 	WORD[si + SAVE_LOADED], 0x0000
+	mov 	BYTE[si + OPS_FLAG], 0x00
+	mov 	ax, [si + CLUSTER_CHG]
+	mov 	[si + CLUSTER_INI], ax
 	mov 	ax, si
 ; -----------------------------------------------------------------
 	
@@ -1121,13 +1169,18 @@ ret
 	; Converter Cluster pra LBA (Área de dados)
 	; Escrever entrada de diretórios no LBA do Disco
 	
-	
+
+; BX = Handler
+; DX = Buffer de Dados
+; CX = Quantidade de Dados	
 LoadFile:
-	push 	bx
-	push 	di
-	push 	bx
-	;cmp 	cl, 0
-	;jne 	RetLoadFile
+	mov 	[HandlerReaded], bx
+	call 	CheckBufferLoaded
+	
+	push 	di		; kernel_call = 0? DI = Handler
+	push 	bx		; kernel_call = 0? BX = DataBuffer
+	push 	dx		; kernel_call = 0? DX = Buffer_DOS
+	push 	cx		; kernel_call = 0? CX = Bytes Amount
 	
 	mov 	byte[FileFound], 1
 	mov 	byte[LoadDriver], 0
@@ -1170,11 +1223,10 @@ ContinueLoad:
 
 	
 LoadBinaryFile:
-	push 	bx
 	push 	di
 	push 	bx
-	;cmp 	cl, 0
-	;jne 	RetLoadFile
+	push 	dx
+	push 	cx
 	
 	mov 	byte[FileFound], 1
 	mov 	byte[LoadDriver], 1
@@ -1195,15 +1247,35 @@ SetOtherSegments:
     mov 	gs, ax
 	
 ReadDataFile:
-    pop		bx    ; Buffer do arquivo  
-	
+
     mov  	ax, WORD [ClusterFile]   
     call  	ClusterLBA          		 ; Conversão de Cluster para LBA.
     xor  	cx, cx
     mov  	cl, SECTORS_PER_CLUSTER    ; 1 Setores para ler
     call  	ReadLogicalSectors
+	
+	cmp 	byte[kernel_call], 1
+	jz 		no_ret_read
+	
+	pop 	cx
+	pop 	dx
+	pop 	bx
+	pop 	di
 
-    push 	bx
+	call 	CheckBufferLoaded
+	
+	push 	di
+	push 	bx
+	push 	dx
+	push 	cx
+	
+	mov 	ax, [FileSegments]
+	mov 	es, ax
+	
+	jmp 	ReadDataFile
+	
+no_ret_read:
+    push 	bx	 ; Buffer do arquivo 
     
 	; Calculando o deslocamento do próximo Cluster do arquivo
     mov 	ax, WORD [ClusterFile]    ; identify current cluster
@@ -1213,6 +1285,8 @@ ReadDataFile:
     mov 	dx, WORD [gs:bx]          ; read two bytes from FAT
     mov  	WORD [ClusterFile], dx   ; DX está com o próximo Cluster
 	
+	pop		bx    ; Buffer do arquivo 
+	 
     cmp  	dx, END_OF_CLUSTER1    ; 0xFFF8
     je  	EndOfFile
 	cmp  	dx, END_OF_CLUSTER2    ; 0xFFFF
@@ -1221,10 +1295,11 @@ ReadDataFile:
 	jmp 	ReadDataFile
 	
 	
-EndOfFile:	
+EndOfFile:
+	pop 	cx
+	pop 	dx
 	pop 	bx
 	pop 	di
-	pop 	bx
 	
 	mov 	ax, word[DirSegments]
 	mov 	es, ax
@@ -1254,13 +1329,330 @@ SaveNextOffset:
 	add 	bx, 2
 ret
 RetLoadFile:
+	pop 	cx
+	pop 	dx
 	pop 	bx
 	pop 	di
-	pop 	bx
 ret
-	
-	
+HandlerReaded	dw 0x0000
 
+CheckBufferLoaded:
+	cmp 	byte[kernel_call], 1
+	jz 		Ret.CheckOF
+	
+	add 	sp, 2
+	mov 	di, [HandlerReaded]
+	
+	cmp 	word[di], 0x0000
+	jz 		Ret.ErrHandler
+	cmp 	di, OpenBuffer
+	jb 		Ret.ErrHandler
+	cmp 	di, OpenBuffer+512
+	jae 	Ret.ErrHandler
+	mov 	ax, di
+	sub 	ax, OpenBuffer
+	cmp 	ax, 0
+	jz 		nochecknexterr
+	
+	
+	sub 	sp, 2
+	push 	dx
+	xor 	dx, dx
+	mov 	bx, 32
+	div 	bx
+	mov 	bx, dx
+	pop 	dx
+	add 	sp, 2
+	cmp 	bx, 0
+	jnz 	Ret.ErrHandler
+	
+nochecknexterr:
+	mov 	al, [di + ACCESS_MODE]
+	and 	al, 0x01
+	cmp 	al, 0
+	jnz 	Ret.ErrAccess
+	mov 	ax, [di + CLUSTER_CHG]
+	cmp 	ax, END_OF_CLUSTER2
+	jz 		Ret.EndCluster
+	sub 	sp, 2
+	
+	mov 	bx, [di + ID_FILE]
+	shl 	bx, 9
+	
+	; ---- TEMPORARY ------------------------------
+	;mov 	byte[di + SAVE_LOADED], 1	
+	; ---------------------------------------------
+	
+	; DESCOBRE A QUANTIDADE DE BYTES RESTANTES DE DATA BUFFER
+	mov 	eax, DWORD[di + POINTER_FILE] ; alterado
+	shr 	eax, 9		; Quick divide to 512
+	inc 	eax	 		; ax = ax + 1
+	
+	cmp 	ax, [di + SAVE_LOADED]
+	jnz 	save_buffer_load
+	
+	shl 	eax, 9		; Quick multiply to 512
+	sub 	eax, DWORD[di + POINTER_FILE]	; alterado
+	mov 	[Q1], ax
+	
+	cmp 	cx, ax
+	ja 		nochangeq1
+	
+	; DESCOBRE DESLOCAMENTO DO BUFFER BASEADO EM PONTEIRO DO ARQUIVO
+	; E MOVE OS BYTES DO BUFFER JÁ CARREGADO
+	mov 	[Q1], cx		; se quantidade solicitada for menor que calculada
+	mov 	cx, 512
+	sub 	cx, ax
+	add 	bx, cx
+	mov 	cx, [Q1]
+	push 	ds
+	push 	es
+	mov 	ax, [DirSegments]
+	mov 	es, ax
+	mov 	ax, [FileSegments]
+	mov 	ds, ax
+	mov 	si, bx
+	push 	di
+	mov 	di, dx
+	rep 	movsb
+	pop 	di
+	pop 	es
+	pop 	ds
+	
+	add 	sp, 2
+	mov 	ax, [Q1]
+	add 	DWORD[di + POINTER_FILE], eax		;alterado
+	
+	
+	add 	[CounterReaded], ax
+	mov 	ax, [CounterReaded]
+	jmp 	Ret.CheckOF_Kernel
+	
+nochangeq1:
+	;mov 	byte[di + FLAGS_AUX], 1
+	push 	cx
+	mov 	cx, 512
+	sub 	cx, ax
+	add 	bx, cx
+	mov 	si, bx
+	mov 	cx, [Q1]
+	push 	ds
+	push 	es
+	mov 	ax, [DirSegments]
+	mov 	es, ax
+	mov 	ax, [FileSegments]
+	mov 	ds, ax
+	push 	di
+	mov 	di, dx
+	rep 	movsb
+	pop 	di
+	pop 	es
+	pop 	ds
+	pop 	cx
+	mov 	ax, [Q1]
+	sub 	cx, ax
+	add 	DWORD[di + POINTER_FILE], eax 	; alterado
+	
+	;int3
+	
+	add 	dx, ax
+	add 	[CounterReaded], ax
+	
+	mov 	bx, [di + ID_FILE]		; ERA DATA_BUFFER
+	shl 	bx, 9
+	
+	mov 	eax, DWORD[di + POINTER_FILE]  ; alterado
+	shr 	eax, 9		; Quick divide to 512
+	inc 	eax
+	cmp 	ax, [di + SAVE_LOADED]
+	jz 		clusterdiscover
+	
+save_buffer_load:
+	mov 	[di + SAVE_LOADED], ax
+clusterdiscover:
+	push 	bx
+    push 	dx
+	push 	cx
+	
+	mov 	ax, FAT_SEGMENT
+    mov 	gs, ax
+	
+	;mov 	byte[di + FLAGS_AUX], 1
+	mov 	eax, DWORD[di + POINTER_FILE]  ; alterado
+	shr 	eax, 9
+	mov 	cx, ax
+	cmp 	cx, 0
+	jz 		restorereg
+	
+	mov 	dx, [di + CLUSTER_INI]
+loop_discover:	
+    mov 	ax, dx
+    add 	ax, ax                	  ; 16 bit(2 byte) FAT entry
+    mov 	bx, 0x0000                ; location of FAT in memory
+    add 	bx, ax                    ; index into FAT    
+    mov 	dx, WORD [gs:bx]          ; read two bytes from FAT
+    mov  	[di + CLUSTER_CHG], dx   ; DX está com o próximo Cluster
+	mov 	[ClusterFile], dx
+	
+	cmp 	dx, END_OF_CLUSTER2
+	jz 		restore_endfile
+	
+	loop 	loop_discover
+	
+restorereg:
+	pop 	cx
+	pop 	dx
+	pop		bx
+	
+	push 	ds
+	pop 	es
+	
+Ret.CheckOF:
+	clc
+	ret
+	
+Ret.CheckOF_Kernel:
+	mov 	word[CounterReaded], 0
+	clc
+	ret
+	
+Ret.ErrHandler:
+	mov 	ax, 06h 		; Manipulador ilegal ou arquivo não aberto
+	stc
+	ret
+	
+Ret.ErrAccess:
+	mov 	word[CounterReaded], 0
+	mov 	ax, 05h 		; Acesso negado
+	stc
+	ret
+	
+; CASO SEJA FINAL DE ARQUIVO
+restore_endfile:
+	pop 	cx
+	pop 	dx
+	pop		bx
+	add 	sp, 2
+	
+Ret.EndCluster:
+	mov 	word[CounterCluster], 0
+	mov 	word[CounterReaded], 0
+	mov 	ax, 0
+	ret
+	
+Loaded	db 0
+Q1 		dw 0
+CounterCluster dw 0
+CounterReaded  dw 0
+
+SetSeekFile:
+	mov 	di, bx
+	cmp 	word[di], 0x0000
+	jz 		Ret.ErrHandler
+	cmp 	di, OpenBuffer
+	jb 		Ret.ErrHandler
+	cmp 	di, OpenBuffer+512
+	jae 	Ret.ErrHandler
+	sub 	bx, OpenBuffer
+	cmp 	bx, 0
+	jz 		nextcheckseek
+	
+	push 	dx
+	push 	ax
+	xor 	dx, dx
+	mov 	ax, bx
+	mov 	bx, 32
+	div 	bx
+	mov 	bx, dx
+	pop 	ax
+	pop 	dx
+	cmp 	bx, 0
+	jnz 	Ret.ErrHandler
+	
+nextcheckseek:
+	xor 	ebx, ebx
+	mov 	bx, cx
+	shl 	ebx, 16
+	mov 	bx, dx
+	cmp 	al, 00h
+	jz 		start_origin
+	cmp 	al, 01h
+	jz 		current_origin
+	cmp 	al, 02h
+	jz 		end_origin
+	jmp 	ret.errseekorigin
+
+start_origin:
+	mov 	[di + POINTER_FILE], ebx
+	jmp 	ret.seeksuccess
+current_origin:
+	add 	[di + POINTER_FILE], ebx
+	jmp 	ret.seeksuccess
+end_origin:
+	mov 	eax, [di + SIZE_BYTES]
+	;dec 	eax
+	add 	eax, ebx
+	mov 	[di + POINTER_FILE], eax
+	or 		byte[di + OPS_FLAG], 00000010b
+ret.seeksuccess:
+	or 		byte[di + OPS_FLAG], 00000001b
+	mov 	dx, [di + POINTER_FILE + 2]
+	mov 	ax, [di + POINTER_FILE]
+	clc
+	ret
+
+ret.errseekorigin:
+	mov 	ax, 01h 	; function number invalid
+	stc
+	ret
+	
+CloseFile:
+	mov 	di, bx
+	cmp 	word[di], 0x0000
+	jz 		Ret.ErrHandler
+	cmp 	di, OpenBuffer
+	jb 		Ret.ErrHandler
+	cmp 	di, OpenBuffer+512
+	jae 	Ret.ErrHandler
+	sub 	bx, OpenBuffer
+	cmp 	bx, 0
+	jz 		nextcheckclose
+	
+	xor 	dx, dx
+	mov 	ax, bx
+	mov 	bx, 32
+	div 	bx
+	mov 	bx, dx
+	cmp 	bx, 0
+	jnz 	Ret.ErrHandler
+	
+nextcheckclose:
+	mov 	bx, [di + ID_FILE]
+	shl 	bx, 9
+	push 	es
+	push 	di
+	
+	mov 	di, bx
+	mov 	ax, [FileSegments]
+	mov 	es, ax
+	mov 	cx, 512 / 4
+	xor 	eax, eax
+	rep 	stosd
+	
+	pop 	di
+	mov 	ax, ds
+	mov 	es, ax
+	mov 	cx, 32 / 4
+	xor 	eax, eax
+	rep 	stosd
+	pop 	es
+	
+ret.closesuccess:
+	xor 	ax, ax
+	clc
+	ret
+	
+	
 ; Converter cluster FAT em eschema de Endereçamento LBA
 ; LBA = ((ClusterFile - 2) * SectorsPerCluster) + DATASTART 
 ClusterLBA:
@@ -1331,4 +1723,4 @@ BOOT_FAILED:
     int  	0x18
 
 OpenBuffer times 512 db 0
-DataBuffer times 512 db 0
+DataBuffer: times 512 db 0
