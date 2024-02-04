@@ -37,7 +37,7 @@ OS_VECTOR_JMP:
 	jmp syscall.prog			; 004Bh
 	jmp winmng.video			; 004Eh
 	jmp shell.cmd				; 0051h
-	;jmp win.prog 				; 0054h
+	jmp tone.play 				; 0054h
 	
 syscall.prog: 	call SYSCMNG
 				retf
@@ -45,8 +45,8 @@ winmng.video:	call WINMNG+3
 				retf
 shell.cmd:		call SHELL16+3
 				retf
-;win.prog:		call WINMNG+6
-;				retf
+tone.play:		call Play_Speaker_Tone
+				retf
 ; --------------------------------------------------
 
 ; _____________________________________________
@@ -167,18 +167,46 @@ OSMain:
 	call 	FAT16.LoadAllFiles
 	;call 	KEYBOARD.Initialize
 	call 	MEMX86.Detect_Low_Memory
-	call 	PCI.Init_PCI
+	;call 	PCI.Init_PCI
 	clc
 	
-	;mov 	si, permission
-	;call 	Shell.Execute
+; Descomente o código abaixo da linha '----' até a mesma linha '----' para testar a 
+; a resolução do bug de travamento quando buffers são zerados.
+; também der um enter no Shell sem digitar nada pra ver as modificações
+; ----------------------------------------------------------------------------
+;FirstCmd:
+;	mov 	si, permission1
+;	call 	Shell.Execute
+;	cmp 	ax, 0xFF
+;	jz 		PrintErr1
+;	mov 	si, suc1
+;	call 	Print_String
+;SecondCmd:
+;	mov 	si, permission
+;	call 	Shell.Execute
+;	cmp 	ax, 0
+;	jz 		PrintSuc1
+;	mov 	si, err1
+;	call 	Print_String
+;	jmp 	Load_Menu
 	
-	;jmp 	Load_Menu
+;PrintErr1:
+;	mov 	si, err1
+;	call 	Print_String
+;	jmp 	SecondCmd
+;PrintSuc1:
+;	mov 	si, suc1
+;	call 	Print_String
+;	jmp 	Load_Menu
 	
 ;Shell.Execute: jmp 	SHELL16+3
 ;	nop
 ;	nop
-;	permission db "chmod u=mdxrw kiddieos\system16\winmng32.kxe",0
+;	permission db "chmod u=mdxrw kiddieos\system16\winmng32.kxe",0  ; Adicione um '0,' antes de '"chmod' para testar
+;	permission1 db 0,0,0,0
+;	err1 db "Erro de buffer zerado",0x0D,0x0A,0
+;	suc1 db "Comando 'chmod' executado com sucesso",0x0D,0x0A,0
+; ----------------------------------------------------------------------------
 
 	
 Load_Menu:
@@ -768,17 +796,21 @@ Get_Cursor:
 ret
 
 Hide_Cursor:
+	pusha
 	mov 	ah, 01h
 	mov 	ch, 20h   ; bit 5 set is hiding cursor
 	mov 	cl, 07h
 	int 	10h
+	popa
 ret
 
 Show_Cursor:
+	pusha
 	mov 	ah, 01h
 	mov 	ch, 00h
 	mov 	cl, 07h
 	int 	10h
+	popa
 ret
 
 

@@ -109,6 +109,7 @@ IsHexa             db 0
 WriteEnable  db 1
 ArgFile 	 db 0
 ArgData 	 db 0
+ArgHidd		 db 0
 WriteCounter dw 0
 
 
@@ -168,7 +169,7 @@ EDDParameters     dd 0x00000000
 ; 		CH -> First Line ; CL -> First Column ; DH -> Last Line ; DL -> Last Column
 Os_Shell_Setup:
 	cmp 	ax, 0x4C02
-	jz 		Back_Blue_Screens
+	jz 		Back_Blue_Screen
 	mov 	byte[CursorRaw], 5
 	mov 	byte[CursorCol], 12
 	Back_Blue_Screen:
@@ -457,10 +458,10 @@ Os_Inter_Shell:
 	push 	ds
 	mov 	ax, 0x3000
 	mov 	es, ax
+	cmp 	byte[es:si], 0
+	jz 		Error_Zero
 	mov 	byte[es:Out_Of_Shell], 1
 	call 	AssignDriveLetter
-	;push 	ds
-	;pop 	es
 	mov 	di, BufferArgs
 	mov 	cx, 120
 	call 	Zero_Buffer
@@ -477,6 +478,8 @@ Shell_Interpreter:
 		mov 	cx, COUNT_COMMANDS   				; ler até 2 comandos
 		mov 	byte[CmdCounter], 0
 		pop 	di
+		cmp 	byte[es:di], 0
+		jz 		Cursor_Commands
 		push	si
 		push 	di
 		call 	ConvCommandToLower
@@ -520,6 +523,7 @@ Shell_Interpreter:
 		call 	bx
 		mov 	byte[IsFile], 0
 		mov 	byte[IsCommand], 0
+		mov 	ax, 0
 		cmp 	byte[Out_Of_Shell], 1
 		je 		Ret_OutOfShell
 		jmp 	Cursor_Commands
@@ -546,11 +550,15 @@ Shell_Interpreter:
 		jmp 	Cursor_Commands
 	Ret_OutOfShell0:
 		call 	Cursor.CheckToRollEditor
+		mov 	ax, 0
 	Ret_OutOfShell:
 		mov 	byte[Out_Of_Shell], 0
 		pop 	ds
 		pop 	es
 	ret
+	Error_Zero:
+		mov 	ax, 0xFF
+		jmp 	Ret_OutOfShell
 			
 		
 		
@@ -871,12 +879,14 @@ JumpDisplayHex:
 	inc 	di
 	jmp 	Continue
 	IsEnter:
+		call 	PutZeroTextMemory
 		mov 	dh, byte[CursorRaw]
 		mov 	dl, byte[CursorCol]
 		call 	Move_Cursor
 		inc 	di
 		jmp 	Continue
 	IsEnter2:
+		;call 	PutZeroTextMemory			; verificar se precisa
 		inc 	bl
 		cmp 	bl, 17
 		jne 	LineBreak
@@ -3129,7 +3139,11 @@ Cmd.WRITE:
 	;call	Reload_Directory
 	mov 	word[WriteCounter], 0x0000
 	
-	inc 	si		; Ponteiro para argumento
+SkipToLetter:					; Caso há espaços antes do 1ª argumento
+	inc 	si					; Ponteiro para argumento
+	cmp 	byte[si], 0x20
+	jz 		SkipToLetter
+	
 	mov 	byte[IsCommand], 0
 	cmp		dword[si], 0x006e6f2d	; si == "-on"?
 	je	 	WriteON
@@ -3144,6 +3158,10 @@ WriteON:
 WriteOFF:
 	mov 	byte[WriteEnable], 0
 	jmp 	Ret.WRITE
+WriteHidden:
+	mov 	byte[ArgHidd], 1
+	add 	si, 3
+	jmp 	SkipToLetter
 CheckArgs:
 	xor 	ax, ax
 	cmp 	dword[si], 0x2063662d 	; si == "-fc "?
@@ -3152,17 +3170,20 @@ CheckArgs:
 	sete	al
 	cmp 	ax, 0
 	jnz 	FileWrite
+	cmp 	dword[si], 0x2069682d	; si == "-hi "?
+	jz 		WriteHidden
 	cmp 	byte[si], 0
 	jz 		Ret.WRITE
+	cmp 	byte[si], '"'			; Se esta condição for verdadeira,
+	jnz 	ArgsError				; Então há um erro de argumentos
 	
+	; Só executa daqui pra baixo caso o 1ª argumento tenha aspas
+	; (sendo um dado a ter sua saída na tela ou arquivos)
 	mov 	ax, 0x6800
 	mov 	es, ax
 	xor 	di, di
-	mov 	eax, 0x0D0D0D0D
+	mov 	eax, 0x0A0A0A0A
 	stosd
-	
-	cmp 	byte[si], '"'
-	jne 	IsNotData
 	
 	push 	si
 SkipToParam:
@@ -3215,9 +3236,11 @@ TransferData:
 	inc 	word[WriteCounter]
 	jmp 	TransferData
 MoveBreak:
+	mov 	al, 0x0A
+	stosb
 	mov 	al, 0x0D
 	stosb
-	inc 	word[WriteCounter]
+	add 	word[WriteCounter], 2
 	add		si, 2
 	jmp 	TransferData
 MoveTab:
@@ -3318,6 +3341,9 @@ FindSpaceZero2:
 	
 ; 	CASO O ARQUIVO EXISTA, IMPRIMIR OS SEUS CARACTERES
 ; 	OBS.: NÃO IMPRIMIR SE NÃO FOR UM EDITOR (CONTROLADO PELO CÓDIGO ACIMA)
+	cmp 	byte[ArgHidd], 1
+	jz 		NoFile
+	
 	push 	di
 	mov 	ax, 0x6800
 	mov 	es, ax
@@ -3330,6 +3356,11 @@ RestoreDI:
 	pop 	di
 	
 NoFile:
+	push 	dx
+	call 	Get_Cursor
+	mov 	[AtualRaw], dh
+	pop 	dx
+	
 	pop 	ax				; Desempilha a Flag de AX
 	push 	di
 	push 	si
@@ -3357,7 +3388,7 @@ FindNextChar:
 	mov 	es, ax
 
 	xor 	di, di
-	mov 	eax, 0x0D0D0D0D
+	mov 	eax, 0x0A0A0A0A
 	stosd
 	add 	di, dx
 	
@@ -3377,7 +3408,7 @@ WriteEditor:
 	mov 	es, ax
 
 	xor 	di, di
-	mov 	eax, 0x0D0D0D0D
+	mov 	eax, 0x0A0A0A0A
 	stosd
 	add 	di, dx
 	
@@ -3397,35 +3428,98 @@ FileEditor:
 	je		WriteEditor.Enter
 	cmp 	al, 0x09
 	je 		WriteEditor.TAB
+	cmp 	ax, 0x4B00 		; Arrow Left
+	je 		WriteEditor.ArrowLeft
+	cmp 	ax, 0x4D00 		; Arrow Right
+	je 		WriteEditor.ArrowRight
+	cmp 	ax, 0x4800 		; Arrow Up
+	je 		WriteEditor.ArrowUp
+	cmp 	ax, 0x5000 		; ArrowDown
+	je 		WriteEditor.ArrowDown
 	cmp 	al, 0x13		; CTRL + S = Salvar
 	je 		WriteFile
 	cmp 	al, 0x18 		; CTRL + X = Cancelar
 	je 		ExitEditor
 	StoreChar:
+		call 	CheckToOffsetChars
 		stosb
 		call 	Get_Cursor
 		inc 	word[WriteCounter]
 		cmp 	dl, byte[LimitCursorFinalX]
 		jne		ShowChar
 		call 	Cursor.CheckToRollEditor
+		inc 	byte[AtualRaw]
 		mov 	ah, 0Eh
 		int 	10h
-		mov 	al, 0x0D
-		stosb
 		jmp 	FileEditor
 	ShowChar:
 		mov 	ah, 0Eh
 		int 	10h
 		jmp 	FileEditor
 
+CheckToOffsetChars:
+	pusha
+	cmp 	byte[es:di], 0
+	jz 		ret.CTOC
+
+	push 	di
+	mov 	cx, [WriteCounter]
+	sub 	cx, di
+	add 	cx, 4
+	add 	di, cx
+	
+	push 	ax
+	mov 	bx, 1
+	cmp 	al, 0x0D
+	jnz 	offsetconf
+	
+	inc 	di
+	mov 	bx, 2
+	
+offsetconf:
+	push 	cx
+	std
+offsetfront:
+	sub 	di, bx
+	mov 	al, [es:di]
+	add 	di, bx
+	stosb
+	loop 	offsetfront
+	cld
+	pop 	cx
+	pop 	ax
+	pop 	di
+	
+	inc 	cx
+	cmp 	al, 0x0D
+	jnz 	Show_Data
+	
+	mov 	al, 0x0A
+	mov 	[es:di+1], al
+	mov 	al, 0x0D
+	inc 	cx
+	
+	call 	FillZeroTextMemory
+	
+Show_Data:
+	mov 	[es:di], al
+	call 	Get_Cursor
+	call 	Hide_Cursor
+	mov 	bl, [CursorRaw]
+	mov 	al, 0
+	call 	PrintData
+	mov 	[CursorRaw], bl
+	call 	Move_Cursor
+	call 	Show_Cursor
+	
+ret.CTOC:
+	popa
+	ret
+	
 WriteFile:
 	pop 	ax
 	pop 	si
 	pop 	di
-
-	;TODO: I WILL DEVELOP THIS FUNCTION YET TO CREATE AND APPEND A FILE
-	; THROUGH THE -FA AND -FC PARAMETERS!
-	;TODO: ENVIAR DADOS E ARQUIVO (BufferWrite & SI) PARA CREATE/APPEND EM FAT16
 	
 	mov 	dx, ax						; DX = Flag de Criação/Acréscimo
 	mov 	cx, word[WriteCounter]		; CX = Quantidade de Caracteres
@@ -3441,6 +3535,9 @@ WriteFile:
 	
 	pop 	word[CD_SEGMENT]
 	call 	Restore_Dir
+	
+	mov 	dh, [AtualRaw]
+	mov 	[CursorRaw], dh
 	jmp 	Ret.WRITE
 	
 ExitEditor:
@@ -3448,12 +3545,20 @@ ExitEditor:
 	pop 	si
 	pop 	di
 	
+	mov 	dh, [AtualRaw]
+	mov 	[CursorRaw], dh
 	call 	Cursor.CheckToRollEditor
 	mov 	si, WriteCanceled
 	call 	Print_String
 	
 	pop 	word[CD_SEGMENT]
 	call 	Restore_Dir
+	jmp 	Ret.WRITE
+	
+ArgsError:
+	mov 	si, args_error
+	call 	Print_String
+	
 Ret.WRITE:
 	push 	es
 	mov 	ax, 0x6800
@@ -3466,44 +3571,86 @@ Ret.WRITE:
 	call 	Reload_Directory
 	mov 	byte[ArgFile], 0
 	mov 	byte[ArgData], 0
+	mov 	byte[ArgHidd], 0
 	ret
 
+; Dois últimos erros pra resolver:
+; 1. Checar o ultimo caractere apagado quando volta pra ultima coluna;
+; 2. Em PrintData para o -fa, colocar PutZeroTextMemory para as quebras;
 WriteEditor.BackSpace:
 		call 	Get_Cursor
 		mov 	bh, byte[LimitCursorBeginY]
 		inc 	bh
-		cmp 	dh, bh
-		jna 	CheckLimitCLIX2	  ; se for igual ou menor, verifica X
-		cmp 	byte[es:di-1], 0x0D
-		je 		FindColumn
-	CursorToLast:
-		push 	SkipCheckLimit2   ; cursor é maior
-		cmp 	dl, 12
-		je		BackCursorToCLI2
-		pop 	bx
-		jmp 	SkipCheckLimit2
+		cmp 	dh, bh					; Verifica se o cursor é menor ou igual ao limite Y do ecrã
+		jbe 	CheckLimitX	  			; se for, verifica a coluna X
+		
+		cmp 	byte[es:di-1], 0x0A		; Verifica se o caractere anterior em memória foi um ENTER
+		je 		FindColumn				; Se sim, então encontrar coluna
+		
+	CursorToLast:						; Se cursor é maior e o char anterior não for ENTER, então...
+		cmp 	dl, 12					; Ou primeiramente o cursor volta pra última coluna da linha anterior
+		je		BackLastColumn			; (se a coluna for 12) e apaga o caractere, ou, ele só apaga o caractere
+		jmp 	EraseCharBack
+		
 	FindColumn:
 		push 	di
 		sub 	di, 2
-		mov 	cx, 56
+		mov 	cx, 56+3
 		FindEnter:
 			std
-			mov 	al, 0x0D
+			mov 	al, 0x0A
 			repne 	scasb
 			cld
 			pop 	di
-			cmp 	cx, 0
+			cmp 	cx, 1
 			je 		CursorToLast
-			sub 	cx, 56
+			cmp 	cx, 0
+			je 		CheckTextMemory
+			sub 	cx, 56+3
 			not 	cx
 			inc 	cx
-			add 	cx, 12
+			add 	cx, 12-1
 			jmp 	BackSpecificColumn
-	CheckLimitCLIX2:			  ; Se X inicial for 12, não faz nada
-		cmp 	dl, 12
+			
+	CheckTextMemory:
+		call 	SearchPositionBack
+	
+	BackSpecificColumn:			; retorna cursor para coluna específica da linha anterior
+		push 	dx
+		call 	Get_Cursor
+		dec 	dh
+		mov 	byte[CursorRaw], dh
+		mov 	dl, cl
+		call 	Move_Cursor
+		pop 	dx
+		dec 	byte[AtualRaw]
+		jmp 	CheckCharBack
+		
+	BackLastColumn:				; retorna cursor pra última coluna da linha anterior
+		push 	dx
+		call 	Get_Cursor
+		dec 	dh
+		mov 	byte[CursorRaw], dh
+		mov 	dl, byte[LimitCursorFinalX]
+		call 	Move_Cursor
+		pop 	dx
+		dec 	byte[AtualRaw]
+		jmp 	FileEditor
+			
+	CheckLimitX:			  	; Verificar o limite de coluna
+		cmp 	dl, 12			; Se X inicial for 12, então chegamos no início do ecrã e não faz nada
 		je		FileEditor
-	SkipCheckLimit2:			  ; apaga caractere e desloca cursor
+	
+	CheckCharBack:							; apaga caractere e desloca cursor
+		cmp 	byte[es:di-1], 0x0A
+		jnz 	EraseCharBack
 		dec 	di
+		mov 	al, 0
+		mov 	[es:di], al
+		dec 	word[WriteCounter]
+	EraseCharBack:
+		dec 	di
+		mov 	ah, 0x0E
 		mov 	al, 0x08
 		int 	10h
 		mov 	al, 0
@@ -3513,33 +3660,57 @@ WriteEditor.BackSpace:
 		int 	10h
 		dec 	word[WriteCounter]
 		jmp 	FileEditor
-	BackCursorToCLI2:		; retorna cursor pra última coluna da linha anterior
-		push 	dx
-		call 	Get_Cursor
-		dec 	dh
-		mov 	byte[CursorRaw], dh
-		mov 	dl, byte[LimitCursorFinalX]
-		call 	Move_Cursor
-		pop 	dx
-		ret
-	BackSpecificColumn:
-		push 	dx
-		call 	Get_Cursor
-		dec 	dh
-		mov 	byte[CursorRaw], dh
-		mov 	dl, cl
-		call 	Move_Cursor
-		pop 	dx
-		jmp 	SkipCheckLimit2
+		
+		
+SearchPositionBack:
+	push 	es
+	push 	dx
+	push 	di
+		
+	; Encontrar posição do 1ª char da linha anterior na memória de texto
+	mov 	ax, 0xB800
+	mov 	es, ax
+	xor 	cx, cx
+	xor 	dx, dx
+	mov 	bx, (12*2)
+	mov 	ax, (80*2)
+	mov 	cl, [CursorRaw]
+	mul 	cx
+	add 	ax, bx
+	sub 	ax, 160
+	mov 	di, ax		; DI = posição do 1ª char
+		
+	; Procurar o byte 0x00 na memória de texto a partir do 1ª char
+	cld
+	mov 	cx, 112
+	mov 	al, 0x00
+	repne 	scasb		; CX = Diferença de bytes entre (56*2) e o 1ª char
+		
+	; Calcular a coordenada da coluna da linha anterior a partir da diferença
+	mov 	ax, 112
+	sub 	ax, cx
+	shr 	ax, 1
+	inc 	al
+	mov 	cl, al
+	add 	cl, 12
+
+	pop 	di
+	pop 	dx
+	pop 	es
+ret
 
 WriteEditor.Enter:
+	call 	CheckToOffsetChars
 	stosb
 	mov 	al, 0x0A
 	stosb
+	
+	call 	PutZeroTextMemory			; Necessário para o backspace identificar a coluna
+	
 	call 	Cursor.CheckToRollEditor
+	inc 	byte[AtualRaw]
 	add 	word[WriteCounter], 2
 	jmp 	FileEditor
-
 	
 WriteEditor.TAB:
 	stosb
@@ -3547,8 +3718,211 @@ WriteEditor.TAB:
 	mov 	ah, 0x0E
 	int 	0x10
 	int 	0x10
+	int 	0x10
+	int 	0x10
 	inc 	word[WriteCounter]
 	jmp 	FileEditor
+	
+; Processamento de seta esquerda
+WriteEditor.ArrowLeft:
+	call 	Get_Cursor
+	dec 	di
+	cmp 	byte[es:di], 0x0A
+	jnz 	ProcessCursor0
+	dec 	di
+ProcessCursor0:
+	cmp 	dl, 12
+	jz 		ProcessBack
+	dec 	dl
+	call 	Move_Cursor
+	jmp 	FileEditor
+ProcessBack:
+	call 	SearchPositionBack
+	push 	dx
+	call 	Get_Cursor
+	dec 	dh
+	mov 	byte[CursorRaw], dh
+	mov 	dl, cl
+	dec 	dl
+	call 	Move_Cursor
+	pop 	dx
+	jmp 	FileEditor
+
+; TODO: Processamento de seta direita
+WriteEditor.ArrowRight:
+	cmp 	byte[es:di], 0
+	je 		FileEditor
+	inc 	di
+	cmp 	byte[es:di], 0x0A
+	jnz 	ProcessCursor1
+	inc 	di
+ProcessCursor1:
+	cmp 	dl, 68
+	jz 		NextLine
+	inc 	dl
+	call 	Move_Cursor
+	jmp 	FileEditor
+NextLine:
+	call 	Cursor.CheckToRollEditor
+	jmp 	FileEditor
+	
+WriteEditor.ArrowUp:
+	call 	Get_Cursor
+	cmp 	dh, byte[LimitCursorBeginY]
+	je 		VerifyScrolledAbove
+	
+	mov 	[LinSaved], dh
+	mov 	[ColSaved], dl
+	xor 	cx, cx
+FindBegin:
+	dec 	di
+	dec 	dl
+	inc 	cx
+	cmp 	byte[es:di-1], 0x0A
+	jz 		Found0A
+	cmp 	dl, 12
+	jz 		FoundBeg
+	jmp 	FindBegin
+	
+Found0A:
+	sub 	di, 2				; Talvez será preciso alterar
+FoundBeg:
+	mov 	dh, [LinSaved]
+	mov 	dl, 12
+	dec 	dh
+	mov 	[CursorRaw], dh
+	call 	GetZeroTextMemory
+	cmp 	cx, ax
+	jae 	JmpNegProcess
+	
+	sub 	cx, ax
+	not 	cx
+	inc 	cx
+	sub 	di, cx				; DI aqui não precisa ser subtraído, já está na posição, ou mudar "sub di, 3" para "sub di, 2" em cima
+	mov 	dl, [ColSaved]
+	call 	Move_Cursor
+	jmp 	FileEditor
+
+JmpNegProcess:
+	mov 	dl, 12
+	add 	dl, al
+	call 	Move_Cursor
+	jmp 	FileEditor
+	
+; Rolar pra cima (descer o texto), salvar os bytes inferiores e recuperar bytes superiores
+VerifyScrolledAbove:
+	jmp 	FileEditor
+	
+
+
+ColSaved db 0
+LinSaved db 0
+AtualRaw db 0
+	
+; TODO: Fazer como o ArrorUp, só que ao inverso
+WriteEditor.ArrowDown:
+	jmp 	FileEditor
+	
+; Rolar pra baixo (subir o texto), salvar os bytes superiores e recuperar bytes inferiores
+VerifyScrolledBelow:
+	jmp 	FileEditor
+	
+PutZeroTextMemory:
+	push	es
+	pusha
+	mov 	ax, 0xB800
+	mov 	es, ax
+	call 	Get_Cursor
+	mov 	cx, dx
+	xor 	bx, bx
+	xor 	dx, dx
+	mov 	ax, 160
+	mov 	bl, ch
+	mul 	bx
+	shl 	cl, 1
+	xor 	ch, ch
+	add 	ax, cx
+	mov 	di, ax
+	mov 	byte[es:di], 0x00
+	popa
+	pop 	es
+ret
+
+GetZeroTextMemory:
+	push	es
+	pusha
+	mov 	ax, 0xB800
+	mov 	es, ax
+	mov 	cx, dx
+	xor 	bx, bx
+	xor 	dx, dx
+	mov 	ax, 160
+	mov 	bl, ch
+	mul 	bx
+	shl 	cl, 1
+	xor 	ch, ch
+	add 	ax, cx
+	mov 	di, ax
+	cld
+	mov 	cx, 112
+	mov 	al, 0x00
+	repne 	scasb
+	mov 	ax, 112
+	sub 	ax, cx
+	shr 	ax, 1
+	mov 	[CountToZero], ax
+	popa
+	pop 	es
+	mov 	ax, [CountToZero]
+ret
+
+FillZeroTextMemory:
+	push	es
+	pusha
+	mov 	ax, 0xB800
+	mov 	es, ax
+	call 	Get_Cursor
+	push 	dx
+	mov 	cx, dx
+	xor 	bx, bx
+	xor 	dx, dx
+	mov 	ax, 160
+	mov 	bl, ch
+	mul 	bx
+	shl 	cl, 1
+	xor 	ch, ch
+	add 	ax, cx
+	mov 	di, ax
+	xor 	cx, cx
+	pop 	dx
+	
+	sub 	dh, 5
+	mov 	cl, 18
+	sub 	cl, dh
+	push 	cx
+	sub 	dl, 12
+	mov 	cl, 56
+	sub 	cl, dl
+	mov 	al, 0
+	cld
+	jmp 	putzeros2
+putzeros1:
+	push 	cx
+	mov 	cx, 56
+putzeros2:
+	stosb
+	inc 	di
+	loop 	putzeros2
+	add 	di, (12*2*2)
+	pop 	cx
+	loop 	putzeros1
+	popa
+	pop 	es
+ret
+
+CountToZero dw 0
+args_error   db "ERROR: parametro invalido - faltam aspas.",0
+
 
 Cmd.OPEN:
 	mov 	si, BufferArgs
