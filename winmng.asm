@@ -15,7 +15,7 @@ jmp 	Set_Video_Mode
 %INCLUDE "Kiddieos/Library/user16.inc"
 
 SHELL.cmd 	EQU SHELL16+3
-		
+	
 winmng_setup:
 	mov 	ax, 3
 	int 	0x10
@@ -108,8 +108,8 @@ sizetot 	dd 0x00000000
 baseaddr 	dw 0x0000
 
 path1  		db "kiddieos\system16\winmng32.kxe",0
-path2  		db "KiddieOS\Users\BFTC\Images\Flower2.bmp",0
+path2  		db "KiddieOS\Users\BFTC\Images\welcome.bmp",0
 perm1	 	db "chmod u=mdxrw kiddieos\system16\winmng32.kxe",0
-perm2	 	db "chmod u=mdxrw KiddieOS\Users\BFTC\Images\Flower2.bmp",0
+perm2	 	db "chmod u=mdxrw KiddieOS\Users\BFTC\Images\welcome.bmp",0
 
 str_error 	db "BMP File not supported!",0x0D,0x0A,'$'

@@ -8,6 +8,7 @@ include "Kiddieos/Library/user16.inc"
 sysc.program	equ 0x3000:0x004B
 win.graphics  	equ 0x3000:0x004E
 shell.cmd 		equ 0x3000:0x0051
+;tone.play 		equ 0x3000:0x0054
 
 main:
 	mov 	ax, datas
@@ -79,7 +80,7 @@ with_args:
 	mov 	bl, 1
 	call 	sysc.program
 	pop 	ds
-	
+
 	mov 	ax, 3
 	int 	0x10
 	
