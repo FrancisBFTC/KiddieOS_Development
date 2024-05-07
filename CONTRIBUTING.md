@@ -67,6 +67,7 @@ Para iniciar o desenvolvimento, você precisará seguir alguns passos:
 Os tipos de colaboração pode seguir uma linha do tempo. Atualmente o KiddieOS está procurando uma estabilidade de desenvolvimento primeiramente, para assim pudermos abrir colaborações mais avançadas. Portanto, a base do KiddieOS será criada para facilitar todas as colaborações, permitindo que o sistema seja escalável tanto por usuários quanto por desenvolvedores. Desta forma, as colaborações são divididas em duas partes: **Para o momento atual** - que consiste em divulgar na internet, identificar falhas e sugerir features. O que poderá ser feito no presente. **Para o momento futuro** - que consiste em integrar código, otimizar e personalizar o sistema. Será feito após a estabilidade e documentação do KiddieOS. Veja abaixo os tipos de colaborações.
 
 <div id='publication'></div>
+
 ## Colaboração pro momento atual
 
 ### Divulgação 
@@ -74,11 +75,13 @@ Os tipos de colaboração pode seguir uma linha do tempo. Atualmente o KiddieOS 
 A divulgação será pra atrair mais colaboradores, interessados e usuários. Também vai servir pra aumentar nossa comunidade, que já é existente no Discord e no Youtube (KiddieOS.Community, posso te passar o link mais tarde se não tiver lá).  Você como divulgador, poderá até mesmo aumentar seu "Networking" e círculo de amizades de novos colaboradores, criar uma teia, uma rede de pessoas que te sigam e que até mesmo te "ajudem" a colaborar. É como se você fosse um professor alternativo do KiddieOS, que ajuda disseminar o conceito do KiddieOS nas redes sociais e grupos de programação.
 
 <div id='identification'></div>
+
 ### Identificação de falhas
 
 Você pode ser um explorador de falhas no KiddieOS apenas em "tentar" utilizá-lo, e uma forma legal de se fazer isto é assistir o máximo de vídeos de "Demonstração" do KiddieOS no canal, que são vídeos que geralmente coloco **"KiddieOS:"** ou **"KiddieOS - "** no início do título, ou apenas um título **SEM** a tag #dsos, que é uma tag só relacionado para as "Video-aulas". Os vídeos de demonstração eu demonstro testes e novas funcionalidades desenvolvidas no KiddieOS, normalmente são vídeos mais curtos e sem voz (Com música de fundo). Assistindo estes vídeos, você aprende a como utilizar o KiddieOS existente e efetuar seus primeiros usos e testes, procurando bugs e reportando aqui em formato de **Issues** no Github, eu irei checar, corrigir em um tempo adequado e te dar um feedback didático do que ocasionou o bug e o que eu fiz pra corrigir, prezando também no seu próprio aprendizado sobre o sistema e sobre os desafios de programação (Detalhe: Não é necessário conhecer de programação pra explorar esses bugs, apenas usar e tentar fazer algo). Para criar Issues aqui, teria algumas regrinhas, mas nada tão exigente assim, apenas que detalhe bem nas descrições, crie um título do erro, e descreva o erro o melhor possível que você conseguir, pra me conseguir entender exatamente o que você estava tentando fazer e o que você esperava como resultado do seu teste, e assim saberei como corrigir ou terei uma forma melhor de procurar e corrigir o erro.
 
 <div id='suggestions'></div>
+
 ### Sugestões de novos sistemas
 
 As sugestões são importantes, até pra filtrarmos os interesses e necessidades, e é algo frequentemente visto no meu canal, no entanto, uma sugestão jogada no ar na internet sem domínio técnico é apenas uma "Sugestão", correto? Algo que encontramos direto por aí. Okay, não é bem dessa forma que eu menciono esse tipo de sugestão que eu espero em uma dessas colaborações, vou explicar: Se você pede algo como - "Eu tenho uma sugestão: Crie um gerenciador de tarefas exatamente igual o do Windows" ou "Crie um driver de placa de vídeo avançada que rode qualquer jogo 3D do Windows", concorda que eu posso levar anos pra concluir estas coisas? E que são sugestões genéricas que todos pedem? Então, tente fugir desse tipo de sugestão. Eu gostaria de algo mais técnico, simples, objetivo e específico, quanto mais específico melhor e quanto mais enquadrado ao que já "existe" no sistema, melhor ainda. 
@@ -86,6 +89,7 @@ As sugestões são importantes, até pra filtrarmos os interesses e necessidades
 Por exemplo: Digamos que eu criei um novo comando pra checar "Detalhes" de arquivos, e aí nos seus testes, você identificou que seria bom ter um novo parâmetro para checar um detalhe específico de um tipo de arquivo.. e aí eu analisei a sua sugestão, estudei o caso e vi que realmente seria bom, então isso sim seria "Sugestão perfeita" digna de "Colaboração do KiddieOS". Isto significa que deve ser algo criteriosamente avaliado, validado e enquadrado nas necessidades atuais do sistema, medidas pelos seus estudos do KiddieOS e o que ele poderia ter "a mais" pra melhorar, algo que pode ser mais rápido de implementar mas que faria toda a diferença pra quem tivesse a mesma necessidade que você. Viu que não é algo apenas jogado no ar? Pode ser algo muito simples, um simples parâmetro de um comando, um simples ícone de uma janela, ou... um novo comando, talvez, uma nova rotina Assembly que complemente outra, existem milhares de sugestões boas que você poderá fazer.
 
 <div id='integration'></div>
+
 ## Colaboração pro momento futuro
 
 ### Integração de Código
@@ -97,6 +101,7 @@ Você simplesmente enviaria uma solicitação de Pull (Pull Request) com suas no
 Essas novas funcionalidades poderiam ser desde simples/básicas até mais avançadas/maiores, no entanto, para esse tipo de Integração inicialmente, será preferencialmente recomendável pequenas alterações por motivos de segurança também, ou seja, funcionalidades menores. Isto é, preferível criar muitas funcionalidades menores uma de cada vez (pra cada Pull Request) como partes integrantes de um problema maior, do que todo o problema maior resolvido de uma vez só, na integração de código por Pull Request.
 
 <div id='optimization'></div>
+
 ### Otimização & Personalização
 
 Otimizar e personalizar pode sim ser criar algo novo, mas muito frequentemente ta ligado a mexer com algo que já ta pronto, por isso há uma alta taxa de riscos e uma grande probabilidade de reprovação no Pull Request, então exige maiores conhecimentos do que no tipo de colaboração anterior. Otimizar seria pegar um código que por natureza ta lento e aumentar sua eficiência, sua velocidade, trocando instruções, invertendo algoritmos ou refazendo partes do algoritmo sem afetar nenhuma outra funcionalidade pré-existente, deixando o algoritmo mais rápido, mais eficaz. Personalizar já é deixar algum sistema/algoritmo com características mais avançadas. 
