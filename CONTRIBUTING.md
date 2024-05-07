@@ -114,7 +114,7 @@ A otimização também pode ser enquadrada na correção de bugs, porque um sist
 
 
 Acesse os links de dúvidas do KiddieOS:
-[Conhecendo o Sistema KiddieOS (Dúvidas/Questões por @lucasnuic)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/18)
-[Dúvidas sobre o KiddieOS | Nome/Marca (Dúvidas/Questões por @lucasnuic)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/19)
+- [Conhecendo o Sistema KiddieOS (Dúvidas/Questões por @lucasnuic)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/18)
+- [Dúvidas sobre o KiddieOS | Nome/Marca (Dúvidas/Questões por @lucasnuic)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/19)
 
 Agradeço por quem leu e compreendeu! Boas colaborações para vocês! :D 
