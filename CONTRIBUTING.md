@@ -11,6 +11,7 @@
       - [Sugestões de novos sistemas](#suggestions)
       - [Integração de código](#integration)
       - [Otimização de código](#optimization)
+* [Dúvidas respondidas](#questions)
 
 <div id='overview'></div> 
 
@@ -112,8 +113,12 @@ E otimização? Okay, digamos que um algoritmo pra procurar a pasta X dentro de 
 
 A otimização também pode ser enquadrada na correção de bugs, porque um sistema pode ter falhas, erros e defeitos, são 3 características diferentes... e você pode tanto que otimizar ou corrigir, tudo será uma otimização. Se você encontrar uma falha, mesmo que mínima, mas que pode acarretar lá na frente e souber corrigir, você ainda estará otimizando o sistema, então está valendo. Muitas vezes um defeito não é tão perceptível assim, erros e falhas é até mais fácil, mas deficiências, defeitos, é algo que só se descobre com o tempo de uso, como a velocidade de operação por exemplo e isso só pode ser corrigido via otimização.
 
+<div id='questions'></div>
 
-Acesse os links de dúvidas do KiddieOS:
+## Dúvidas respondidas
+
+Na sessão de Issues, veremos perguntas gerais e específicas sobre o sistema que já foram respondidas, provavelmente uma de suas dúvidas podem estar lá. Você também poderá interagir com a conversação da Issue ou criar uma nova Issue de dúvidas. Acesse os links de dúvidas do KiddieOS logo abaixo:
+
 - [Conhecendo o Sistema KiddieOS (Dúvidas/Questões por @lucasnuic)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/18)
 - [Dúvidas sobre o KiddieOS | Nome/Marca (Dúvidas/Questões por @lucasnuic)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/19)
 
