@@ -119,7 +119,8 @@ A otimização também pode ser enquadrada na correção de bugs, porque um sist
 
 Na sessão de Issues, veremos perguntas gerais e específicas sobre o sistema que já foram respondidas, provavelmente uma de suas dúvidas podem estar lá. Você também poderá interagir com a conversação da Issue ou criar uma nova Issue de dúvidas. Acesse os links de dúvidas do KiddieOS logo abaixo:
 
-- [Conhecendo o Sistema KiddieOS (Dúvidas/Questões por @lucasnuic)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/18)
-- [Dúvidas sobre o KiddieOS | Nome/Marca (Dúvidas/Questões por @lucasnuic)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/19)
+- [Conhecendo o Sistema KiddieOS (Dúvidas/Questões por @storebreakup)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/18)
+- [Dúvidas sobre o KiddieOS | Nome/Marca (Dúvidas/Questões por @storebreakup)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/19)
+- [Lançamento de KiddieOS via Torrent (Dúvidas/Questões por @storebreakup)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/21)
 
 Agradeço por quem leu e compreendeu! Boas colaborações para vocês! :D 
