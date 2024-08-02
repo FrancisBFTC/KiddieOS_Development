@@ -15,19 +15,23 @@
 
 Detect_Low_Memory:
 	clc
-	xor 	eax, eax
+	xor 	eax, eax		; Detectar padrão
 	int 	0x12
+	;mov 	ah, 88h			; Detectar extendido
+	;int 	15h
 	jc 		.Err_DLM
 	
-	push 	eax
-	mov 	si, msg_suc
-	call 	Print_String
-	mov 	si, msg_size1
-	call 	Print_String
-	pop 	eax
-	call 	Print_Dec_Value32
-	mov 	si, msg_size2
-	call 	Print_String
+	; Reativar impressão quando implementar rolagem de tela
+	; no modo protegido e implementar esses prints via INT 0xCE
+	;push 	eax
+	;mov 	si, msg_suc
+	;call 	Print_String
+	;mov 	si, msg_size1
+	;call 	Print_String
+	;pop 	eax
+	;call 	Print_Dec_Value32
+	;mov 	si, msg_size2
+	;call 	Print_String
 ret
 
 

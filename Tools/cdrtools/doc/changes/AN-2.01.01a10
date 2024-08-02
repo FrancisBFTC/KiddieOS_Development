@@ -1,0 +1,127 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a10:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of dirtibutions.
+	The only reason is to add certain new CD/DVD features that are important.
+
+	So _please_ do not send any patches except when you like to fix extreme bugs.
+	I am currently mainly working on stable incremental restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	The file "CONTRIBUTING" has been updated.
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libscg:
+
+-	scsi-apollo.c & scsi-hpux.c indented properly to follow Cstyle
+
+-	scsi-linux-ata.c cast added to avoid strange warning from GCC
+	caused by bad coding style in the Linux kernel.
+
+-	scsi-linux-ata.c trying again to add workarounds for new Linux
+	Kernel self-incompatibilities: Adding the same uid workaround
+	as for scsi-linux-sg.c. Note that I am not sure if this is the
+	only incompatibility that has been added with Linux-2.6.16, it may
+	be that they did also break the behavior of seteuid().
+	Please help me with further testing and debugging.
+
+	I am however short before giving up completely with Linux.
+
+
+Rscsi:
+
+Cdrecord:
+
+-	Fixed a typo in defaults.c & scsimmc.h
+
+-	Fixed a bug (ignoring DVD+R/DL media) that has been introduced
+	with cdrecord-2.01.01a09 when trying to work around a Pioneer
+	firmware problem.
+
+-	Introduced a better DMA speed test that now hopefully notices
+	all cases when the SCSI read buffer command does not work.
+
+-	Print the physical drive buffer size in addition to the logical 
+	drive buffer size when both differ.
+
+-	Added a workaround for a NEC DVD firmwarebug that caused cdrecord
+	to use the CD write speed instead of the DVD write speed.
+
+-	Added a workaround for the fact that some NEC writers return a too
+	small size for half written DVD+RW (use end_lba from GET PERFORMANCE
+	in this case).
+
+-	Better error messages in case of no track options that are called
+	together with file type arguments.
+
+-	Added new Mt.Fuji6 profile texts for HD-DVD and Blu ray writers.
+
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+-	Fixed several typos that have been introduced with 2.01.01a09 and that
+	did prevent compilation on Linux, FreeBSD and Cygwin.
+
+Readcd:
+
+-	New experimental option -edc-corr. This has already been added with
+	2.01.01a09 but forgotten to list here.
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

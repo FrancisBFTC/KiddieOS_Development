@@ -1,0 +1,158 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a38:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	distibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	The Schily Makefile system has been enhanced to install
+	the profiled version of the archives in a sub-directory "profiled".
+	This is done via a new macro SUBINSDIR=
+
+-	New autoconf test checks sizeof(time_t)
+
+-	New autoconf test for the existence of stack_t and siginfo_t in signal.h
+
+-	In order to allow better dealing with Solaris linker Mapfiles,
+	a getfp() function (calling abort(3)) is created when it is not
+	possible to implement this function because of compiler constraints.
+
+-	Many other enhancements of the autoconfiguration have been a result
+	of porting the Bourne Shell into the Schily Makefilesystem.
+
+
+
+
+Libschily:
+
+-	The schily *printf routines now correctly support the %j format (intmax_t)
+
+-	getargs now first checks whether an argument can be a combination of
+	several singlechar flags before starting to set values.
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+- 	libfind (used by sfind, bsh, star, mkisofs) fixed the -exec {} +
+	implementation. Before the fix, it could core dump if the built-in
+	xargs(1) would exactly fill up args to the size of ARG_MAX.
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+-	libsiconv/sic_nls.c modified to allow compilation with older GCC
+	versions.
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+-	cdrecord/readcd/cdda2wav now support an enhanced /etc/default/cdrecord file
+	with an additional parameter to specify the max. transfer size for a device.
+
+-	CDR_FORCESPEED=any now works for cdrecord to switch off DMA speed test results
+
+-	Make cdrecord compile again with a K&R compiler 
+
+-	Add a "blank emulation" layer to the BluRay driver too.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	cdrecord/readcd/cdda2wav now support an enhanced /etc/default/cdrecord file
+	with an additional parameter to specify the max. transfer size for a device.
+
+Readcd:
+
+-	cdrecord/readcd/cdda2wav now support an enhanced /etc/default/cdrecord file
+	with an additional parameter to specify the max. transfer size for a device.
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Fixed a typo unides -> inodes
+
+-	Mkisofs now gives better warning for files > 4 GB in hope it
+	will no direct people to read the documentation.
+
+-	superfluous definition for memmove() on memmove()-less platforms removed
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

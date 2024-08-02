@@ -1,0 +1,144 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a19:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	dirtibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	A small restructuring of the include file structure:
+	new file include/schily/xconfig.h
+	include/schily/xmconfig.h now only contains manual static configuration 
+	for VMS
+
+-	The Makefilesystem now inclucdes links for sparc64 (Fujitsu-Siemens)
+
+Libschily:
+
+-	Fixed a typo in fconv.c that caused problems on IBM AIX5.
+
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+-	-perm now correctly recognises argument parsing errors by 
+	dealing with the fact that mode_t is unsigned.
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+-	Renamed getdelim() to getworddelim() to avoid a name clash in Cygwin.
+
+	Note that there is still a name clash on Cygwin with getline(). As this
+	is a hard POSIX violation caused by Cygwin, you need to edit Cygwin's
+	/usr/include/stdio.h and remove the non-conforming Cygwin getline()
+	if you like to compile cdrtools. Please also make a bug report against 
+	Cygwin. Tell the Cygwin people that libschily's getline() is compilant
+	to a commercial interface published since 1982. Cygwin needs to use a 
+	different name if they don't like to follow the official getline()
+	prototype.
+
+-	The manual layer break code has been modified to deal with the different
+	GCC behavior with signed/unsigned comparison.
+
+
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+-	New Option ts= # similar to cdrecord's and readcd's options.
+	This allows to work around a Linux kernel bug that prevents
+	cdda2wav to be usable with USB drives. To work around this
+	Linux bug try cdda2wav ts=128k or less.
+
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	mkisofs -T & mkisofs -b boot_file now work correctly.
+	This fixes a bug introduced with 2.01.01a18
+
+-	Deep directory abortion now happens from the right place, so
+	mkisofs will allow files but no sub-dirs inside the last
+	permitted directory nesting level.
+
+-	Mkisofs will now correctly ignore deep directory nesting
+	in no Rock Ridge mode with mkisofs -find
+
+-	mkisofs -find dir will now correctly deal with Rock Ridge deep
+	directory relocation.
+
+-	Some small compile problems on Cygwin (caused by a unsigned int
+	vs. UInt32_t clash) have been fixed. Thanks to Uwe Büdel for reporting.
+
+-	Symlinks now work in mkisofs -find mode too.
+
+-	.. directory in rr_moved now gets the correct mode
+
+-	graft dirs now work even if they cause Rock Ridge deep
+	directory relocation.
+
+
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

@@ -1,0 +1,452 @@
+New features with AN-2021-06-07:
+
+This is the first localization step for the schily source consolidation. Many
+programs now (hopefully) call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries and the
+	missing programs
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to the tools should *****
+*****		call all programs in the "C" locale		   *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		   *****
+*****		unless these frontends support localized strings   *****
+*****		used by the cdrtools with NLS support.		   *****
+
+		*** WARNING        ***
+		*** Need new smake ***
+
+	*** Due to the fact that schily-tools 2014-04-03 introduced to use new macro
+	*** expansions and a related bug fix in smake, you need a newer smake
+	*** to compile this source. If your smake is too old and aborts, ensure to
+	*** use the recent smake by calling:
+
+	cd ./psmake
+	./MAKE-all
+	cd ..
+	psmake/smake
+	psmake/smake install
+
+	The new smake version mentioned above is smake-1.2.4
+	The recent smake version is smake-1.5
+
+	*** Due to the fact that schily-tools 2018-01-26 introduced
+	*** optimizations for the Schily version of SunPro Make, you
+	*** need at least the dmake version from 2018/01/11 with support
+	*** for the "export" directive to compile with this makefile system.
+
+For the beginning of the list of new features of the software in this tarball, 
+please scroll down to "NEW FEATURES"
+
+	WARNING: the new version of the isoinfo program makes use of the 
+		*at() series of functions that have been introduced by Sun
+		in August 2001 and added to POSIX.1-2008. For older platforms,
+		libschily now includes emulations for these functions but
+		these emulations have not yet been tested thoroughly.
+		Please report problems!
+
+	BUG WARNING: Please never report bugs only to Linux distributions as
+		they usually do not forward these bug reports upstream and
+		the Linux distributions typically do not let skilled people
+		check the bugs. We did not hear about a FIFO problem in star
+		for a long time. Then a problem on Linux occurred once
+		every 6000-10000 tries but it did not happen on Solaris after
+		even 10 million tries, so it was not known besides Linux and
+		not reported to the project.
+
+	BUG WARNING: *** GNU make *** starts too early with parallel
+		execution (when reading Makefiles and evaluating rules for
+		"include" statements already). Since GNU make does not
+		support a concept for a correct ordering of such actions,
+		you need to be prepared to see GNU make fail in parallel
+		mode. If you try to compile a maiden unpacked schilytools
+		tarball in parallel mode using GNU make, this will definitely
+		fail as a result of the GNU make timestamp caching bug. See
+		below for more information.
+
+		If you are interested in reliable parallel execution,
+		it is recommended to use the included "dmake" program with
+		a command line like:
+
+			dmake -j10 -r -f SMakefile
+
+		from the top level directory. Note that if you are on Linux,
+		you need the dmake version from schilytools 2021-06-07 or
+		newer, since that version introduced a solution for a kernel
+		caused performance problem with filesystems on Linux. Older
+		dmake versions will not be faster in parallel mode on Linux.
+
+		The "dmake" program included in the schilytools tarball is the
+		current version of the "new" SunOS make program that has been
+		introduced in January 1986 by Sun Microsystems. It also
+		introduced new features like the "include" directive that
+		3 years later have been copied by gmake in a partially buggy
+		way. As gmake does not fix showstopper bugs, it cannot be
+		supported. Current showstoppers are: 1) gmake executes
+		"include" related rules in the inverse order, causing rules
+		to fail if they depend on files created by an "earlier" action
+		2) gmake caches an outdated state of the directory and aborts
+		with a wrong complain about allegedly missing files that in
+		fact exist already, because they just have been remade.
+
+NEW FEATURES:
+
+-	README.compile now explicitly mentions that using INS_BASE=xxx
+	requires a "make clean" followed by a recompile with INS_BASE=xxx to
+	make the change effective.
+
+	Thanks to Robert Clausecker for reporting.
+
+-	COPYING: The license of the program "lndir" is now correctly
+	mentioned as "MIT licensed". Before, it incorrectly was reported
+	as "similar to BSD".
+
+	Thanks to Robert Clausecker for reporting.
+
+-	RULES/MKLINKS: creates more ISA specific symlinks for FreeBSD
+	and ARM based platforms.
+
+-	DEFAULTS/Defaults.freebsd now sets RUNPATH. Before, this was 
+	commented out.
+
+	Thanks to Robert Clausecker for reporting.
+
+-	RULES/*: the FreeBSD rules now pass RUNPATH to the linker.
+	This allows to compile schilytoos with LINKMODE=dynamic on
+	FreeBSD.
+
+	Thanks to Robert Clausecker for reporting.
+
+-	RULES/rules.cnf: now always tries to update the configuration
+	test code in the directory "inc" that e.g. generates
+
+		align.h and avoffset.h
+
+	if the rules detect the need to automatically run "configure".
+	This permits to start compilation in a dedicated sub-directory
+	and to rely on the makefile system to automatically create all
+	primary dependendencies.
+
+	Note that there is no automatic creation of libraries that
+	may need to be compiled first. This is only handled automatically
+	when using the predefined compile order from the top level
+	directory.
+
+	Thanks to Robert Clausecker for reporting.
+
+-	.links: The new FreeBSD links have been added to let them be
+	removed by calling:
+
+		./.clean
+
+-	RULES/rules.top: The NOECHO=@ has been moved more to the front of the
+	file to cover all rule commands.
+
+-	makefiles.tar.bz2 was updated to include the above changes.
+
+-	cpp: A new option -help (and an --help alias) has been implemented
+	to print a short usage information.
+
+-	cpp: cpp -version (and --version) now prints a new version date to
+	give a hint to the changes. from above.
+
+-	cpp: #ifdef linux and #ifdef __aarch64__ are now supported
+
+-	cpp: The binary is now also installed as $INS_BASE/bin/krcpp
+	via a hardlink to lib/cpp (the historic location of the K&R cpp).
+
+	For manual use, it is now recommended to call:
+
+		krcpp ...
+
+-	cpp: The man page now mentions $INS_BASE/bin/krcpp as well
+
+-	cpp: The binary.../bin/krcpp is now also supported
+	by the CSW packaging
+
+-	cpp: The man page krcpp.1 is now used by CSW packaging instead
+	of cpp.1. This makes it easier to avoid getting a GCC man page
+	of the same name.
+
+-	man2html: This tool has been added to the packaging of the
+	CSW packet schilytools.
+
+-	smake: the MAKEFLAGS parser has been enhanced to understand the
+	encoding used by the BSD make program "bmake". This is needed to
+	support something like "bmake INS_BASE=xxx" on FreeBSD while
+	compiling the schilytools.
+
+	This parser enhancement also covers some incompatibilities with
+	the MAKEFLAGS= values created by SunPro Make (e.g. a missing --
+	before the make macro definitions are added).
+
+	Thanks to Robert Clausecker for reporting.
+
+-	smake: The smake man page now also mentions SunPro make as dmake(1)
+	and make(1s) in the "SEE ALSO" section.
+
+-	SunPro Make: A new hardlink .../bin/svr4.make is installed to make
+	it easier to get make "make" with SVr3 behavior.
+
+-	SunPro Make: The binary.../bin/svr4.make is now also supported
+	by the CSW packaging
+
+-	SunPro Make: The man page sysV-make.1 mentions the above change.
+
+-	SunPro Make: The man page now also mentions smake(1) in the
+	"SEE ALSO" section.
+
+-	SunPro Make: The word POSIX is now printed in bold to make it
+	easier to read the SunPro Make man page.
+
+-	SunPro Make: Temporary output files, used for serializing stdout
+	and stderr with "make -j 2" or more parallel jobs are no longer 
+	opened with O_DSYNC.
+
+	On platforms with bad filesystem performance, like Linux, using
+	O_DSYNC did cause a massive performance problem when running in
+	parallel mode on Linux.
+
+	Since using O_DSYNC just enforces a common view between the kernel
+	and the filesystem background storage and since the named temporary
+	files do not need to survive a reboot, there is no need to use O_DSYNC.
+
+	If you for whatever reason like to check whether using O_DSYNC
+	causes a difference, call:
+
+		cd sunpro
+		smake clean
+		smake COPTX=-DDO_DIRECTIO
+
+	to enforce the previous method.
+
+-	SunPro Make: a new version date has been introduced for "make -version"
+
+-	Bourne Shell: the man page now uses a correct notation for "[]" for the
+	arguments of the builtin "dosh" that has been introduced in May 2012.
+
+
+
+SCCS THOUGHTS:
+
+-	SCCS: The current idea for converting a historic SCCS project into
+	a project oriented SCCS history bundle is the following:
+
+	-	Create a user map file for "sccslog" by calling:
+
+		mkdir $HOME/.sccs
+		$EDITOR $HOME/.sccs/usermap
+
+		Enter the UNIX login names followed by a TAB, followed
+		by an E-mail notation. Use one line per user, e.g.
+
+			joerg	J. Schilling <joerg@mail.com>
+
+	-	Create a copy of the whole project to work on for this test.
+		Do not do this conversion on the original project until
+		sccs-6.0 is ready.
+
+	-	chdir to the project home directory of the just created copy.
+
+	-	Call "sccs init -i ." to make the project using an in-tree
+		project oriented repository.
+
+	-	Call:
+
+		find * -path '*SCCS/s.*' | /opt/schily/ccs/bin/sccscvt -NSCCS/s. -k -ooo -V6 -
+
+		for the CSRG BSD project use:
+
+		find * -path '*SCCS/s.*' | TZ=US/Pacific /opt/schily/ccs/bin/sccscvt -NSCCS/s. -k -ooo -V6 -
+
+		to convert all history files into SCCSv6 history files. The
+		TZ=US/Pacific is important for the UCB conversion since SCCSv6
+		uses timezones but SCCSv4 does not and we need to have the 
+		correct timezone entries in the SCCSv6 history files.
+
+		For the complete "schilytools" project with 4200 SCCS history
+		files in 55 Mbytes, this takes 12 seconds for the SCCS history
+		from 1984 .. 2020, but note that most of the edits from the
+		1980s are lost, so there are few entries from the time
+		before 1989.
+
+		An alternate example: the SCCS history from the BSD-4.4 project
+		from December 1979 up to June 1995 is in 12600 SCCS history
+		files that take up 125 MB.
+		The conversion time to the SCCSv6 history file format is
+		18 seconds.
+
+	-	Call:
+
+		find * -path '*SCCS/s.*' | /opt/schily/ccs/bin/sccslog -changeset -
+
+		to populate the changeset file from the existing deltas.
+
+		For the complete "schilytools" project with 19600 commits,
+		this takes 8 minutes. The resulting file .sccs/SCCS/s.changeset
+		has a size of approx. 7 MBytes.
+
+		An alternate example: the SCCS history from the BSD-4.4 project
+		from December 1979 up to June 1995 has approx. 47000 commits.
+		The conversion time is approx. 40 minutes.
+		The size of the resulting changeset file is approx. 14 MBytes.
+
+	-	convert the in-tree repository into an off-tree repository.
+		This final step is not yet needed and there is currently no
+		code to do that automatically.
+
+	-	If you like to check the resulting changeset file, there is
+		currently only one way to look at it, by calling:
+
+		sccs -O get -p -A -m .sccs/SCCS/s.changeset | more
+
+		This prints an annotated version of the changeset file.
+		The next task is to develop an enhancement to "sccs log"
+		that prints the changeset in a way similar to what "hg log -v"
+		prints.
+
+	-	NOTE: Normal filesystems on Linux are slow, it is advised to
+		make the conversions on tmpfs for performance reasons in case
+		you are using Linux.
+
+	Please however keep in mind that this is still experimental and there is
+	absolutely no grant that a changelog created with current experimental
+	software will work correctly with the final SCCS version. The procedure
+	is just an example to check how it may look like.
+
+	The final conversion method will be more automated... most likely
+	by a command similar to "sccs import ..."
+
+	IMPORTANT: This is not yet the time to finally convert a project into
+	the project mode, because the project would be stuck in the current 
+	state. What we need to continue work in that repository state in the
+	project mode is at least a working "sccs commit". Be prepared to remove
+	the changeset history file once "sccs commit" works and to re-create
+	the changeset file for that time.
+
+ 
+
+-	SCCS TODO:
+
+	-	Activate "fsdiff" as a "bdiff" replacement in delta(1)
+		to speed up delta(1) and to reduce the size of the SCCS
+		history files.
+
+	-	Implement something that outputs similar information from
+		the changeset file as printed with "hg log -v".
+
+		This would be the next key feature.
+
+	-	verify whether sccs.c uses -NSCCS in the back end programs
+		correctly, instead of converting g-file names from the command
+		line into s.file names in the frontend in order to forward 
+		s.file names to the backend programs. This is needed for an
+		off-tree repository.
+
+		The related unit tests are already passed.
+
+	-	Add code to to sccs(1) to send a list of files to admin(1) and
+		delta(1) with new or modified files in order to have all
+		important code for a "sccs commit" in a single program that
+		does not need to deal with ARG_MAX limitations.
+
+	-	Add code to admin(1), delta(1), sccs-log(1) and get(1) to 
+		maintain/understand the changeset file.
+
+		This is mainly writing out the sccschangeset(4) entries to an
+		intermediate store if a single file has been treated
+		successfully. For sccs-log(1), see below.
+
+	-	Finish the work to allow normal line based diffs in SCCS even
+		for binary files. This are files that include nul bytes and
+		this needs to completely avoid fputs() and this needs an 
+		initialized member p_line_length in struct packet even for 
+		all content that does not result from a previous getline() call.
+
+	-	sccs -R tell (and probably other subcommands?) does not yet
+		work in NewMode
+
+	-	Add code to libcomobj to understand the changeset file.
+		This is needed in order to e.g. know the file names and file
+		specific SIDs/state that corresponds to a project global SID.
+
+	-	Find/verify a complete transactional model that allows to repair
+		complex changes to the set of files for a project that have
+		been aborted in the middle. The current idea is to create the
+		file $PROJECTHOME/.sccs/changeset with the deltas to the
+		changeset during a complex update operation.
+
+	-	Find a decision on how to deal with the admin flags that are
+		currently implemented as global flags and thus do not depend on
+		the SID (version) if the history file.
+
+	-	Aborting a transaction via ^C currently requires a manual
+		removal of the global lock file. Find a way to avoid this in
+		case that a commit has been aborted while being prompted for
+		a commit message (which is before any real action happened).
+
+	-	Implement a fully automated method to convert a SCCSv4 based
+		history with unrelated history files into a new SCCSv6 based
+		project mode history with a populated changeset history file.
+
+		This will most likely be done as a variant of the to be defined
+		new command "sccs sccsimport" that imports a whole existing old
+		SCCS project.
+
+	-	Implement this "sccs sccsimport" based conversion in a way where
+		sccs(1) holds the global changeset lock for the whole time
+		of the conversion.
+
+
+
+
+-	Bourne Shell Missing features for POSIX compliance:
+
+	- Support for $'...' quoting (this is not needed for the current
+					version of POSIX but for the next POSIX
+					version that will be named SUSv8).
+					The development of SUSv8 will start in
+					late 2016.
+
+	We are now expecting the Bourne Shell to be fully POSIX compliant.
+
+-	Bourne Shell further TODO list:
+
+	-	Finish loadable builtin support.
+
+	-	POSIX does not allow us to implement ". -h", so we will
+		add a "source" builtin to be able to implement "source -h"
+
+-	The following builtins (that are available in bsh) are still missing in
+	the Bourne Shell:
+
+	err			echo with output going to stderr
+	glob			echo with '\0' instead of ' ' between args
+	env			a builtin version of /usr/bin/env
+
+	The following bsh intrinsics are still missing in the Bourne Shell:
+
+	-			the restricted bsh has restriction features that
+				are missing in the Bourne shell.
+
+	-	source -h	read file into history but do not execute
+
+	and probably more features not yet identified to be bsh unique.
+
+
+
+Author:
+
+Joerg Schilling
+D-13353 Berlin
+Germany
+
+Email: 	joerg@schily.net
+
+Please mail bugs and suggestions to me.

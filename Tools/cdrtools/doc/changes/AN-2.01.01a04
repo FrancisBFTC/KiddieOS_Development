@@ -1,0 +1,164 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a04:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of dirtibutions.
+	The only reason is to add certain new CD/DVD features that are important.
+
+	So _please_ do not send any patches except when you like to fix extreme bugs.
+	I am currently mainly working on stable incremental restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+All:
+
+-	astoull*() new in schily.h
+
+-	utypes.h now has MAX_ and MIN_ value definitions for all basic
+	system types.
+
+-	Using Makefiles-1.5a02
+
+-	Support added to compile in 64 bit mode on Solaris Sparc.
+	Use: smake CCOM=cc64
+
+-	Support added to compile shared libraries with version
+	numbers for interface levels and make inofficial "interfaces"
+	static
+
+-	Prevent gmake to go into an enless loop on Solaris
+	in case that /usr/ucb/tr is before /usr/bin/tr in PATH
+
+-	Better autoconf error message ion case that the expected
+	C-compiler could not be found.
+
+-	Mac OS X now installs files as root:wheel
+
+-	Supply linker mapfiles for all libraries. This allows cdrtools
+	to be compiles using shared libraries only and to properly 
+	hide inofficial interfaces on Solaris (using ls)
+	Note that this feature is not available with GNU ld
+
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libscg:
+
+-	Autoconf test for broken Linux sg.h headers added
+
+-	if libscg is compiles on newer Solaris systems, the warning:
+
+	"Warning: Volume management is running, medialess managed drives are invisible.\n"
+
+	is no longer printed.
+
+	Since Solaris 11 Build 21, vold no longer hides empty drives 
+	that are under volume management. This now allows cdrecord to be even 
+	used to close the tray while vold is running.
+
+	The criteria used to decide whether Solaris is "recent enough" is 
+	#ifndef SEEK_HOLE
+	The definition SEEK_HOLE has been added with Solaris 11 Build 14
+	while the fixed vold appears in Solaris 11 Build 21.
+
+-	Support for root-less cdrecord using fine-grained privileges.
+	Remote SCSI not tests for PRIV_NET_PRIVADDR instead of (geteuid() == 0)
+
+	If you like all users to be able to call cdrecord root-less, you need
+	Solaris 10 or newer.
+
+	Edit the file /etc/security/exec_attr and add:
+
+	All:solaris:cmd:::/opt/schily/bin/cdrecord: privs=file_dac_read,sys_devices,proc_lock_memory,proc_priocntl,net_privaddr
+	All:solaris:cmd:::/opt/schily/bin/readcd: privs=file_dac_read,sys_devices,net_privaddr
+	All:solaris:cmd:::/opt/schily/bin/cdda2wav: privs=file_dac_read,sys_devices,net_privaddr
+
+	If you like to allow only specific user to use cdrecord,
+	use something like:
+
+	CD RW:solaris:cmd:::/opt/schily/bin/cdrecord: privs=file_dac_read,sys_devices,proc_lock_memory,proc_priocntl,net_privaddr
+
+	instead and make the users members of the profile "CD RW"
+	by adding a line like:
+
+	joerg::::profiles=CD RW
+
+	into /etc/user_attr
+
+	Note that you either need to call cdrecord via "pfexec cdrecord ....."
+	or by using a profile aware shell (e.g. /usr/bin/pfksh)
+
+Rscsi:
+
+Cdrecord:
+
+-	Correctly evaluate the write speeds for Ultra speed+ CD-RW media.
+	This prevents wrong warnings that the "drive does not support Ultra speed+"
+
+-	Fixed a typo in the driveropts=help messages
+
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+-	Added a workaround for the _POSIX_PRIORITY_SCHEDULING behavior
+	on MacosX: defined but not supported#
+	Thanks to: Emanuele Giaquinta <e.giaquinta@glauco.it>
+
+-	Bugfix: cdda2wav did previously chose to ignore the result of realloc(3)
+	This prevents core-dumps.
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	mkisofs now detects if a file grows or shrinks while being
+	read by mkisofs.
+
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

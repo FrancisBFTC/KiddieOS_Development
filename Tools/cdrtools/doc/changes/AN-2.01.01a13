@@ -1,0 +1,136 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a13:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of dirtibutions.
+	The only reason is to add certain new CD/DVD features that are important.
+
+	So _please_ do not send any patches except when you like to fix extreme bugs.
+	I am currently mainly working on stable incremental restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	libschily now includes a fallback fnmatch() for better portability
+	This fnmatch() implementation has been taken from th BSD project.
+
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+-	The libfind code (developed as part of the sfind(1) command) has been added
+	in order to support "mkisofs -find ..."
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	mkisofs now includes libfind and allows to use the find(1) command line
+	syntay to be used.
+
+	The new -find option acts as a option separator. To the right of the
+	-find option, find(1) syntax is used. No other mkisofs option may 
+	appear anymore.
+
+	Files are considered to be taken into the .ISO image in case that the
+	find(1) expression used on the command line yields TRUE.
+
+	In addition to the find(1) utility, libfind allows to modify the stat(2)
+	data for each file before it is included in the .ISO. The following
+	find(1) primaries are implemented for this feature:
+
+	-chmod	mode/onum	Modify the permissions for a file usinf the
+				chmod(1) syntax.
+				This primary always yields TRUE
+
+	-chown	uname/uid	Modify the owner for a file.
+				This primary always yields TRUE
+
+	-chgrp	gname/gid	Modify the group for a file.
+				This primary always yields TRUE
+
+	The command line: "mkisofs -o image.iso -R -J somedir"
+	may be written as: "mkisofs -o image.iso -R -J -find somedir"
+	to give the same results as before.
+
+	The command line:
+
+		mkisofs -o image.iso -R -J -find somedir -chmod a+r -chown root -chgrp 0
+
+	will ensure that all files will have at least read permission for all users
+	and set the user/group to 0.
+
+	The command line:
+
+		mkisofs -o image.iso -R -J -find somedir ( -type d -chown root ) -o -true
+
+	will change the owner of all directories to root, leaving other file
+	types untouched.
+
+	Graft points are not yet implemented in -find mode.
+
+-	removed fnmatch.c
+	mkisofs now uses the fnmatch() implementation from the OS if present
+	and the fallback version from libschily if fnmatch() is missing in the OS.
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

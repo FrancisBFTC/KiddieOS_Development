@@ -1,0 +1,131 @@
+%INCLUDE "libasm.inc"
+
+msg db "Programa em modo protegido",0
+i 	dd 1
+number db "8192",0
+number2 times 10 db 0
+number3 dd 0
+expression db "(((5 * (2 * 5)) * 10) / (10 + 10))",0
+par_count  db 0
+pushes_count db 0
+
+expr_parse:
+	xor 	eax, eax
+	xor 	ecx, ecx
+	call 	skip_space
+parse_parenthesis:
+	cmp 	byte[esi], '('
+	jz 		inc_par_count
+	cmp 	byte[esi], '0'
+	jb 		other_char
+	cmp 	byte[esi], '9'
+	ja 		other_char
+	inc 	ecx
+	inc 	esi
+	jmp 	parse_parenthesis
+inc_par_count:
+	inc 	byte[par_count]
+	inc 	esi
+	jmp 	parse_parenthesis
+other_char:
+	call 	parse_int
+push_value:
+	push 	eax
+	cmp 	byte[par_count], 0
+	jz 		ret_value
+	call 	skip_space
+	cmp 	byte[esi], ')'
+	jz 		pop_values
+	; -------------------------------------
+	; Próxima operação
+	xor 	eax, eax
+	mov 	al, [esi]
+	push 	eax
+	xor 	ecx, ecx
+	inc 	esi
+	call 	skip_space
+
+	; -------------------------------------
+	jmp 	parse_parenthesis
+
+pop_values:
+	dec 	byte[par_count]
+	pop 	edx
+	pop 	ebx
+	pop 	eax
+	cmp 	bl, '+'
+	jz 		expr_add
+	cmp 	bl, '-'
+	jz 		expr_sub
+	cmp 	bl, '*'
+	jz 		expr_mul
+	cmp 	bl, '/'
+	jz 		expr_div
+	
+expr_add:
+	add 	eax, edx
+	inc 	esi
+	jmp 	push_value
+expr_sub:
+	sub 	eax, edx
+	inc 	esi
+	jmp 	push_value
+expr_mul:
+	mov 	ebx, edx
+	xor 	edx, edx
+	mul 	ebx
+	inc 	esi
+	jmp 	push_value
+expr_div:
+	mov 	ebx, edx
+	xor 	edx, edx
+	div 	ebx
+	inc 	esi
+	jmp 	push_value
+	
+ret_value:
+	pop 	eax
+	ret
+	
+parse_int:
+	push 	esi
+	xor 	bx, bx
+	mov 	bl, [esi]
+	push 	bx
+	mov 	byte[esi], 0
+	sub 	esi, ecx
+	STR.ToInt(esi)
+	pop 	bx
+	pop 	esi
+	mov 	[esi], bl
+ret
+
+skip_space:
+	cmp 	byte[esi], 0x20
+	jnz 	ret_skip_space
+	inc 	esi
+	jmp 	skip_space
+ret_skip_space:
+	ret
+
+Main(ARGC, ARGV)
+	VINT32 Process EQ [ARGV],[i]
+	Printz(0x0F, msg)
+	Printz(0x02, [Process])
+	
+	;STR.ToInt([Process])
+	;mov 	[number3], eax
+	;Get_Dec32(eax, number2)
+	;Printz(0x05, number2)
+	
+	;mov 	esi, expression
+	;call 	expr_parse
+	
+	mov 	esi, [Process]
+	call 	expr_parse
+	
+	Get_Dec32(eax, number2)
+	Printz(0x05, number2)
+	
+.EndMain
+

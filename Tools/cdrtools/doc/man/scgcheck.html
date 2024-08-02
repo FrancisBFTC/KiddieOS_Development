@@ -1,0 +1,584 @@
+Content-type: text/html
+
+<HTML><HEAD><TITLE>Manpage of SCGCHECK</TITLE>
+</HEAD><BODY>
+<H1>SCGCHECK</H1>
+Section: Schily\'s USER COMMANDS (1)<BR>Updated: Version 3.0 2020/05/21<BR><A HREF="#index">Index</A>
+<A HREF="http://localhost/cgi-bin/man/man2html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+scgcheck - check and validate the ABI of libscg
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>scgcheck</B>
+
+[
+<I>options</I>
+
+]
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>Scgcheck</B>
+
+is used to check and verify the Application Binary Interface of libscg.
+<P>
+<P>
+
+<A NAME="lbAE">&nbsp;</A>
+<H3>Device naming</H3>
+
+Most users do not need to care about device naming at all, as 
+in
+<B>-auto</B>
+
+mode,
+<B>scgcheck</B>
+
+implements 
+<B>auto target</B>
+
+support and automagically finds a test drive in case that exactly
+one CD-ROM type drive is available in the system.
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT><B>-version</B>
+
+<DD>
+Print version information and exit.
+<DT><B>-auto</B>
+
+<DD>
+Instead of asking to confirm each test before runing it, 
+<B>scgcheck</B>
+
+tries to do a fully automated test.
+<DT><B>dev=</B><I>target</I>
+
+<DD>
+Set the SCSI target for the device, see notes above.
+A typical target device specification is
+<B>dev=</B><I>1,6,0</I>
+
+.
+If a filename must be provided together with the numerical target 
+specification, the filename is implementation specific.
+The correct filename in this case can be found in the system specific
+manuals of the target operating system.
+On a 
+<I>FreeBSD</I>
+
+system without 
+<I>CAM</I>
+
+support, you need to use the control device (e.g.
+<I>/dev/rcd0.ctl</I>).
+
+A correct device specification in this case may be
+<B>dev=</B><I>/dev/rcd0.ctl:@</I>
+
+.
+<P>
+<B>General SCSI addressing</B>
+
+<BR>
+
+The
+<I>target device</I>
+
+to the 
+<B>dev=</B>
+
+option
+refers to
+<I>scsibus</I>/<I>target</I>/<I>lun</I>
+
+of the device. Communication on 
+<I>SunOS</I>
+
+is done with the SCSI general driver
+<B>scg.</B>
+
+Other operating systems are using a library simulation of this driver.
+Possible syntax is:
+<B>dev=</B>
+
+<I>scsibus</I>,<I>target</I>,<I>lun</I>
+
+or
+<B>dev=</B>
+
+<I>target</I>,<I>lun</I>.
+
+In the latter case, the device has to be connected to the default 
+SCSI bus of the machine.
+<I>Scsibus</I>,
+
+<I>target </I>
+
+and 
+<I>lun</I>
+
+are integer numbers. 
+Some operating systems or SCSI transport implementations may require to
+specify a filename in addition.
+In this case the correct syntax for the device is:
+<B>dev=</B>
+
+<I>devicename</I>:<I>scsibus</I>,<I>target</I>,<I>lun</I>
+
+or
+<B>dev=</B>
+
+<I>devicename</I>:<I>target</I>,<I>lun</I>.
+
+If the name of the device node that has been specified on such a system
+refers to exactly one SCSI device, a shorthand in the form
+<B>dev=</B>
+
+<I>devicename</I>:<I>@</I>
+
+or
+<B>dev=</B>
+
+<I>devicename</I>:<I>@</I>,<I>lun</I>
+
+may be used instead of
+<B>dev=</B>
+
+<I>devicename</I>:<I>scsibus</I>,<I>target</I>,<I>lun</I>.
+
+<P>
+<B>Remote SCSI addressing</B>
+
+<BR>
+
+To access remote SCSI devices, you need to prepend the SCSI device name by
+a remote device indicator. The remote device indicator is either
+<B>REMOTE:</B><I><A HREF="mailto:user@host">user@host</A>:</I>
+
+or
+<B>REMOTE:</B><I>host:</I>
+
+A valid remote SCSI device name may be:
+<B>REMOTE:</B><I><A HREF="mailto:user@host">user@host</A>:</I>
+
+to allow remote SCSI bus scanning or
+<B>REMOTE:</B><I><A HREF="mailto:user@host">user@host</A>:1,0,0</I>
+
+to access the SCSI device at 
+<I>host</I>
+
+connected to SCSI bus # 1,target 0, lun 0.
+In order to allow remote access to a specific
+<I>host</I>,
+
+the
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+rscsi">rscsi</A></B>(1)
+
+program needs to be present and configured on the
+<I>host</I>.
+
+<P>
+<B>Alternate SCSI transports</B>
+
+<BR>
+
+<B>ATAPI</B>
+
+drives are just
+<B>SCSI</B>
+
+drives that inherently use the 
+<I>ATA packet interface</I>
+
+as
+<B>SCSI</B>
+
+command transport layer build into the IDE (ATA) transport.
+You may need to specify an alternate transport layer on the command  line
+if your OS does not implement a fully integrated kernel driver subsystem that
+allows to access any drive using
+<B>SCSI</B>
+
+commands via a single unique user interface.
+<P>
+To access SCSI devices via alternate transport layers,
+you need to prepend the SCSI device name by a transport layer indicator.
+The transport layer indicator may be something like
+<B>USCSI: </B>
+
+or
+<B>ATAPI:</B>.
+
+To get a list of supported transport layers for your platform, use 
+<B>dev=</B>
+
+<I>HELP</I>:
+
+<P>
+<B>Portability Background</B>
+
+<BR>
+
+To make 
+<B>scgcheck</B>
+
+portable to all <FONT SIZE="-2">UNIX</FONT> platforms, the syntax
+<B>dev=</B>
+
+<I>devicename</I>:<I>scsibus</I>,<I>target</I>,<I>lun</I>
+
+is preferred as it hides OS specific knowledge about device names from the user.
+A specific OS may not necessarily support a way to specify a real device file name nor a
+way to specify 
+<I>scsibus</I>,<I>target</I>,<I>lun</I>.
+
+<P>
+<I>Scsibus </I>
+
+0 is the default SCSI bus on the machine. Watch the boot messages for more 
+information or look into 
+<B>/var/adm/messages </B>
+
+for more information about the SCSI configuration of your machine.
+If you have problems to figure out what values for 
+<I>scsibus</I>,<I>target</I>,<I>lun</I>
+
+should be used, try the 
+<B>-scanbus</B>
+
+option of 
+<B>scgcheck</B>
+
+described below.
+<P>
+<B>Autotarget Mode</B>
+
+<BR>
+
+If no 
+<B>dev=</B>
+
+option 
+is present, or if it
+only contains a transport specifyer but no address notation,
+<B>scgcheck</B>
+
+tries to scan the SCSI address space for CD-ROM drives.
+If exactly one is found, this is used by default.
+<DT><B>timeout=</B><I>#</I>
+
+<DD>
+Set the default SCSI command timeout value to 
+<I>#</I> seconds.
+
+The default SCSI command timeout is the minimum timeout used for sending
+SCSI commands.
+If a SCSI command fails due to a timeout, you may try to raise the
+default SCSI command timeout above the timeout value of the failed command.
+If the command runs correctly with a raised command timeout,
+please report the better timeout value and the corresponding command to 
+the author of the program.
+If no 
+<I>timeout </I>
+
+option is present, a default timeout of 40 seconds is used.
+<DT><B>debug=</B><I>#, </I><B>-d</B>
+
+<DD>
+Set the misc debug value to # (with debug=#) or increment
+the misc debug level by one (with -d). If you specify
+<I>-dd,</I>
+
+this equals to 
+<B>debug=</B><I>2.</I>
+
+This may help to find problems while opening a driver for libscg.
+as well as with sector sizes and sector types.
+Using
+<B>-debug</B>
+
+slows down the process and may be the reason for a buffer underrun.
+<DT><B>kdebug=</B>#, <B>kd=</B>#
+
+<DD>
+Tell the 
+<B>scg</B>-driver
+
+to modify the kernel debug value while SCSI commands are running.
+<DT><B>scgopts=</B><I>list</I>
+
+<DD>
+A comma separated list of SCSI options that are handled by libscg.
+The implemented options may be uptated indepentendly from applications.
+Currently, one option:
+<B>ignore-resid</B>
+
+is supported to work around a Linux kernel bug.
+<DT><B>-silent</B>, <B>-s</B>
+
+<DD>
+Do not print out a status report for failed SCSI commands.
+<DT><B>-v</B>
+
+<DD>
+Increment the level of general verbosity by one.
+This is used e.g. to display the progress of the process.
+<DT><B>-V</B>
+
+<DD>
+Increment the verbose level with respect of SCSI command transport by one.
+This helps to debug problems
+during the process, that occur in the CD-Recorder. 
+If you get incomprehensible error messages you should use this flag
+to get more detailed output.
+<B>-VV</B>
+
+will show data buffer content in addition.
+Using
+<B>-V</B>
+
+or
+<B>-VV</B>
+
+slows down the process.
+<DT><B>f=</B><I>file</I>
+
+<DD>
+Specify the log file to be used instead of 
+<I>check.log</I>.
+
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>EXAMPLES</H2>
+
+<P>
+<A NAME="lbAH">&nbsp;</A>
+<H2>FILES</H2>
+
+<A NAME="lbAI">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+cdrecord">cdrecord</A></B>(1),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+readcd">readcd</A></B>(1),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+mkisofs">mkisofs</A></B>(1),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?7+scg">scg</A></B>(7).
+
+<P>
+<A NAME="lbAJ">&nbsp;</A>
+<H2>NOTES</H2>
+
+<P>
+
+When using 
+<B>scgcheck</B>
+
+with the broken 
+<B>Linux SCSI generic driver.</B>
+
+You should note that 
+<B>scgcheck</B>
+
+uses a hack, that tries to emulate the functionality of the scg driver.
+Unfortunately, the sg driver on 
+<B>Linux</B>
+
+has several severe bugs:
+<DL COMPACT>
+<DT>*<DD>
+It cannot see if a SCSI command could not be sent at all.
+<DT>*<DD>
+It cannot get the SCSI status byte. 
+<B>Scgcheck</B>
+
+for that reason cannot report failing SCSI commands in some
+situations.
+<DT>*<DD>
+It cannot get real DMA count of transfer. 
+<B>Scgcheck</B>
+
+cannot tell you if there is an DMA residual count.
+<DT>*<DD>
+It cannot get number of bytes valid in auto sense data.
+<B>Scgcheck</B>
+
+cannot tell you if device transfers no sense data at all.
+<DT>*<DD>
+It fetches to few data in auto request sense (CCS/SCSI-2/SCSI-3 needs &gt;= 18).
+<P>
+</DL>
+<A NAME="lbAK">&nbsp;</A>
+<H2>DIAGNOSTICS</H2>
+
+<P>
+
+<P>
+
+A typical error message for a SCSI command looks like:
+<P>
+<DL COMPACT><DT><DD>
+<PRE>
+scgcheck: I/O error. test unit ready: scsi sendcmd: no error
+CDB:  00 20 00 00 00 00
+status: 0x2 (CHECK CONDITION)
+Sense Bytes: 70 00 05 00 00 00 00 0A 00 00 00 00 25 00 00 00 00 00
+Sense Key: 0x5 Illegal Request, Segment 0
+Sense Code: 0x25 Qual 0x00 (logical unit not supported) Fru 0x0
+Sense flags: Blk 0 (not valid)
+cmd finished after 0.002s timeout 40s
+</PRE>
+
+<P>
+</DL>
+
+The first line gives information about the transport of the command.
+The text after the first colon gives the error text for the system call
+from the view of the kernel. It usually is:
+<B>I/O error</B>
+
+unless other problems happen. The next words contain a short description for
+the SCSI command that fails. The rest of the line tells you if there were
+any problems for the transport of the command over the SCSI bus.
+<B>fatal error</B>
+
+means that it was not possible to transport the command (i.e. no device present
+at the requested SCSI address).
+<P>
+
+The second line prints the SCSI command descriptor block for the failed command.
+<P>
+
+The third line gives information on the SCSI status code returned by the 
+command, if the transport of the command succeeds. 
+This is error information from the SCSI device.
+<P>
+
+The fourth line is a hex dump of the auto request sense information for the 
+command.
+<P>
+
+The fifth line is the error text for the sense key if available, followed
+by the segment number that is only valid if the command was a
+<I>copy</I>
+
+command. If the error message is not directly related to the current command,
+the text
+<I>deferred error</I>
+
+is appended.
+<P>
+
+The sixth line is the error text for the sense code and the sense qualifier if available.
+If the type of the device is known, the sense data is decoded from tables
+in
+<I>scsierrs.c</I> .
+
+The text is followed by the error value for a field replaceable unit.
+<P>
+
+The seventh line prints the block number that is related to the failed command
+and text for several error flags. The block number may not be valid.
+<P>
+
+The eight line reports the timeout set up for this command and the time
+that the command realy needed to complete.
+<P>
+<A NAME="lbAL">&nbsp;</A>
+<H2>BUGS</H2>
+
+<P>
+<A NAME="lbAM">&nbsp;</A>
+<H2>CREDITS</H2>
+
+<P>
+<A NAME="lbAN">&nbsp;</A>
+<H2>MAILING LISTS</H2>
+
+<P>
+<A NAME="lbAO">&nbsp;</A>
+<H2>AUTHOR</H2>
+
+<PRE>
+Joerg Schilling
+D-13353 Berlin
+Germany
+</PRE>
+
+<P>
+
+Additional information can be found on:
+<BR>
+
+<A HREF="http://cdrecord.org/private/cdrecord.html">http://cdrecord.org/private/cdrecord.html</A>
+<P>
+
+If you have support questions, send them to:
+<P>
+
+<B><A HREF="mailto:cdrtools-support@lists.sourceforge.net">cdrtools-support@lists.sourceforge.net</A></B>
+
+<P>
+
+If you have definitely found a bug, send a mail to:
+<P>
+
+<B><A HREF="mailto:cdrtools-developers@lists.sourceforge.net">cdrtools-developers@lists.sourceforge.net</A></B>
+
+<BR>
+
+or
+<B><A HREF="mailto:joerg.schilling@fokus.fraunhofer.de">joerg.schilling@fokus.fraunhofer.de</A></B>
+
+<P>
+
+To subscribe, use:
+<P>
+
+<B><A HREF="https://lists.sourceforge.net/lists/listinfo/cdrtools-developers">https://lists.sourceforge.net/lists/listinfo/cdrtools-developers</A></B>
+
+<BR>
+
+or
+<B><A HREF="https://lists.sourceforge.net/lists/listinfo/cdrtools-support">https://lists.sourceforge.net/lists/listinfo/cdrtools-support</A></B>
+
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DL>
+<DT><A HREF="#lbAE">Device naming</A><DD>
+</DL>
+<DT><A HREF="#lbAF">OPTIONS</A><DD>
+<DT><A HREF="#lbAG">EXAMPLES</A><DD>
+<DT><A HREF="#lbAH">FILES</A><DD>
+<DT><A HREF="#lbAI">SEE ALSO</A><DD>
+<DT><A HREF="#lbAJ">NOTES</A><DD>
+<DT><A HREF="#lbAK">DIAGNOSTICS</A><DD>
+<DT><A HREF="#lbAL">BUGS</A><DD>
+<DT><A HREF="#lbAM">CREDITS</A><DD>
+<DT><A HREF="#lbAN">MAILING LISTS</A><DD>
+<DT><A HREF="#lbAO">AUTHOR</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 20:38:31 GMT, October 16, 2021
+</BODY>
+</HTML>

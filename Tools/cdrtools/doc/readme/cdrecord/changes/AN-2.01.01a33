@@ -1,0 +1,211 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a33:
+
+--------->
+******** WARNING! This is a release that introduces _massive_ changes
+******** in mkisofs. These changes are not yet and cannot yet be complete
+******** and are definitely not tested sufficiently already.
+******** If you like to test the recent massive mkisofs enhencements, you
+******** are welcome! If you lik a "stable" version, use mkisofs from
+******** Cdrtools-2.01.01a27
+<--------
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	distibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+Libschily:
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+-	Added support to unlock the free firmware for the Plextor 755 and 760
+	drives. Thanks to a hint from Alexander Noé.
+	This makes the following features available again:
+
+		GIGAREC SINGLESESSION HIDECDR
+
+	Note: You need to install free firmware in the drive first to make this
+	work.
+
+	If you like, you may turn the feature off using "driveropts=plexdisable"
+
+
+-	Added support for enhanced gigarec found in newer Plextor drives.
+	The gigarec values 0.9 anf 1.1 are now supported. Cdrecord now supports:
+
+	0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4
+
+	Note that not all values are supported by all drives.
+
+
+-	Added support for Yamaha AutioMaster in the Plextor Premium 2.
+	Thanks to a hint from Paolo Saggese. Original Yamaha audiomaster
+	is like gigarec 0.85, Plextor implemented 0.8666 which still looks
+	like a useful additional intermdiate value.
+
+
+-	Make the man page more obvious that gigarec with values < 1.0 is _very_
+	similar to audiomaster except for pit sizes.
+
+-	Code restructured from a CD/DVD only program to a program that
+	writes multiple different similar media.
+
+-	New simulation driver "bd_simul"
+
+-	Trying to make the text in cdrecord.c that forbids incompatible changes
+	to be published under the name "cdrecord" more user friendly.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Readcd:
+
+-	Added support to read C1/C2/CU errors from Plextor and NEC/Optiarc drives.
+	Thanks to Alexander Noé for the code.
+
+	If you run the test with:
+
+	readcd -cxscan
+
+	you will only see summary output. If you add one -v, you see the error
+	information for every second that does include errors. If you add -vv,
+	you see information for every second in the data range.
+
+	Note that the output format will change in future to support GNU plot.
+	I am looking for suggestions for a useful output format.
+
+-	Added support for pisum8 tests for DVDs on drives made by Plextor
+
+	If you run the test with:
+
+	readcd -pi8scan
+
+-	Added support for pif tests for DVDs on drives made by Plextor
+
+	If you run the test with:
+
+	readcd -pifscan
+
+	Fall all three new options, you will only see summary output. If you 
+	add one -v, you see the error information for every second (CD)
+	8 * 32 KB (pisum8) or 32 KB (pif) that does include errors. If you add
+	-vv, you see information for every interval in the data range.
+
+	Note that the output format may change in future,
+	I am looking for suggestions for a useful output format.
+
+-	New option -plot allows to modify the outputformat for the options
+	-cxscan, -pi8scan, -pifscan
+
+	To plot a list of pisum8 and pif errors, call:
+
+	readcd -pi8scan -plot > pisum8
+	readcd -pifscan -plot > pif
+	gnuplot
+	gnuplot> plot "pisum8" w l
+	gnuplot> replot "pif" w l
+
+	To plot a list of C1/C2/CU errors call:
+
+	readcd -cxscan > cx
+	awk '{ print $1 " " $2 }' < cx > c1errs
+	awk '{ print $1 " " $3 }' < cx > c2errs
+	awk '{ print $1 " " $4 }' < cx > cuerrs
+	gnuplot
+	gnuplot> plot "c1errs" w l
+	gnuplot> replot "c2errs" w l
+	gnuplot> replot "cuerrs" w l
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Avoid warnings when compiling tree.c with some compilers.
+
+-	Do no longer warn about violating ISO-9660 if -iso-level 4 has been specified.
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

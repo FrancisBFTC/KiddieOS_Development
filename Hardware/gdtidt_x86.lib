@@ -180,7 +180,70 @@ IDT_Start:
 		.TypeAttr	 db INT32_DPL0  
 		.Offset16_31 dw 0x0000
 		
-	TIMES (MY_INT - (32+2)) DQ 0x0000000000000000
+	IRQ2:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	IRQ3:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	IRQ4:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	IRQ5:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	IRQ6:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	IRQ7:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	IRQ8:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	IRQ9:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	IRQ10:
+		.Offset0_15  dw 0x0000
+		.Selector    dw 0x0008
+		.Unused      db 0x00
+		.TypeAttr	 db INT32_DPL0  
+		.Offset16_31 dw 0x0000
+		
+	TIMES (MY_INT - (32+11)) DQ 0x0000000000000000
 	
 	INTxCD:
 		.Offset0_15  dw 0x0000
@@ -225,7 +288,16 @@ Vector.Address:
 	TIMES 10 DD 0x00000000
 	DD  IRQ_Timer
 	DD  IRQ_Keyboard
-	TIMES (MY_INT - (32+2)) DD 0x00000000
+	DD 0x00000000
+	DD 0x00000000
+	DD 0x00000000
+	DD 0x00000000
+	DD 0x00000000
+	DD 0x00000000
+	DD 0x00000000
+	DD 0x00000000
+	DD 	IRQ_Network
+	TIMES (MY_INT - (32+11)) DD 0x00000000
 	DD 	LIB_Graphic32  ; INT 0xCD
 	DD  LIB_String32   ; INT 0xCE
 	TIMES (IDTSIZE - MY_INT) - QUANT_INT DD 0x00000000

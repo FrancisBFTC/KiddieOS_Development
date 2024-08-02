@@ -1,0 +1,293 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a28:
+
+--------->
+******** WARNING! This is a release that introduces _massive_ changes
+******** in mkisofs. These changes are not yet and cannot yet be complete
+******** and are definitely not tested sufficiently already.
+******** If you like to test the recent massive mkisofs enhencements, you
+******** are welcome! If you lik a "stable" version, ise mkisofs from
+******** Cdrtools-2.01.01a27
+<--------
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	distibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	Support for SunStudio 12 on Linux was added.
+	Call "make CCOM=suncc", but note that you then
+	will not be able to compile Linux specific functions like
+	support for ext2 file flags. This does not work because the
+	related include files are not written in clean C.
+
+	Note that nearly all programs from cdrtools depend on libscg
+	which uses platform speficic code for every OS. As the Linux
+	kernel include files are not written in clean C, you cannot
+	compile libscg using Sun Studio. If someone from the Linux kernel
+	team would rewrite the Linux kernel include files to only use clean
+	C based constructs, cdrecord could be compiled with Sun Studio
+	compilers.
+
+-	Added a workaround to config.guess to get correct
+	platform names from "configure" even thogh suncc 
+	does not #define __ELF__
+
+-	Linux specific autoconf tests are not only executed on Linux
+	based platforms
+
+-	Some make rule definitions for Cygwin restructured to allow
+	compilation with more Cygwin releases. The -D_WIN32_WINNT=
+	definitions are now only in effect if the selected compiler
+	is the Microsoft compiler.
+
+-	New include file schily/ioctl.h
+
+
+-	Added Support to create Blastwave SVr4 packages.
+	To create a Blastwave package, call:
+
+		.clean
+		smake -f Mcsw
+
+	You need the program "fakeroot" and will find the results
+	in packages/<arch-dir>
+
+	Note that this source tree will allow you to create the package
+	CSWcdrtools but not the packages CSWschilybase and CSWschilyutils
+	on which CSWcdrtools depends.
+
+	WARNING: libsiconv.a and it's character translation tables (located in 
+	/opt/*/lib/siconv) are not part of CSWcdrtools but of CSWschilybase.
+	If you do not update CSWschilybase to include the character translation
+	tables used by libsiconv, mkisofs will not work correctly.
+
+	NOTE: the SVr4 package specific rules are approx. 10 lines of make rules.
+	It should be simple to create rule definitions for other package systems
+	found on platforms other than Solaris. Volunteers who like to help
+	to deveop support for other packaging systems are welcome!
+
+
+Libschily:
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+-	"make install" now also installs the READMEs and other docukmentation to
+	..../share/doc/libparanoia/
+
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+-	New library libsiconv replaces libunls.
+	Libsiconv saves ~ 130 kB of executable space in mkisofs and allows to use
+	iconv() if it is present on the current polatform.
+
+Libscg:
+
+Rscsi:
+
+-	"make install" now also installs the READMEs and other docukmentation to
+	..../share/doc/rscsi/
+
+Cdrecord:
+
+-	"make install" now also installs the READMEs and other docukmentation to
+	..../share/doc/cdrecord/
+
+-	New function verify() in high level code.
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	"make install" now also installs the READMEs and other docukmentation to
+	..../share/doc/cdda2wav/
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+-	New merged code from the "sformat" and "cdrecord" consolidation.
+
+-	Bumped to version 1.2
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated my Eric Youngdale):
+
+-	"make install" now also installs the READMEs and other docukmentation to
+	..../share/doc/mkisofs/
+
+-	The change from libunls to libsiconv fixes a lot of bugs in the
+	character translation tables. libsiconv now uses the official tables
+	from Unicode.org. Any other "single char" -> UNICODE table from
+	Unicode.org may be taken unmodified and copied to /opt/schily/lib/libsiconv
+	to become usable by libsiconv.
+
+	If you use the same character set names as with old mkisofs, you get
+	the character translations from the tables in /opt/schily/lib/libsiconv,
+	if you use ICONV based locale names and iconv() is available on your
+	platform, then mkisofs used iconv() to translate the character encodings.
+
+	If you like to force to use the iconv() code, use something like:
+
+	mkisofs -input-charset iconv:8859-1
+
+	****** IMPORTANT ********
+
+	You need to install the table files from libsiconv to make mkisofs 
+	behave correctly.
+
+-	Thanks to the new libsiconv, mkisofs now supports to run in a UTF-8 locale.
+	As long as no automatic locale support is present, call
+
+	mkisofs -input-charset UTF-8
+
+-	Completed the Symlink implementation for UDF. The code was 20% ready
+	from Helios.de from the includes from the Helios variant of mkisofs.
+
+-	New option -no-udfsymlinks to turn off support for UDF symlinks.
+	The UDF standards requires any OS to implement symlink support, but
+	you never know...
+
+-	New option -UDF implements non-anonymous UDF support.
+	The relation between -UDF vs. -udf is the same as with -R vs. -r
+
+-	Integrated a larger code drop from Helios.de, thanks to Helmut Tschemernjak
+	from helios.de. We did integrate the following new features from Helios.de:
+
+	-	Support for UID/GID in the UDF file meta data
+
+	-	Support for permissions in the UDF file meta data
+
+	-	Support for Mac OS X "/..namedfork/rsrc"
+
+	-	Avoid Mac OS X syslog entries when "/rsrc" is used.
+
+	-	Support for UDF based Mac OS extensions (type/creator and 
+		resource forks).
+
+	-	New option -no-hfs allows to turn off creating a ISO9660/HFS hybrid
+		when UDF based Mac OS extensions are used.
+
+	-	Do not chache resorce fork files in the inode cache anymore.
+
+	We did not include the following code from the Helios.de code drop:
+
+	-	Helios UNICODE unification (always tries to create "complete"
+		characters if e.g. a 'ö' is written as 'o'+'"', this is translated
+		into a 'ö'.
+
+		The reason for not integrating this code is that it did violate
+		constraints from mkisofs. The translation was done based on UTF-8
+		regardless of the current locale of the user. It could only work
+		in a UTF-8 based locale but mkisofs did not yet support UTF-8 an
+		based locale. The correct implementation would be in most cases
+		based on UCS-2 characters as used by Joliet and UDF.
+
+	-	Helios code that did prevent mkisofs to abort on certain kind of 
+		read errors.
+
+		The reason for not integrating this code is that it did not work
+		as expected for all possible cases and that such code should use
+		a similar mechanism as "star"s error control feature.
+
+	-	The Helios option -nolimit-pathtables has not been included as the
+		implementation did cause the PATH table to contain random data in 
+		case that a PATH table overflow was allowed.
+
+	-	The Helios code drop did modify the libfind callback function to
+		implement Mac OS extensions. This is not correct as all the Mac OS
+		related stuff should already in the functions that are called
+		by the unmodified libfind callback.
+
+		Another problem with this code is that it would introduce an 
+		otherwise non-existent path length limitation with "mkisofs -find "
+
+	-	Helios did remove the artificial limit for UDF files > 2 GB.
+		This is currently not done for consistency between ISO-9660 and
+		UDF. Mkisofs will implement multi-extent files soon and then
+		the UDF file size limitation will be removed.
+
+
+	HELIOS TODO:
+
+	-	Add better code for ignoring errors. This should be done
+		using star's error control module, see star/checkerr.c
+
+	-	Add some code that allows to write media with more than 65535
+		parent directories, even if this violates ISO-9660 and prevents
+		DOS from being able to read the resulting FS. This needs to be
+		done in a way that causes all "overflowing" directories to get
+		a definitive pointer instead of random values.
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

@@ -1,0 +1,130 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a25:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	distibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+Libschily:
+
+-	__fjmalloc()/__jmalloc() now allow to specify JM_EXIT to exit() instead
+	of callinf siglongjmp()
+
+-	New function file_getraise() to get the current file raise value.
+  
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+-	Libfind is now close from the final state
+
+-	Added README file to the directory libfind/ that help to learn how
+	to create a complete find(1) command, a "bsh" find builtin and a 
+	ksh93 find builtin using libfind.
+
+-	Libfind Version is now 1.3
+
+-	libfind has been restructured to allow it to be used as builtin function
+	inside shells like e.g. "bsh" and "ksh93".
+
+-	libfind now allows I/O redirection (needed for shell builtins).
+
+-	libfind now may be told to check for abort situations (needed for
+	shell builtins in order to check for abort on ^C).
+
+-	New function find_free()
+
+-	Libfind no longer leaks memory if called with a commandline with
+	syntax errors.
+
+
+Libfile:
+
+Libhfs_iso:
+
+Libscg:
+
+-	scg_numbus() function for FreeBSD corrected to make cdrtools work again.
+	Thanks to a hint from Joseph Terner <jtsn@jtsn.de>
+
+Rscsi:
+
+Cdrecord:
+
+-	A typo in the man page has been fixed (mkisofs does not have a -q but
+	a -quiet option).
+
+-	A debug message in the DVD+ driver hav been updated to make cdrecord
+	again compile in -DDEBUG mode.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Fixed a bug that caused cdda2wav to hang when retrieving the CDDB information.
+	This bug has been introduced with cdrtools-2.01.01a21
+
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

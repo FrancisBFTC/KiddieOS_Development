@@ -1,0 +1,181 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a58:
+
+*******
+NOTE: cdrtools is currently in a state just before a new major release.
+	
+
+*******
+
+
+All:
+
+-	New Make rules for Syllable. Syllable is a fork from AtheOS.
+
+-	New make rules for Haiku
+
+-	New include file schily/sysexits.h is needed for Haiku
+
+-	New autoconf test for sysexits.h
+
+-	Autoconf tests for os2.h and os2me.h moved from cdda2wav to
+	global
+
+-	config.guess and config.sub now have support for Haiku
+
+-	New rule support for linux on "sh3", "sh4" and "sh4a" platforms.
+
+-	autoconf now acts more reliable and more orthogonal with  AC_CHECK_TYPE() vs. 
+	AC_CHECK_SIZEOF() and carefully includes include files separately based on
+	fine grained tests.
+
+-	Changed schily/dirent.h to correctly set up NAME_MAX on ATARI MiNT
+
+-	Changed schily/maxpath.h to correctly set up NAME_MAX on ATARI MiNT
+
+Libschily:
+
+-	fexec now correctly works on Haiku and BeOS
+
+-	libschily/format.c now supports the %z (size_t) and %t (ptrdiff_t) 
+	printf format size modifiers (fixed a typo introdiced in the first attempt)
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+-	A first version of the SCSI adaptation layer for Syllable has been added.
+	Thanks to Kristian Van Der Vliet <vanders@liqwyd.com> for the first 
+	implementation.
+
+-	Haiku is a BeOS clone and thus uses scsi-beos.c as SCSI adaptation layer.
+
+	IMPORTANT NOTICE: if you like to compile libscg with a current Haiku release
+	you first need to copy a file:
+
+	cd /boot/develop/headers/os
+	cp device/CAM.h drivers/CAM.h
+
+	CAM.h was at /boot/develop/headers/os/drivers/CAM.h in BeOS and as CAM
+	has no own hardware, it seems to belong into /boot/develop/headers/os/drivers/
+
+
+Libscgcmd:
+
+Rscsi:
+
+Cdrecord:
+
+-	Fixed a minor typo in cdrecord
+
+-	Some better warnings with cdrecord in case that the environment variables
+	'CDR_FORCERAWSPEED=' or 'CDR_FORCSPEED=' have been specified.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Cdda2wav now uses an autoconf test to decide whether BEOS clone areas 
+	can be used. THis gives Haiku compatibility.
+
+-	Fixed a bug introduced with introducing support for MD5 Sums.
+	Cdda2wav now disables the MD5 sum output in case -no-infofile has been specified
+
+-	Autoconf tests for os2.h and os2me.h moved from cdda2wav to
+	global
+
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Mkisofs now reports "Haiku" for the OS platform if on Haiku.
+
+-	The isoinfo man page now includes the -debug option
+
+-	Automated support for System ID
+
+	Haiku, Syllable, AMIGA-OS, ATARI-MiNT
+
+-	Fixed some Rock Ridge bugs that have been identified when investigating
+	in the OpenSolaris bug 6807009
+	http://defect.opensolaris.org/bz/show_bug.cgi?id=5385
+
+-	Man page description for -abstract -biblio -copyright is now better
+	to understand
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

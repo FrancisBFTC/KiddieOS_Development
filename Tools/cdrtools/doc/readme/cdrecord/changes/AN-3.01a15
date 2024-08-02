@@ -1,0 +1,242 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-3.01a15:
+
+This is the first localization step for cdrtools. All programs now (hopefully)
+call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries.
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to cdrtools should *****
+*****		call all programs from cdrtools in the "C" locale *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		  *****
+*****		unless these frontends support localized strings  *****
+*****		used by the cdrtools with NLS support.		  *****
+
+This version compiles on Win-DOS using the Microsoft compiler cl.exe but
+warning: due to missing POSIX compliance with basic features (e.g. stat()
+does not return inode numbers), there are many problems with the resulting
+code and thus it is recommended to better use a POSIX layer on top of 
+WIN-DOS.
+
+All:
+
+-	Due to an incorrect message from last release, here is corrected
+	information on when a Linux installation is potentially dangerous:
+
+	New autoconf tests for sys/capability.h and cap_*() functions
+	from Linux -lcap
+
+	WARNING: If you do not see this:
+
+		checking for sys/capability.h... yes
+
+		...
+
+		checking for cap_get_proc in -lcap... yes
+		checking for cap_get_proc... yes
+		checking for cap_set_proc... yes
+		checking for cap_set_flag... yes
+		checking for cap_clear_flag... yes
+
+	your Linux installation is insecure in case you ever use the
+	command "setcap" to set up file capabilities for executable commands.
+
+	Note that cdrtools (as any other command) need to be capabylity aware
+	in order to avoid security leaks with enhanced privileges. In most
+	cases, privileges are only needed for a very limited set of operations.
+	If cdrtools (cdrecord, cdda2wav, readcd) are installed suid-root, the
+	functions to control privileges are in the basic set of supported
+	functions and thus there is no problem for any program to control it's
+	privileges - if they have been obtained via suid root, you are on a
+	secure system.
+
+	If you are however on an incomplete installation, that supports to
+	raise privileges via fcaps but that does not include developer support
+	for caps, the programs get the privileges without being able to know
+	about the additional privileges and thus keep them because they cannot
+	control them.
+
+	WARNING: If you are on a Linux system that includes support for
+	fcaps (this is seems to be true for all newer systems with 
+	Linux >= 2.6.24) and there is no development support for capabilities
+	in the base system, you are on an inherently insecure system that allows
+	to compile and set up programs with enhanced privileges that cannot 
+	control them.
+
+	In such a case, try to educate the security manager for the related
+	Linux distribution. Note that you may turn your private installation
+	into a secure installation by installing development support for libcap.
+
+-	WARNING: the include structure of include/schily/*.h and several sources
+	has been restructured to cause less warnings with older OS platforms.
+	If you see any new problem on your personal platform, please report.
+
+-	New includefiles:
+
+	schily/poll.h		Support poll()
+	schily/stdarg.h		An alias to schily/varargs.h (but using the std name)
+	schily/sunos4_proto.h	Missing prototypes for SunOS-4.x to make gcc quiet
+	schily/timeb.h		Needed for users of ftime()
+
+-	Many minor bug-fixes for the files include/schily/*.h
+
+-	include/schily/archconf.h now defines __SUNOS5 for easier coding
+
+-	include/schily/priv.h now defines platform independent fine grained privileges
+
+-	Updated README.compile:
+
+	Some typo patches from Jan Engelhardt <jengelh@inai.de>
+
+	Documented the "LINKMODE=" macro to explain how to create dynamically
+	linked bynaries.
+
+Libschily:
+
+-	Added #include <schily/libport.h> to libschily/fnmatch.c 
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Added #include <schily/libport.h>
+
+Libcdrdeflt:
+
+Libdeflt:
+
+-	Added #include <schily/libport.h>
+
+Libfind:
+
+-	dirname -> dir_name to avoid a gcc warning
+
+Libfile:
+
+Libhfs_iso:
+
+-	Rename variable "utime" to "uxtime" to avoid a compiler warning
+
+Libmdigest:
+
+Libsiconv:
+
+Libscg:
+
+-	Repositioned #ifdefs to avoid unused variable definitions in
+	libscg/scsi-sun.c
+
+-	libscg/scsi-linux-ata.c now aborts early if errno == EPERM. This now
+	makes it behave like libscg/scsi-linux-sg.c
+
+-	A new scg flag SCGF_PERM_PRINT tells libscg to print a more verbose error
+	in case that a SCSI comand was aborted with errno == EPERM.
+
+Libscgcmd:
+
+Libmdigest:
+
+Rscsi:
+
+Cdrecord:
+
+-	Allow to compile without Linux libcap using "smake COPTX=-DNO_LINUX_CAPS LIB_CAP="
+
+-	Cdrecord now checks whether there are sufficient fine grained privileges.
+
+-	Cdrecord now uses the new flag SCGF_PERM_PRINT to get better warnings if the
+	permissions granted by the OS are not sufficient.
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Include file reordering to avoid warnings on older platforms
+
+-	Allow to compile without Linux libcap using "smake COPTX=-DNO_LINUX_CAPS LIB_CAP="
+
+-	Repositioned #ifdefs to avoid unused variable definitions in
+	cdda2wav/sndconfig.c
+
+-	Cdda2wav now checks whether there are sufficient fine grained privileges.
+
+-	Work around a bug in sys/param.h FreeBSD-9.1, that #define's __FreeBSD_kernel__
+	instead of #define __FreeBSD_kernel__ 9 that would be needed for Debian
+	k-FreeBSD compatibility.
+	The bug affects cdda2wav/mycdrom.h
+
+
+Readcd:
+
+-	Allow to compile without Linux libcap using "smake COPTX=-DNO_LINUX_CAPS LIB_CAP="
+
+-	Readcd now checks whether there are sufficient fine grained privileges.
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Make mkisofs compile without -DUDF and without -DDVD_VIDEO
+	Thanks to a hint from rmd4work@mail.ru
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

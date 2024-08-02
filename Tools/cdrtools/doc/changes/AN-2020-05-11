@@ -1,0 +1,337 @@
+New features with AN-2020-05-11:
+
+This is the first localization step for the schily source consolidation. Many
+programs now (hopefully) call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries and the
+	missing programs
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to the tools should *****
+*****		call all programs in the "C" locale		   *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		   *****
+*****		unless these frontends support localized strings   *****
+*****		used by the cdrtools with NLS support.		   *****
+
+		*** WARNING        ***
+		*** Need new smake ***
+
+	*** Due to the fact that schily-tools 2014-04-03 introduced to use new macro
+	*** expansions and a related bug fix in smake, you need a newer smake
+	*** to compile this source. If your smake is too old and aborts, ensure to
+	*** use the recent smake by calling:
+
+	cd ./psmake
+	./MAKE-all
+	cd ..
+	psmake/smake
+	psmake/smake install
+
+	The new smake version mentioned above is smake-1.2.4
+	The recent smake version is smake-1.3
+
+	*** Due to the fact that schily-tools 2018-01-26 introduced
+	*** optimizations for the Schily version of SunPro Make, you
+	*** need at least the dmake version from 2018/01/11 with support
+	*** for the "export" directive to compile with this makefile system.
+
+
+	WARNING: the new version of the isoinfo program makes use of the 
+		*at() series of functions that have been introduced by Sun
+		in August 2001 and added to POSIX.1-2008. For older platforms,
+		libschily now includes emulations for these functions but
+		these emulations have not yet been tested thoroughly.
+		Please report problems!
+
+	BUG WARNING: Please never report bugs only to Linux distributions as
+		they usually do not forward these bug reports upstream and as
+		the Linux distributions typically do not let skilled people
+		check the bugs. We did not hear about a FIFO problem in star
+		for a long time. Then a problem on Linux occurred once
+		every 6000-10000 tries but it did not happen on Solaris after
+		even 10 million tries, so it was not known besides Linux.
+
+	BUG WARNING: GNU make release 4.3 starts too early with parallel
+		execution (when reading Makefiles and evaluating rules for
+		"include" statements already). Since GNU make does not
+		support a concept for correct ordering of such actions,
+		you need to be prepared to see gmake-4.3 fail in parallel
+		mode. If you are interested in reliable parallel execution,
+		it is recommended to use the included "dmake" program with
+		a command line like:
+
+			dmake -j10 -f SMakefile
+
+		from the top level directory
+
+
+-	Makefile system: A new version of the BSD make (bmake) program fixed 
+	a bug in pattern macro substitution, so we are now able to detect 
+	BSD make and to read BSD make program specific rules.
+
+	This could in theory allow us to support BSD make in the future,
+	but...
+
+	Note that we on the other side discovered a new bug with pattern 
+	macro substitution in bsd make: The substitution:
+
+		$(FOO:%=bar/%)
+
+	is replaced by "bar/" with an empty "FOO", but of course, with an 
+	empty FOO, the substitution should be empty as well.
+
+	This second bug (above) was fixed on May 6th, but we do not yet have
+	all needed make rules and we do not know whether other bugs may still
+	prevent the usability of BSD make. Supporting BSD make will be hard
+	as BSD make does not support pattern matching default rules and this
+	is important for placing the .o files into a sub-directory.
+
+	Also note that the portable program source for "bmake" from "pkgsrc"
+	is 2 years old and thus currently cannot be supported at all. If 
+	you like to experiment on your own, you need to get this version:
+
+		http://crufty.net/help/sjg/bmake.html
+
+	see
+
+		http://www.crufty.net/ftp/pub/sjg/bmake.tar.gz
+
+	and replace the newer files from the netbsd.org CVS tree by hand in
+	order to fix the first and second mentioned pattern macro substitution
+	bug.
+
+-	Makefile system: RULES/MKLINKS was enhanced to create a new symlink
+	RULES/r-bsdmake.tag that points to RULES/r-make.tag
+
+-	Makefile system: The archive makefiles.tar.bz2 has been added to the
+	schilytools tree to allow easy reuse of the makefile system for own
+	projects.
+
+-	Bourne Shell: The unit tests for the new ERR trap did not work on
+	Solaris because /bin/false on Solaris causes an exit code of 255.
+	We now only check for an exit code != 0.
+
+-	Bourne Shell: Some of the unit tests for the trap command are now only
+	run in case that the SUT is "bosh".
+
+-	Bourne Shell: set -- now checks the '\0' character at the end of
+	the string "--". This fixes strange behavior with argument strings that
+	start with "--".
+
+-	Bourne Shell: Added a new flag XEC_INFUNC to the xflag parameter to mark
+	the fact when inside a function.
+
+-	Bourne Shell: set -e no longer causes commands with nonzero exit code
+	to abort inside a function in case that the return code of that function
+	is evaluated by e.g. an "if" statement.
+
+	Thanks to Koichi Nakashima for reporting
+
+-	Bourne Shell: A unit test for the above bug has been added.
+
+-	Bourne Shell: $- may no longer be partially wrong (and miss the state
+	of the -e flag).
+
+	Thanks to Koichi Nakashima for reporting
+
+-	Bourne Shell: under some rare conditions, the syntax tree -> cmdline
+	converter could omit a command delimiter. This was the result of the
+	fact that a helper variable "didnl" (used for codeoutput beautifying)
+	was not reset in func.c and thus could cause
+
+		printf a ; printf b
+
+	to print "aprintf b" instead of "ab"
+
+	Thanks to Koichi Nakashima for reporting
+
+-	Bourne Shell: A unit test for the above bug has been added.
+
+-	Bourne Shell: A command like:
+
+		command | while read name; do loopcmd; done
+
+	did stop after the first loop because "read" did then read from stdin
+	instead of using the pipe file descriptor. This happened only of
+	"loopcmd" was not a shell builtin.
+
+	Thanks to Koichi Nakashima for reporting
+
+-	Bourne Shell: A unit test for the above bug has been added.
+
+-	Bourne Shell: When we added support for ${var+value with spaces}
+	4 years ago, we forgot to enhance the lexer the same way for things
+	like "${var+value with spaces}" and "${var+"value with spaces"}".
+	This has been forgotten, because a different part of the lexer is
+	used to parse that kind of quoted strings. The lexer now supports
+	looking for closing '}' in quoted text as well.
+
+	Thanks to Koichi Nakashima for reporting
+
+-	Bourne Shell: A unit test for the above bug has been added.
+
+-	Bourne Shell: The expression "${var1#"$var2"}" has been introduced by
+	ksh88 with strange rules for the way the double quotes past # are
+	handled. We now support them....
+
+	Thanks to Koichi Nakashima for reporting
+
+-	Bourne Shell: A unit test for the above bug has been added.
+
+-	Bourne Shell: Some unit tests from "mksh" (that previously have been
+	disabled) have been enabled, since the two changes above now make
+	the Bourne Shell behave like "mksh" for these 6 additional tests.
+
+-	SCCS: The "sccs" command now implements "sccsdiffs" as alias to
+	the "sccsdiff" subcommand. This helps avoid the confusion from the
+	subcommand "diffs" vs. "sccsdiff" that frequently causes people to
+	type "sccsdiffs" instead of "sccsdiff".
+
+-	SCCS: the "sccs" command is now using getopt() to parse the options
+	for the project specific subcommands.
+
+-	SCCS: the "sccs root" command now checks for too many arguments and
+	only allows zero or one path arguments.
+
+-	SCCS: An new SCCS high level library libsccs has been introduced.
+
+-	SCCS: The project oriented high level commands from sccs(1) have been
+	moved to the new libsccs.
+
+-	SCCS: several of the old low level SCCS commands now call save_args()
+	in order to be able to print the command name together with error
+	messages.
+
+-	SCCS: The "sccs istext" subcommand now uses getopt()
+
+-	SCCS: The "sccs istext" subcommand now uses off_t instead of int
+	to count line numbers.
+
+-	SCCS: Fixed a potential core dump from "sccs istext" on Linux as Linux
+	does not allow a double fclose().
+
+-	SCCS: The "sccs istext" subcommand now clearly distinguishes between
+	a line that stars with the character '\001' and one that contains a
+	null byte.
+
+-	SCCS: The error "de14" now only refers to a null byte in a file.
+	The Error "de20" exists since 2011 and is related to the other SCCSv4
+	illegal character, a '\001' at the beginning of a line.
+
+-	SCCS: The delta command no longer uses the "de14" error code in case 
+	the file contains a null byte
+
+-	SCCS: The file version.h has a new date.
+
+-	SunPro Make: removed a superfluous space in the man page that appeared
+	in the pattern macro substitution description.
+
+-	mkisofs: README.eltorito has been enhanced to mention "-boot-load-size"
+	and "-eltorito-platform efi"
+
+-	mkisofs::isoinfo: For strange reasons, support for identifying an
+	EFI boot record has been forgotten when EFI boot support has been
+	added to mkisofs approx. 10 years ago. Isoinfo is now able to print
+	"efi" instead of the unexpected "Unknown arch".
+
+-	mkisofs: The diagnostic tools for mkisofs (isoinfo, ...) now all have
+	been modified to show the version date of the cdrtools version they
+	are from.
+
+
+-	SCCS TODO:
+
+	-	Convert sccs.c to use -NSCCS in the back end programs instead
+		of converting g-file names from the command line into s.file
+		names in the frontend in order to forward s.file names to the
+		backend programs. Doing it this way allows us to have the SCCS
+		history files "off tree" in a separate directory tree starting
+		with ".sccs/" at the "project root" directory, as the related
+		code to convert path names is in libcomobj::bulkprepare().
+
+	-	Add code to admin(1) and delta(1) to retrieve the list of
+		new or modified files in order to have all important code
+		for a "sccs commit" in a single program that does not need to
+		deal with ARG_MAX limitations.
+
+	-	Add code to admin(1), delta(1) and get(1) to maintain/understand
+		the changeset file.
+
+	-	Add code to libcomobj to understand the changeset file,
+		which is needed in order to e.g. know the file names and file
+		specific SIDs/state that correspond to a project global SID.
+
+	-	Add code to all programs to maintain a lock (for the file
+		$PROJECTHOME/.sccs/SCCS/s.changeset, that would be in the file
+		$PROJECTHOME/.sccs/SCCS/z.changeset) to maintain a project
+		global lock.
+
+	-	Find/verify a complete transactional model that allows to repair
+		complex changes to the set of files for a project that have
+		been aborted in the middle. The current idea is to create the
+		file $PROJECTHOME/.sccs/changeset with the deltas to the
+		changeset during a complex update operation.
+
+	-	Find a way to decide when to use SCCS V6 type history files.
+
+		For the project mode, this is needed in order to prevent 
+		historic SCCS implementations to believe they could modify
+		files without knowing about project global locks.
+
+		Currently, SCCS V6 needs to be usable manually for every
+		history file using "admin".
+
+
+
+
+
+-	Bourne Shell Missing features for POSIX compliance:
+
+	- Support for $'...' quoting (this is not needed for the current
+					version of POSIX but for the next POSIX
+					version that will be named SUSv8).
+					The development of SUSv8 will start in
+					late 2016.
+
+	We are now expecting the Bourne Shell to be fully POSIX compliant.
+
+-	Bourne Shell further TODO list:
+
+	-	Finish loadable builtin support.
+
+	-	POSIX does not allow us to implement ". -h", so we will
+		add a "source" builtin to be able to implement "source -h"
+
+-	The following builtins (that are available in bsh) are still missing in
+	the Bourne Shell:
+
+	err			echo with output going to stderr
+	glob			echo with '\0' instead of ' ' between args
+	env			a builtin version of /usr/bin/env
+
+	The following bsh intrinsics are still missing in the Bourne Shell:
+
+	-			the restricted bsh has restriction features that
+				are missing in the Bourne shell.
+
+	-	source -h	read file into history but do not execute
+
+	and probably more features not yet identified to be bsh unique.
+
+
+
+Author:
+
+Joerg Schilling
+D-13353 Berlin
+Germany
+
+Email: 	joerg@schily.net, joerg.schilling@fokus.fraunhofer.de
+
+Please mail bugs and suggestions to me.

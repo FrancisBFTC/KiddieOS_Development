@@ -1,0 +1,180 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a76:
+
+*******
+NOTE: cdrtools is currently in a state of a release candidate for the next
+major release.	
+
+*******
+
+******* All man pages have been rewritten for the upcomming final release ******
+******* Please read the man pages and report hints and proposals          ******
+
+
+All:
+
+Libschily:
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+Libscgcmd:
+
+Libmdigest:
+
+Rscsi:
+
+Cdrecord:
+
+-	Added a workaround for a firmware bug in the drive:
+	'HL-DT-ST' 'BD-RE  BH10LS30 ' '1.00'
+	That causes the drive to return zero media size for BluRay media.
+
+-	cdrecord now aborts if the cuefile= option was specified with a non-CD
+	media in the drive.
+
+-	CDRWIN CUE files now may refer to several data files where each data file
+	contains less than the whole disk but more than a single track.
+
+-	The CUE parser now correctly sets the sector size information for the
+	lead-in area.
+
+-	The CUE parser now by default only accepts CDRWIN CUE compliant files
+	but may be switched into an enhanced mode by introducing a special comment
+	"REM CDRTOOLS"
+
+-	The CUE parser now supports a FILE command between INDEX 00 and INDEX 01.
+	This is needed in order to write CUE sheets from Exact Audio Copy.
+	Note that cdrecord needs to be switched into the enhanced CUE parser mode
+	by either specifying "REM CDRTOOLS" or by specifying:
+	REM COMMENT "ExactAudioCopy v0.99pb5"
+
+	Also note that cdrecord currently does not support more than one FILE
+	command per TRACK. For this reason, hidden audio tracks only work if
+	the hidden audio data is in the same file that also contains data for
+	track 1.
+
+-	New commands "ARRANGER", "COMPOSER" and "MESSAGE" for adding CD-Text information
+	in CUE files. Note that these commands are cdrecord specific extensions that
+	re unknown by CDRWIN and thus need "REM CDRTOOLS" to be enabled.
+
+-	The CUE file format is now documented in the cdrecord man page.
+
+-	Fixed a small type bug in cdrecord/fifo.c (introduced a few
+	versions before) that hits if the OS does not support the FIFO.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	New cdda2wav option -vaudio-tracks
+
+-	Make cdda2wav -q silent again (even with CDs with hidden track) to
+	make it compatible again with scripts.
+
+-	cdda2ogg and cdda2ogg.1 added to standard install
+	The script cdda2ogg was enhanced to work seamlessly.
+
+-	cdda2mp3 and cdda2mp3.1 added to standard install
+	The script cdda2mp3 was enhanced to work seamlessly.
+
+-	the scripts cdda2ogg and cdda2mp3 now allow to forward options to
+	cdda2wav.
+
+	In order to enable "paranoia mode", call:
+
+	cdda2ogg -paranoia
+
+	In order to enable the most proof "paranoia mode", call:
+
+	cdda2ogg -paraopts=proof
+
+-	The cdda2ogg man page was completely reworked
+
+-	The SYSvr4 pkg definition now includes cdda2ogg and cdda2mp3
+
+-	Added a workaround for a broken ASPI that hangs with
+	odd transfer counts.
+
+
+Readcd:
+
+-	Added a workaround for a broken ASPI that hangs with
+	odd transfer counts.
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

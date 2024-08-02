@@ -1,0 +1,96 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a07:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of dirtibutions.
+	The only reason is to add certain new CD/DVD features that are important.
+
+	So _please_ do not send any patches except when you like to fix extreme bugs.
+	I am currently mainly working on stable incremental restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+All:
+
+-	Autoconf script added to 'conf' directory
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+-	Fixed a bug caused by an uninitalized variable when handling
+	CDR_MAXFIFOSIZE= and no file /etc/default/cdrecord exists
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+-	Write correct error info in case that BeOS/Zeta *_area() calls
+	fail.
+
+-	As Heiko did not work on cdda2wav during the past 2.5 years,
+	Heiko did hand over the SCCS history for cdda2wav.
+
+-	Autoconf test for <sys/cdio.h> added (FreeBSD)
+
+-	Some FreeBSD related changes from Heiko done in 2004
+
+	IMPORTANT:	I need testers for FreeBSD and DragonFly BSD as
+			a result of the merge with the complex changes
+			from Heiko.
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

@@ -1,0 +1,175 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a72:
+
+*******
+NOTE: cdrtools is currently in a state of a release candidate for the next
+major release.	
+
+*******
+
+******* All man pages have been rewritten for the upcomming final release ******
+******* Please read the man pages and report hints and proposals          ******
+
+
+All:
+
+Libschily:
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+Libscgcmd:
+
+Libmdigest:
+
+Rscsi:
+
+Cdrecord:
+
+-	The CDRWIN cue sheet parser has been enhanced to give better error messages:
+
+	-	There are now hints on what is missing in the CUE file
+
+	-	The error message now also contains the column where the problem was detected
+
+-	Allow cdrecord to compile again on a pre-C99 compiler (there was a variable delaration
+	past a statement in a function.
+
+-	A description for the *.inf file fomat was added to the cdrecord man page
+
+-	New (previously missing) CD-Text tags have been added to auinfo.c (*.inf file parser):
+
+	Albumsongwriter=
+	Albumcomposer=
+	Albumarranger=
+	Albummessage=
+	Albumclosed_info=
+
+	Note that these tags do not appear in the CDDB database.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	New arg "all" to -t option.
+
+	cdda2wav -B	extracts all audio tacks into separate files
+	cdda2wav -tall	extracts all audio tacks into a single files
+
+-	cdda2wav now by default writes a file "xxx.cdtext" with raw binary
+	CD-Text data in case cdda2wav was told to retrieve CD-Text.
+
+-	A new option -no-textfile allows to disable the creation of the file "audio.cdtext"
+	This version of cdda2wav creates a file "audio.cdtext" or similar (depending on
+	the set up file name base) in case that there is CD-Text on the medium and that
+	the drives supports to read the CD-Text data with MMC SCSI commands.
+
+-	Fixed a bug in cdda2wav that caused cdda2wav to set up the file name base too late.
+	This resultes in the files "audio.cdindex" and "audio.cddb" alwas to have this name
+	while the *.inf files use the name base from the cdda2wav arguments. Now all
+	files created by cdda2wav honor the file name base.
+
+-	Cdda2wav by default fills empty track specific CD-Text data with the Disk global
+	value (if present). A new option -no-textdefaults allows to disable this fallback
+	and leaves the related fields empty if they are empty on the mester CD.
+
+-	Fixed a problem with cdda2wav -interactive (used by GNOME GSTREAMER CD-DAE plugin)
+	that could cause cdda2wav to dump core in case that there is a data
+	session past the last audio track.
+
+-	New (previously missing) CD-Text tags have been added to the *.inf files:
+
+	Albumsongwriter=
+	Songwriter=
+	Albumcomposer=
+	Composer=
+	Albumarranger=
+	Arranger=
+	Albummessage=
+	Message=
+	Albumclosed_info=
+	Closed_info=
+
+	Note that these tags do not appear in the CDDB database.
+
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Fixed a bug with file descriptor handling in mkisofs/apple.c
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

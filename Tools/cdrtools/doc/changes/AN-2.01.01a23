@@ -1,0 +1,116 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a23:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	dirtibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	"libvms" new from Steven M. Schweda sms@antinode.org
+
+Libschily:
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+Libscg:
+
+-	Trying to implement a workaround for a Linux USB DMA size problem by implementing
+	support for a new ioctl proposal from Alan Stern <stern@rowland.harvard.edu>
+
+	UPDATE: It seems that the final fix in the Linux kernel will take some time
+	and will be incompatible to the current patch. For this reason, I decided to 
+	make the intermediate patch available at:
+	ftp://ftp.berlios.de/pub/cdrecord/alpha/Linux-USB-DMA-Size.patch
+
+
+Rscsi:
+
+Cdrecord:
+
+-	Enhanced CUE sheet parser to allow writing the new Zeta CD from
+	http://www.zeta-os.com/cms/custom/lcd/indexe.php
+
+-	Supporting -raw/-raw16/-raw96r in CUE sheet mode (with cuefile=).
+	Please test and report as I am not able to test all possible cases.
+
+	As it seems that this new mode works now properly, it it possible 
+	to write SVCDs on Pioneer writers that refuse to write SVCDs in -sao mode
+	because Pioneer implements a silly internal memory mamagement that
+	reserves memory for 99 tracks with not more than 2 indices each.
+ 
+	In RAW mode, cdrecord takes care of subchannel data and is able to work
+	around this deficit in Pioneer drives.
+
+-	Correctly reset CDRWIN CUE sheet state at the beginning of a new track
+
+-	Added some small changes to help compiling on VMS
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Added some small changes to help compiling on VMS
+
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

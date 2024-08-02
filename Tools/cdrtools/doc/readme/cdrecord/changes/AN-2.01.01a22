@@ -1,0 +1,128 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a22:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	dirtibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	Correctly cast all open(name, oflag, 0666) calls to:
+	open(name, oflag, (mode_t)0666) as open is a vararg function.
+
+Libschily:
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+Libscg:
+
+-	Try to deal with broken Linux distributions that do not provide a "HZ" macro
+	in /usr/include/sys/param.h
+
+-	Use USER_HZ in favor of HZ (if available) for computing SCSI timeout values.
+
+-	Disable automatic ATA (dev(hd*) integration and scan on pre-Linux-2.6 systems.
+
+-	Try to skip non-POSIX compliant EROFS error codes when opening /dev/hd*
+
+Rscsi:
+
+Cdrecord:
+
+-	prdiskstatus() which is supporting cdrecord -minfo is now a globally implemented
+	function.
+
+-	cdrecord -minfo extended to print TOC related media info.
+	The new option -minfo is now almost complete.
+
+-	cdrecord -scanbus now defaults to scan 1024 SCSI busses in case that the "numbus"
+	function is not yet available on a remote RSCSI server.
+
+-	Make cdrecord -msinfo print the right values for "multi-session" (multi-border)
+	DVD-R and DVD+R.
+
+-	cdrecord -atip output for DVD media enhanced and updated for DVD+R/DL & HD-DVD
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	cdda2wav -scanbus now defaults to scan 1024 SCSI busses in case that the "numbus"
+	function is not yet available on a remote RSCSI server.
+
+Readcd:
+
+-	readcd -scanbus now defaults to scan 1024 SCSI busses in case that the "numbus"
+	function is not yet available on a remote RSCSI server.
+
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	New options -posix-H/-posix-L/-posix-P implement the -H/-L/-P options
+	defined by POSIX.1-2001 for descending commands like ls/chmod/chown/find/pax/...
+
+	Future versions of mkisofs will implement these options under their original
+	names -H/-L/-P. The current version of mkisofs cannot implement them as
+	previous versions did implement different functionality with -H and -P.
+
+-	mkisofs called without any parameters or called with an illegal option
+	now prints a short overview of the most important options in 80x24 chars.
+
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

@@ -1,0 +1,259 @@
+New features with AN-2020-02-11:
+
+This is the first localization step for the schily source consolidation. Many
+programs now (hopefully) call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries and the
+	missing programs
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to the tools should *****
+*****		call all programs in the "C" locale		   *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		   *****
+*****		unless these frontends support localized strings   *****
+*****		used by the cdrtools with NLS support.		   *****
+
+		*** WARNING        ***
+		*** Need new smake ***
+
+	*** Due to the fact that schily-tools 2014-04-03 introduced to use new macro
+	*** expansions and a related bug fix in smake, you need a newer smake
+	*** to compile this source. If your smake is too old and aborts, ensure to
+	*** use the recent smake by calling:
+
+	cd ./psmake
+	./MAKE-all
+	cd ..
+	psmake/smake
+	psmake/smake install
+
+	The new smake version mentioned above is smake-1.2.4
+	The recent smake version is smake-1.3
+
+	*** Due to the fact that schily-tools 2018-01-26 introduced
+	*** optimizations for the Schily version of SunPro Make, you
+	*** need at least the dmake version from 2018/01/11 with support
+	*** for the "export" directive to compile with this makefile system.
+
+
+	WARNING: the new version of the isoinfo program makes use of the 
+		*at() series of functions that have been introduced by Sun
+		in August 2001 and added to POSIX.1-2008. For older platforms,
+		libschily now includes emulations for these functions but
+		these emulations have not yet been tested thoroughly.
+		Please report problems!
+
+	BUG WARNING: Please never report bugs only to Linux distributions as
+		they usually do not forward these bug reports upstream and as
+		the Linux distributions typically do not let skilled people
+		check the bugs. We did not hear about a FIFO problem in star
+		for a long time. Then a problem on Linux occurred once
+		every 6000-10000 tries but it did not happen on Solaris after
+		even 10 million tries, so it was not known besides Linux.
+
+-	Schily.Copyright Updated Copyright year information
+
+-	include/schily/wait.h: Cstyle changes
+
+-	include/schily/getopt.h: OPT_PLUS changed into GETOPT_PLUS_FL
+
+-	libgetopt: fixed a typo in the man page getopt.3
+
+-	diff: diff now handles seek errors in the input files.
+
+-	diff: diff now copies data from named pipes to /tmp/ files
+	to get a seekable object.
+
+-	match: If match was called with -w, the string allocated for the
+	notword-word-notword pattern was one byte too small. This could cause 
+	core dumps with some string lengths of "word".
+
+-	Bourne Shell: now also using GETOPT_PLUS_FL
+
+-	Bourne Shell: A new variable ${.sh.path} returns the absolute path
+	of the binary associated to the exec() for this shell.
+
+-	Bourne Shell: The definition of NUMBUFLEN was moved from print.c to
+	defs.h to allow others to write into numbuf, knowing it's length.
+
+-	Bourne Shell: The archive sh/dotfiles.tar.bz2 now contains an updated
+	.shrc file that makes use of the new shell variable ${.sh.path}
+
+-	Bourne Shell: "for i in; do cmd ...; done" is now valid syntax even
+	though this is useless, since bosh did already accept:
+
+		"for i in $emptyvar ; do cmd ...; done"
+
+	But this is in the POSIX standard and other recent shells seem to
+	accept it.
+
+	Thanks to Robert Elz for reporting
+
+-	Bourne Shell: Added a new conformance test for the for loop
+
+-	Bourne Shell: The call "bosh -version" now prints 2020...
+
+-	bsh: The parser integrity check routine iocheck() did not know the
+	command type && and thus could print
+
+		Caught !iocheck Signal.
+
+	This was a 40 year old bug ;-)
+
+-	fifo: fifo_main.c no longer defines ibs & obs as COMMON variables,
+	since this is already done by fifo.c
+
+	Thanks to Jan Engelhardt for reporting
+
+-	SCCS: comb.c now puts the filename in the created shell script
+	in single quotes to prevent attacks.
+
+	Thanks to Robert Clausecker for reporting as a side effet of a code review
+	for SchilliX-ON
+
+-	SCCS: comb.c now forbids single quotes and backslashes in filenames as
+	they would cause problems with the shell script created by comb.
+
+	Thanks to Robert Clausecker for reporting as a side effet of a code review
+	for SchilliX-ON
+
+-	SCCS: removed a superfluous /*FALLTHROUGH*/ after a break; in a switch
+	statement that was imported from the Sun source in December 2006.
+
+	Thanks to Robert Clausecker for reporting as a side effet of a code review
+	for SchilliX-ON
+
+-	SCCS: sccs.c did dump core with "sccs -p foo get test.txt"
+
+	Thanks to Bogdan Barbu for reporting.
+
+-	star: fixed typos in star.1 and star.4
+
+	Thanks to Eric Ackermann for reporting
+	as a side effect of a code review for SchilliX-ON
+
+-	star: fixed typos in header.c
+
+	Thanks to Eric Ackermann for reporting
+
+-	star: translated some German comment to English in diff.c, extract.c,
+	list.c, remove.c, restore.c, fifo.c
+
+	Thanks to Eric Ackermann for reporting
+	as a side effect of a code review for SchilliX-ON
+
+-	star: create.c: #ifdef __what_people_would_expect__ changed to:
+	#ifdef __wrong_but_what_people_would_expect__ for better readability.
+
+-	libschily: new man pages starthandlecond.3 and unhandlecond.3
+
+-	libschily: handlecond.3 and raisecond.3 now correctly mention
+	handlecond() & raisecond() instead of handle()/raise(). The old names
+	from 1980 had to be renamed because os an unfriendly actt from the
+	C standard commitee.
+
+	Thanks to Eric Ackermann for reporting
+	as a side effect of a code review for SchilliX-ON
+
+-	libschily: various small fixes in various man pages from libschily.
+
+	Thanks to Eric Ackermann for reporting
+	as a side effect of a code review for SchilliX-ON
+
+
+-	SCCS TODO:
+
+	-	Convert sccs.c to use -NSCCS in the back end programs instead
+		of converting g-file names from the command line into s.file
+		names in the frontend in order to forward s.file names to the
+		backend programs. Doing it this way allows us to have the SCCS
+		history files "off tree" in a separate directory tree starting
+		with ".sccs/" at the "project root" directory, as the related
+		code to convert path names is in libcomobj::bulkprepare().
+
+	-	Add code to admin(1) and delta(1) to retrieve the list of
+		new or modified files in order to have all important code
+		for a "sccs commit" in a single program that does not need to
+		deal with ARG_MAX limitations.
+
+	-	Add code to admin(1), delta(1) and get(1) to maintain/understand
+		the changeset file.
+
+	-	Add code to libcomobj to understand the changeset file,
+		which is needed in order to e.g. know the file names and file
+		specific SIDs/state that correspond to a project global SID.
+
+	-	Add code to all programs to maintain a lock (for the file
+		$PROJECTHOME/.sccs/SCCS/s.changeset, that would be in the file
+		$PROJECTHOME/.sccs/SCCS/z.changeset) to maintain a project
+		global lock.
+
+	-	Find/verify a complete transactional model that allows to repair
+		complex changes to the set of files for a project that have
+		been aborted in the middle. The current idea is to create the
+		file $PROJECTHOME/.sccs/changeset with the deltas to the
+		changeset during a complex update operation.
+
+	-	Find a way to decide when to use SCCS v6 type history files.
+
+		For the project mode, this is needed in order to prevent 
+		historic SCCS implementations to believe they could modify
+		files without knowing about project global locks.
+
+		Currently, SCCS V67 needs to be anebale manually for every
+		history file using "admin".
+
+
+
+
+
+-	Bourne Shell Missing features for POSIX compliance:
+
+	- Support for $'...' quoting (this is not needed for the current
+					version of POSIX but for the next POSIX
+					version that will be named SUSv8).
+					The development of SUSv8 will start in
+					late 2016.
+
+	We are now expecting the Bourne Shell to be fully POSIX compliant.
+
+-	Bourne Shell further TODO list:
+
+	-	Finish loadable builtin support.
+
+	-	POSIX does not allow us to implement ". -h", so we will
+		add a "source" builtin to be able to implement "source -h"
+
+-	The following builtins (that are available in bsh) are still missing in
+	the Bourne Shell:
+
+	err			echo with output going to stderr
+	glob			echo with '\0' instead of ' ' between args
+	env			a builtin version of /usr/bin/env
+
+	The following bsh intrinsics are still missing in the Bourne Shell:
+
+	-			the restricted bsh has restriction features that
+				are missing in the Bourne shell.
+
+	-	source -h	read file into history but do not execute
+
+	and probably more features not yet identified to be bsh unique.
+
+
+
+Author:
+
+Joerg Schilling
+D-13353 Berlin
+Germany
+
+Email: 	joerg@schily.net, joerg.schilling@fokus.fraunhofer.de
+
+Please mail bugs and suggestions to me.

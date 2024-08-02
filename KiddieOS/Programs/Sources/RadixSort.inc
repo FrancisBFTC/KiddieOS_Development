@@ -42,9 +42,10 @@ RadixSort:                                 ; Label que será chamada por instru�
 	;call 	Calloc                         ; Chamada de função pra alocar 'ECX' inteiros
 	;mov 	dword[b], eax                  ; Guarda no ponteiro 'b' o endereço alocado pela função
 	Malloc(ecx, 4)
+	;mov 	eax, [0x104000+13]
 	mov 	dword[b], eax                  ; Guarda no ponteiro 'b' o endereço alocado pela função
-	pop 	ecx
-	pop 	ebx
+	;pop 	ecx
+	;pop 	ebx
 	
 	; 1ª loop p/ armazenar o valor maior do vetor
 	push 	ecx                            ; Salve ECX na pilha pois ele será alterado no loop
@@ -58,7 +59,7 @@ RadixSort:                                 ; Label que será chamada por instru�
 	return_loopfor_rad1:                   ; retorno do loop FOR
 		inc 	dword[i]                   ; Incremente o índice i
 		loop 	loop_for_rad1              ; Volte para o início do loop e decremente ECX até valer 0
-	pop 	ecx                            ; ECX valendo 0, restaure o valor anterior de ECX
+		pop 	ecx                            ; ECX valendo 0, restaure o valor anterior de ECX
 	
 	; Loop while externo para filtrar os dígitos
 	loop_while_rad1:                       ; Início do loop WHILE
@@ -191,7 +192,7 @@ ReturnRadix:
 	;mov 	ebx, b                         ; EBX = Endereço de b[ ]
 	;call 	Free                           ; Desaloca este endereço
 	Free(b)
-	pop 	ebx
+	;pop 	ebx
 	popad                                  ; Restaure todos os registradores da pilha
 ret                                        ; Retorne para a chamada da instrução CALL
 ; --------------------------------------------------------------------------------------------------------------------------

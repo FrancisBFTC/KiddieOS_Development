@@ -1,0 +1,163 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a18:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	dirtibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	Fixed some files that did include <avoffset.h> instead of <schily/avoffset.h>
+
+-	Trying to make the floating point printf() support functions work
+	on systems that implement C99 only with no fallback.
+
+	As this change is a result from a report from a person that does not like
+	to cooperate, I was not able to test on the reported AIX-5.x platform.
+	Also note that this change may result in problems on other platforms.
+	Please test and report!
+
+
+-	The Schily Makefilesystem now includes environment definitions
+	for the Microsoft Studio 8 compiler. If you like to edit these
+	definitions, check the DEFAULTS directory
+
+-	Next step in supporting Microsoft C-compilers: build in environment
+	set up for the MS compilers. To compile with the MS C-Compiler,
+	set up a Cygwin environment and compile a Cygwin 'smake'.
+	Then use this smake to comile with the MS C-compiler by calling:
+
+	smake CCOM=cl
+
+	This defaults to VC7. If you like to use VC6, call:
+
+	smake CCOM=cl VC=6
+
+	Note that smake itself (if compiled with "cl") will not work, as
+	MS does not implement a reliable way to pass a quoted arg vector
+	to a new program.
+
+	Note that cdrtools do not yet completely compile with MSVC. This
+	is mostly caused by missing standard comliance in the MS C-compilers.
+
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+-	Fixed a bug introduced with 2.01.01a17 that caused cdrecord to complain about
+	an illegal layer breadk value if called with a single layer DVD and another
+	driveropts= option. Thanks to Monika Schillling ms@mschilling.com
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	Implement a new "correct inode number" algorithm for zero length files.
+
+-	Implement a fingerprint that allows to check whether a ISO-9660 file 
+	system image has been created by a new mkisofs and inplements the
+	new "correct inode number" algorithm.
+
+-	Implementing the new Rock Ridge (rrip) protocol version 1.12 from 1994.
+	Mkisofs before implemented the old rrip version 1.10 from 1993.
+
+-	New option -rrip110 to disable the "new" 1994 Rock Ridge version.
+
+	This option may be needed if you know of a system that does not deal with
+	RRip V-1.12. Currently no such system is known.
+
+-	Using better (more portable) values for some special "inode" numbers.
+
+-	Implement correct hard link counts for directories and files with Rock Ridge
+
+-	Mkisofs cannot live without libschily anymore. For this reason, the
+	#ifdef USE_LIBSCHILY code has been removed.
+
+-	Better & faster hashing:
+
+	-	Better hach function in hash.c for more balanced hash tree
+
+	-	Number of hash root entries enhanced from 1024 to 16*1024
+
+	-	Avoid string compare in find_file_hash()
+
+-	Corrected check algorithm, for non-zero-length files that are assigned
+	to a zero extent
+
+-	Avoid uncached entries to clash with real inode numbers.
+
+-	Print correct number of written extents in multi session mode.
+
+-	All ISO-9660 numbers now correctly use the type UInt32_t 
+
+-	Convert type of all extent number related variables to UInt32_t
+
+-	Use inode caching by default on newer Cygwin releases that use
+	64 bit inode numbers.
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

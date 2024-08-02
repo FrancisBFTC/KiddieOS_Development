@@ -1,0 +1,207 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a29:
+
+--------->
+******** WARNING! This is a release that introduces _massive_ changes
+******** in mkisofs. These changes are not yet and cannot yet be complete
+******** and are definitely not tested sufficiently already.
+******** If you like to test the recent massive mkisofs enhencements, you
+******** are welcome! If you lik a "stable" version, use mkisofs from
+******** Cdrtools-2.01.01a27
+<--------
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	distibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	Added a note to README.compile on how to work around a problem
+	in /usr/include/linux/types.h that prevents to compile cdrtools
+	on Linux using the Sun Studio compiler.
+
+-	A workaround against non autoconf friendly code in Cygwin has been
+	fixed in include/schily/iconv.h (a typo).
+
+-	Compilations with static configuration are now also possible on HP-UX
+
+-	All profiles libraries now have the same name as the non-profiled variants.
+	To create a profiled version of a command, do something like this:
+
+	cd cdrecord
+	smake clean
+	smake COPTX=-xpg LXOPTX=-xpg LINKMODE=profiled
+
+	For GCC use:
+
+	cd cdrecord
+	smake clean
+	smake COPTX=-pg LXOPTX=-pg LINKMODE=profiled
+
+
+Libschily:
+
+-	getargs() enhanced to fully support POSIX Command line rules
+
+-	snprintf() is again compiled into libschily in case that the function
+	is missing on the current platform.
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+-	sic_open() now allows to be called with a NULL pointer argument
+
+-	sic_list() now returns the number of listed translations
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+-	Some small typo fixes in the man page
+
+-	Speed values are now also displayed as multiple of Blu Ray 1x
+
+-	First hacky "support" for Blu Ray media. Note that this support
+	is based on the assumption that
+		"cdrecord driver=drv_dvdplusrw driveropts=burnfree" -force
+	works for BD-RE.
+
+	There was no write testing for this new yet but several of the 
+	parameters have been verified and several modifications have been applied
+	to make some of the commands work for Blu Ray.
+
+	The code is fully experimental!
+
+-	The read disk structure command has been enhanced to support the 
+	media type field for Blu ray.
+
+-	Speed values are now also displayed as multiple of Blu Ray 1x
+
+-	Cdrecord now aborts with DVD+R if -dummy has been specified as there is
+	no -dummy mode for DVD+R. This has been forgotten for years....
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Added some casts to interface.c and ioctl.c in order to prevent warnings
+	from the Sun Studio 12 compiler.
+
+-	The man page has been restructured to correctly use bold and italic
+	with option descriptions.
+
+Readcd:
+
+-	Speed values are now also displayed as multiple of Blu Ray 1x
+
+-	readcd -factor meshpoints=100 now also displays the speed as multiple 
+	of Blu Ray speed if the medium is a BD
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated my Eric Youngdale):
+
+-	Avoid a core dump with mkisofs -new-dir-mode XXXX caused by a bad
+	getargs() option format string. Thanks to Thomas Flock <tf-mkisofs-200611@online.de>
+	for reporting.
+
+-	Some small typo fixes in the man page
+
+-	Fix mkisofs to no longer dump core in case that a non-existing locale
+	is used. Thanks to Dirk Paehl for reporting.
+
+-	mkisofs now warns in case that /opt/schily/libsiconv/ is missing
+	or not populated.
+
+-	mkisofs no longer requires the Mac OS extension related locale
+	translations to be present in case that no Mac extensions are requested.
+
+-	diag/isoinfo also has been fixed to correctly use iconv.
+	Thanks to Kai Raphahn <kai.raphahn@laburec.de> for reporting.
+
+
+	HELIOS TODO:
+
+	-	Add better code for ignoring errors. This should be done
+		using star's error control module, see star/checkerr.c
+
+	-	Add some code that allows to write media with more than 65535
+		parent directories, even if this violates ISO-9660 and prevents
+		DOS from being able to read the resulting FS. This needs to be
+		done in a way that causes all "overflowing" directories to get
+		a definitive pointer instead of random values.
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

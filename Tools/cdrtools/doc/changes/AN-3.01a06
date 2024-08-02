@@ -1,0 +1,374 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-3.01a06:
+
+This is the first localization step for cdrtools. All programs now (hopefully)
+call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries.
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to cdrtools should *****
+*****		call all programs from cdrtools in the "C" locale *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		  *****
+*****		unless these frontends support localized strings  *****
+*****		used by the cdrtools with NLS support.		  *****
+
+This version compiles on Win-DOS using the Microsoft compiler cl.exe but
+warning: due to missing POSIX compliance with basic features (e.g. stat()
+does not return inode numbers), there are many problems with the resulting
+code and thus it is recommended to better use a POSIX layer on top of 
+WIN-DOS.
+
+All:
+
+-	A new rule RULES/profiled.lnk allows to call:
+
+	smake COPTX=-pg LDOPTX=-pg LINKMODE=profiled
+
+	to create binaries that use gprof.
+
+-	The Makefile System is now able to switch gmake-3.82 into a more POSIX 
+	compliant mode to tell the shell to report problems back to gmake.
+
+-	New autocof tests on whether printf supoorts %lld and %jd
+
+-	Fixed the vc9-setup files to make VC9 work.
+
+-	Newer Cygwin "tail" versions do no longer support UNIX syntax.
+	change tail +2 to tail -n +2 in RULES/cc-mcs.rul to allow to use
+	the Microsoft compiler again
+
+-	A new environment variable MKLINKS_COPY allows to tell all
+	MKLINS scripts to generate file copies rather than symlinks.
+	Call:
+		MKLINKS_COPY=true
+		export MKLINKS_COPY
+	to enable this feature
+
+-	Run an additional test -h command in MKLNKS to verify whether mingw
+	supports symlinks
+
+-	MKLINKS now creates copies instead of symlink when we use MSC
+	as MSC does not support to read symlinks files
+
+-	Fixed a typo in include/schily/libport.h (group functions have been
+	defined to return struct passwd* instead of struct group*
+
+-	Fixed wrong bracketing for C++ in include/schily/stdlib.h
+
+-	Fixed wrong bracketing for C++ in include/schily/utypes.h
+
+-	Added a workaround for MSC to include/schily/utypes.h
+	MSC believes that a 32 bit int and a 32 bit long are incompatible
+	and cannot even be casted, so we need to make uint32_t a n unsigned long
+
+-	Let include/schily/archdefs.h define the standard processor #defines
+	when compiling with MSC.
+
+-	New include file include/schily/windows.h works around the oddities
+	from the MSC include file windows.h
+
+-	include/schily/stdio.h now defines popen()/pclose() to _popen()/_pclose()
+	if on WIN-DOS
+
+-	include/schily/limits.h now defines PIPE_BUF
+
+-	include/schily/utsname.h now defines struct utsname for our MSC uname()
+	emulation.
+
+
+-	The setup for the PATHs needed by Visual Studio 9 has been
+	corrected.
+
+-	autoconf has been modified to avoid optimizing away code that 
+	is intended for testing. This help to work against a problem
+	with detecting mbrtowc() on MinGW
+
+-	autoconf now tests for mbtowc() and wctomb()
+
+-	RULES/i*86-mingw32_nt-gcc.rul now link against -lmingw32 instead
+	of -lmgw32.
+
+-	include/schily/stat.h now defines S_IREAD/S_IWRITE/S_IEXEC
+	These macros are available on typical UNIX systems but not
+	on Android. The definition comes from UNIX V7 and is not in
+	POSIX. Needed by SCCS and the Bourne Shell
+
+-	include/schily/wait.h now defines WIFCONTINUED() if needed
+
+-	include/schily/wchar.h now defines mbtowc() to mbrtowc() if
+	needed (e.g. on Android)
+
+-	include/schily/ccomdefs.h now correctly knows about the GCC
+	release that introduced __attribute__ (used).
+
+-	Android is not POSIX (by not defining various functions as functions 
+	in libc as required by POSIX) because it tries to define many 
+	functions that are part of the standard as inline macros in
+	include files only. This breaks autoconf, so we needed to rewrite
+	some tests (e.g for getpagesize, tcgetpgrp, tcsetpgrp)
+
+-	The Schily autoconf system has been enhanced to support cross
+	compilation. Schily autoconf is based on GNU autoconf and
+	GNU autoconf does not support cross compilation because it needs
+	to run scripts on the target system for some of the tests.
+
+	The "configure" script that is delivered with the Schily makefile
+	system runs 718 tests and 68 of them need to be run on the target
+	system.
+
+	The Schily autoconf system now supports a method to run these 65
+	tests natively on a target system. You either need a machine with
+	remote login features or you need an emulator with a method to
+	copy files into the emulated system and to run binaries on the
+	emulated system as e.g. the Android emulator.
+
+	We currently deliver three scripts for "remote" execution of
+	programs on the target system:
+
+	runrmt_ssh		runs the commands remove via ssh
+	runrmt_rsh		runs the commands remove via rsh
+	runrmt_android		runs the commands remove via the debug bridge
+
+	If you need to remotely run programs on a system that is not
+	supported by one of there three scripts, you need to modify one
+	of them to match your needs.
+
+	To enable Cross Compilation use the following environment variables:
+
+	CONFIG_RMTCALL=		Set up to point to a script that does
+				the remote execution, e.g.:
+
+				CONFIG_RMTCALL=`pwd`/conf/runrmt_ssh
+
+	CONFIG_RMTHOST=		Set up to point to your remote host, e.g.:
+
+				CONFIG_RMTHOST=hostname 
+				or
+				CONFIG_RMTHOST=user@hostname
+
+				use a dummy if you like to use something
+				like to the Android emulator.
+
+	CONFIG_RMTDEBUG=	Set to something non-null in order to 
+				let the remote execution script mark
+				remote comands. This will result in
+				configure messages like:
+
+				checking bits in minor device number... REMOTE 8
+
+	Note that smake includes automake features that automatically
+	retrieve system ID information. For this reason, you need to overwrite 
+	related macros from the command line if you like to do a
+	cross compilation.
+
+	Related make macros:
+
+	K_ARCH=			# (sun4v) Kernel ARCH filled from uname -m / arch -k
+	M_ARCH=			# (sun4)  Machine filled from arch
+	P_ARCH=			# (sparc) CPU ARCH filled from uname -p / mach
+	OSNAME=			# sunos, linux, ....
+	OSREL=			# 5.11
+	OSVERSION=		# snv_130
+	CCOM=			# generic compiler name (e.g. "gcc")
+	CC_COM=			# compiler to call (name + basic args)
+
+	ARCH=			overwrites M_ARCH and P_ARCH
+
+	It is usually suffucient to set ARCH and OSNAME.
+
+	In order to use a cross compiler environment instead of a native compiler,
+	set the make macro CC_COM to something different than "cc".
+
+	If you are on Linux and like to compile for Android, do the following:
+
+	1) 	set up CC acording to the instructions from the cross compiler
+		tool chain
+
+	2)	set environment variables CONFIG_RMTCALL / CONFIG_RMTHOST, e.g.:
+		setenv CONFIG_RMTCALL `pwd`/conf/runrmt_android
+		setenv CONFIG_RMTHOST NONE
+
+	3)	call smake:
+
+		smake ARCH=armv5 OSNAME=linux CCOM=gcc "CC_COM=$CC"
+	
+
+-	Several programs no longer test for HAVE_DEV_* but for HAVE__DEV_*
+	as we did switch from hand written tests for /dev/tty, /dev/null 
+	and similar to  AC_CHECK_FILES(/dev/tty /dev/null /dev/zero)
+
+-	The Makefile system now links dynamic libraries on Mac OS X against
+	libgcc_s.1 instead of libgcc.
+
+Libschily:
+
+-	New function permtostr() in libschily allows to convert a
+	mode_t like stat.st_mode into a chmod compliant string like:
+
+		u=rw,g=r,o=r
+
+	that is accepted by libschily::getperm() to allow a  conversion
+	back to a mode_t variable.
+
+-	libschily::rename() now uses mktemp() to temorarily save the
+	rename target file.
+
+-	comerr() now maps exit codes that would fold to '0' to EX_CLASH
+	which is -64
+
+-	New functions zerobytes() and cmpmbytes() added to libschily.
+
+-	New functions strstr() and wcsstr() added to libschily.
+
+-	libschily/fexec.c moved the workaround against the Mac OS X linker
+	for "environ" upwards to cover the new code also.
+
+-	Fixed libschily/gettimeofday.c to compile with MSC
+
+-	Fixed libschily/sleep.c to compile with MSC
+
+-	Fixed libschily/usleep.c to be empty with MSC as sleep.c includes
+	a working usleep()
+
+-	libschily/gethostname.c enhanced to support Win-DOS with cl.exe
+
+-	libschily/uname.c New function to support Win-DOS with cl.exe
+
+-	libschily/dirent.c New functions: opendir()/closedir()/readdir()
+				to support Win-DOS with cl.exe
+
+-	libschily/kill.c New function to support Win-DOS with cl.exe
+
+-	libschily/stdio/fgetline.c 64 bit speedup by calling fgets() in
+	case that getc() is not a macro.
+
+-	libschily/stdio/fgetstr.c 64 bit speedup by calling fgets() in
+	case that getc() is not a macro.
+
+-	libschily/chown.c new to support Win-DOS with cl.exe
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+-	libfind/find.c disables -exec in case there is no fork().
+	This is in order to support MINGW
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+-	libscg::scsi-aix.c was updated with some experimental code to support
+	two new SCSI kernel interfaces on AIX.
+
+-	Allow to disable the SCSI low level transport adoption layer
+	from libscg by adding -DNO_SCSI_IMPL
+
+-	libscg/scsihack.c now supports the MSC compiler
+
+-	Several small changes to work around oddoties fount in MS include files
+
+-	Trying to better support AIX again.
+
+Libscgcmd:
+
+Libmdigest:
+
+Rscsi:
+
+Cdrecord:
+
+-	Several changes to support mingw and MSC
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Several changes to support mingw and MSC
+
+Readcd:
+
+-	Better algorithm for -edc-corr
+
+Scgcheck:
+
+-	Several changes to support mingw and MSC
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	The mkisofs diagnostic tools now support MSC that does not support
+	POSIX terminal handling.
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

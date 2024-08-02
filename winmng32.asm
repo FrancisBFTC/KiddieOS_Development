@@ -1073,6 +1073,18 @@ Load3thAddr:
 	mov 	ecx, 64018 * 3
 	rep 	movsb
 	
+	;jmp 	$
+	;mov 	eax, 500
+	;cmp 	eax, 0
+	;jz 		short LabelTest
+	;add 	ecx, 3Ch
+	;push 	ecx
+	;nop
+	;nop
+	;nop
+;LabelTest:
+	;jmp		$
+	
 	;mov 	eax, 0x0A
 	;mov 	edi, DWORD[MEMORY_BMP]
 	;mov 	esi, WallPaper1

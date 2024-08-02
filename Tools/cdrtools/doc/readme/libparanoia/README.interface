@@ -1,0 +1,225 @@
+/*
+ * @(#)README.interface	1.2 19/04/16 Copyright 2002-2019 J. Schilling
+ *
+ * Exports (libparanoia) cdda_paranoia.h
+ */
+
+/*
+ * The paranoia_init() function with callback funtions has been introduced in
+ * February 2007. It is used since the interface version SCHILY_1.0
+ *
+ * The opaque "d" pointer is typically a SCSI * from libscg, but it may be
+ * anything as long as the callback functions use it.
+ *
+ * The variable "nsectors" is the max. # of sectors to read per request
+ *
+ * The function returns a cdrom_paranoia * that has been allocated inside
+ * paranoia_init().
+ *
+ * The original interface from Monty (from 1997) called the functions 
+ *	cdda_disc_firstsector()
+ *	cdda_disc_lastsector()
+ *	cdda_read()
+ *	cdda_sector_gettrack()
+ *	cdda_track_audiop()
+ *	cdda_track_firstsector()
+ *	cdda_track_lastsector()
+ *	cdda_tracks()
+ * directly from libparanoia into the main program, but this was not portable
+ * as this is not supported by the Apple linker.
+ */
+cdrom_paranoia	*paranoia_init	__PR((void * d, int nsectors,
+				  long	(*d_read) __PR((void *d,
+							void *buffer,
+							long beginsector,
+							long sectors)),
+
+				  long	(*d_disc_firstsector) __PR((void *d)),
+				  long	(*d_disc_lastsector) __PR((void *d)),
+				  int	(*d_tracks) __PR((void *d)),
+				  long	(*d_track_firstsector) __PR((void *d,
+								int track)),
+				  long	(*d_track_lastsector) __PR((void *d,
+								int track)),
+				  int	(*d_sector_gettrack) __PR((void *d,
+								long sector)),
+				  int	(*d_track_audiop) __PR((void *d,
+								int track)) ));
+
+/*
+ * The paranoia_dynoverlapset() function has been introduced in
+ * February 2004. It is used since the interface version SCHILY_1.0
+ * and allows top set the range used for dynamic overlapping.
+ */
+void		paranoia_dynoverlapset __PR((cdrom_paranoia * p,
+					int minoverlap, int maxoverlap));
+/*
+ * Free the result from a paranoia_init() call.
+ * Introduced in April 1998 by Monty (cdparanoia-III-alpha3).
+ * It is used since the interface version SCHILY_1.0.
+ */
+void		paranoia_free	__PR((cdrom_paranoia * p));
+
+/*
+ * Set the mode of operation.
+ * Mode is a bitmap, see definitions below.
+ * Introduced in April 1998 by Monty (cdparanoia-III-alpha3).
+ * It is used since the interface version SCHILY_1.0.
+ */
+void		paranoia_modeset __PR((cdrom_paranoia * p, int mode));
+
+/*
+ * Set static overlap.
+ * Introduced in December 1998 by Monty (cdparanoia-III-alpha9.4).
+ * It is used since the interface version SCHILY_1.0.
+ */
+void		paranoia_overlapset __PR((cdrom_paranoia * p, long overlap));
+
+/*
+ * Read a single sector of audio data from CD.
+ * Calls: paranoia_read_limited(p, callback, 20)
+ * Returns: Pointer to read data.
+ *
+ * Introduced in April 1998 by Monty (cdparanoia-III-alpha3).
+ * It is used since the interface version SCHILY_1.0.
+ */
+Int16_t		*paranoia_read	__PR((cdrom_paranoia * p,
+					void (*callback) (long, int)));
+
+/*
+ * Read a single sector of audio data from CD.
+ * Calls: callback function for statistics if != NULL
+ * Returns: Pointer to read data.
+ *
+ * Introduced in March 2001 by Monty (cdparanoia-III-alpha9.8).
+ * It is used since the interface version SCHILY_1.0.
+ */
+Int16_t		*paranoia_read_limited __PR((cdrom_paranoia * p,
+					void (*callback) (long, int),
+					int maxretries));
+
+/*
+ * Set sector number to continue reading from.
+ * Parameters: "seek" -> sector number, "mode" -> SEEK_SET, SEEK_END, SEEK_CUR
+ * Returns: Previous sector position.
+ *
+ * Introduced in April 1998 by Monty (cdparanoia-III-alpha3).
+ * It is used since the interface version SCHILY_1.0.
+ */
+long		paranoia_seek	__PR((cdrom_paranoia * p, long seek, int mode));
+
+
+/*
+ * Exports defined in libparanoia overlap.h
+ */
+
+/*
+ * Reset the complete state of libparanoia.
+ *
+ * Introduced in June 1998 by Monty (cdparanoia-III-alpha7).
+ * It is used since the interface version SCHILY_1.0.
+ */
+void	paranoia_resetall	__PR((cdrom_paranoia * p));
+
+/*
+ * Reset the cache of libparanoia.
+ *
+ * Introduced in April 1998 by Monty (cdparanoia-III-alpha3).
+ * It is used since the interface version SCHILY_1.0.
+ */
+void	paranoia_resetcache	__PR((cdrom_paranoia * p));
+
+
+
+/*
+ * New interfaces introdiced with interface version SCHILY_1.1:
+ */
+
+/*
+ * Get the mode of operation.
+ * Mode is a bitmap, see definitions below.
+ * Introduced in December 2013.
+ * It is used since the interface version SCHILY_1.1.
+ */
+int	paranoia_modeget __PR((cdrom_paranoia * p));
+
+/*
+ * Get the number of sectors to read ahead.
+ *
+ * Introduced in December 2013.
+ * It is used since the interface version SCHILY_1.1.
+ */
+int	paranoia_get_readahead	__PR((cdrom_paranoia * p));
+
+/*
+ * Set the number of sectors to read ahead.
+ * Readead should be larger than the size of the RAM in the drive.
+ *
+ * Introduced in December 2013.
+ * It is used since the interface version SCHILY_1.1.
+ */
+void	paranoia_set_readahead	__PR((cdrom_paranoia * p, int readahead));
+
+Mode flags:
+
+Supported:
+
+PARANOIA_MODE_VERIFY
+PARANOIA_MODE_OVERLAP
+PARANOIA_MODE_NEVERSKIP
+PARANOIA_MODE_C2CHECK
+
+Unsupported:
+
+PARANOIA_MODE_FRAGMENT
+PARANOIA_MODE_SCRATCH
+PARANOIA_MODE_REPAIR
+
+
+
+/*
+ * Imports (via callback definition from paranoia_init())
+ */
+d_disc_firstsector	(cdrom_drive *d)		-> long sector
+d_disc_lastsector	(cdrom_drive *d)		-> long sector
+d_read			(cdrom_drive *d, void *buffer, long beginsector, long sectors)	-> long sectors
+d_sector_gettrack	(cdrom_drive *d, long sector)	-> int trackno
+d_track_audiop		(cdrom_drive *d, int track)	-> int ???  /* Is audiotrack */
+d_track_firstsector	(cdrom_drive *d, int track)	-> long sector
+d_track_lastsector	(cdrom_drive *d, int track)	-> long sector
+d_tracks		(cdrom_drive *d)		-> int tracks
+
+callback		(long inpos, int function)
+
+/*
+ * Imports (libc)
+ */
+calloc
+free
+malloc
+realloc
+
+memcmp
+memcpy
+memmove
+memset
+
+qsort
+
+/*--------------------------------------------------------------------------*/
+#define	SEC_SIZE	2352
+scgp = scg_open();
+bufsize = scg_bufsize(scgp, CDR_BUF_SIZE);
+nsecs = bufsize / SEC_SIZE;
+
+cdp = paranoia_init(scgp, nsecs);
+# paranoia_modeset(cdp, mode);
+# paranoia_overlapset(cdp, overlap);
+
+paranoia_seek((cdp, 0L, int SEEK_SET);
+while (not ready) {
+	bp = paranoia_read(cdp, NULL);
+	write(f, bp, SEC_SIZE);
+}
+
+paranoia_free(cdp);

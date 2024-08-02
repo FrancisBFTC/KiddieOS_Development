@@ -11,17 +11,39 @@
 %DEFINE RESEND   0xFE
 
 %MACRO __ReadPort 1
-	xor dx, dx
 	xor ax, ax
 	mov dx, %1
 	in al, dx
 %ENDMACRO
 
+%MACRO __ReadPort16 1
+	xor ax, ax
+	mov dx, %1
+	in ax, dx
+%ENDMACRO
+
+%MACRO __ReadPort32 1
+	xor eax, eax
+	mov dx, %1
+	in eax, dx
+%ENDMACRO
+
 %MACRO __WritePort 2
-	xor dx, dx
 	mov dx, %1
 	mov al, %2
 	out dx, al
+%ENDMACRO
+
+%MACRO __WritePort16 2
+	mov dx, %1
+	mov ax, %2
+	out dx, ax
+%ENDMACRO
+
+%MACRO __WritePort32 2
+	mov dx, %1
+	mov eax, %2
+	out dx, eax
 %ENDMACRO
 
 %ENDIF

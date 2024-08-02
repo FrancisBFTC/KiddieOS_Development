@@ -1,0 +1,143 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a21:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	dirtibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	The makefile system now supports the Winsock library
+
+Libschily:
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+-	Is now quiet on NFSv4 ACLs (ZFS) although it still does not support them.
+
+Libscg:
+
+-	Bumped libscg version to 0.9
+
+-	Trying to support FreeBSD Kernel under non-FreeBSD (GNU) userland
+
+-	New interface function scg_numbus() returns the number of SCSI busses.
+
+-	Trying to work around a Linux design problem that has been introduced
+	about 3 years ago when Linux stopped to support an orthogonal SCSI
+	Kernel transport for all SCSI devices. Since then, ATAPI drives are
+	handled different from other SCSI devices. The problem is that
+	the linux maintainers intentionally reduce the information that
+	is available in the kernel and this way prevent to allow libscg to
+	only show only unique drives.
+
+	libscg now tries to map ATAPI drives to SCSI bus numbers >= 1000.
+	cdrecord -scanbus should now show even ATAPI drives. This allows
+	cdrecord/readcd/cdda2wav to implement the auto-target feature even
+	on Linux.
+	
+
+Rscsi:
+
+-	New interface function scg_numbus() returns the number of SCSI busses.
+	This is implemented via the new emote function "N".
+
+Cdrecord:
+
+-	The messages for the auto-target function are now printed on stderr
+	to avoid problems with merged output from stdout.
+
+-	The atip information now includes enhanced rzone information
+	with dual layer values.
+
+-	struct rzone_info now includes the DVD/DL enhancements from MMC
+
+-	print_diskinfo() enhanced for DVD support
+
+-	New option -minfo/-media-info to print Media information/status
+
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+-	Trying to support FreeBSD Kernel under non-FreeBSD (GNU) userland
+
+-	The messages for the auto-target function are now printed on stderr
+	to avoid problems with merged output from stdout.
+
+Readcd:
+
+-	The messages for the auto-target function are now printed on stderr
+	to avoid problems with merged output from stdout.
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	Trying to support FreeBSD Kernel under non-FreeBSD (GNU) userland
+
+-	Now correctly default to "mac-roman" coding with Apple HFS.
+
+-	Trying to better support correct graft-point handling after 
+	2.01.01a20 is the first release that correctly handles the vanilla case
+	Thanks to a hint from Udo Büdel
+
+-	Trying to better handle overlapping directory names.
+	Thanks to a hint from Thomas Flock
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

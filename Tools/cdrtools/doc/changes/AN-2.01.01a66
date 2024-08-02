@@ -1,0 +1,166 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a66:
+
+*******
+NOTE: cdrtools is currently in a state just before a new major release.
+	
+
+*******
+
+
+All:
+
+-	Added support for 64 bit compilation on HP-HX using "cc".
+	Use make CCOM=cc64 as usual to switch to 64 bit compilation.
+
+Libschily:
+
+-	libschily/fconv.c reworked to deal with non-C99 compliant systems and to deal
+	with the constraints found in HP-UX-11.11.
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+-	Fixed a problem in libsiconv in case that the the locale is specified as
+	"iconv:name".
+
+Libscg:
+
+-	Make libscg deal with the new error code from HP-UX that
+	is returned for a non-existing ATAPI slave.
+
+-	Some minor changes in libscg to make scgcheck report less problems
+	with HP-UX
+
+Libscgcmd:
+
+Libmdigest:
+
+Rscsi:
+
+Cdrecord:
+
+-	Better man page with repect to dev=
+
+-	The cdrecord man page has been restructured.
+
+-	Fixed a bug in the workaround code for a firmware bug for DVD+R
+	media in HL-DT-ST drives.
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Better man page with repect to dev=
+
+-	The cdda2wav man page has been restructured.
+
+Readcd:
+
+-	readcd now only send the Plextor specific SCSI commands for the -cxscan
+	option in case that the drive identifies as Plextor.
+
+-	Better man page with repect to dev=
+
+Scgcheck:
+
+-	Better man page with repect to dev=
+
+Scgskeleton:
+
+Btcflash:
+
+-	Better man page with repect to dev=
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	mkisofs man page reworked
+
+-	isoinfo man page reworked
+
+-	New file mkisofs/rock.h 
+
+-	isodump now prints more information about Rock Ridge attributes to
+	help debugging non-compliant Rock Ridge ISO images.
+
+-	isoinfo now correctly identifies ISO images made with the Mac OS X
+	program "hdiutil" by e.g. calling:
+
+	hdiutil makehybrid -iso -hfs -verbose -o xxx.iso some_dir
+
+	As filesystems that violate the Rock Ridge standard.
+
+	Check e.g. by "isoinfo -i xxx.iso -d"
+
+	Interpreting Rock Ridge on such images can be enforced by calling:
+
+	"isoinfo -i xxx.iso -lR -debug" 
+
+-	mkisofs now ignores the broken Rock Ridge attributes that have been
+	created by the Mac OS X program "hdiutil".
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

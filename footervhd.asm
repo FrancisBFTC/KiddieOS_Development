@@ -59,7 +59,7 @@ vhd_footer:
 .currentSyze:
     dd 1, 0xDC300000    ;bytes.
 .diskGeometry:
-    dw 971              ;# Cylinders.
+    dw 985              ;# Cylinders.
     db 255              ;# Heads.
     db 63               ;# Sectors.
 .diskType:

@@ -1,0 +1,146 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a27:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	distibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	Added forgotten file RULES/x86-interix-cl.rul to the Schily Makefilesystem
+
+-	Trying to better deal with MS winsock2.h oddities in schily/time.h
+
+-	#undef iswalnum ... in schily//wchar.h before defining non wchar fallbacks.
+
+-	config.guess now knows about i386 Darwin (Mac OS X on Intel)
+
+-	Schily makefilesystem enhanced to check for extended
+	fields in struct utsname as seen e.g. in MS SFU (Interix).
+
+-	New predefined macro OSVERSION in the makefilesystem is needed
+	for SCO OpenServer 6.x support (because this uses a UnixWare
+	kernel
+
+-	Trying to support Compilation on SCO OpenServer 6.x
+
+-	New macro $(CC_OUTPUT_FILTER) allows to filter away the
+	unwanted file name echo from cl.exe.
+
+-	Interix now uses uname -m instead of uname -p for $(OARCH)
+
+-	Makefile support for pentium-4-unixware-cc.rul and
+	pentium-4-unixware-gcc.rul was added.
+
+-	New autoconf test for libiconv
+
+-	The Schily makefilesystem now by default searches in /usr/local/include
+	and /usr/local/lib if on FreeBSD. This is needed in order to find
+	libintl and libiconv.
+
+-	make html and make htmlx now works even on the top level directory
+	and creates html versions of the man pages
+
+-	fixed a typo in the autoconf test for C99 isinf/isnan
+
+Libschily:
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+-	find_list.c now #ifdefs names like S_IFLNK
+
+Libfile:
+
+-	Better portability for strerror() in file.h
+
+Libhfs_iso:
+
+Libscg:
+
+-	Better help message for Mac OS X wich dev=help
+
+Rscsi:
+
+Cdrecord:
+
+-	Cdrecord now correctly reports Copyright ...2007 with -version
+
+-	Let cdrecord check the available transfer size for more SCSI
+	commands.
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Let cdda2wav print the -version outout to stdout and in a similar form
+	as other cdrtools programs.
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+-	Make btcflash compile on K&R compilers (like on HP-UX)
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	mkisofs -J no longer implies -l as done incorrectly after
+	converting from GNU getopt_long() to getargs()
+
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

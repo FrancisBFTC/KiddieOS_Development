@@ -15,15 +15,15 @@ jmp 	OpenThisFile 			; FAT16+24
 jmp 	LoadFile 				; FAT16+27
 jmp 	SetSeekFile				; FAT16+30
 jmp 	CloseFile 				; FAT16+33
+jmp 	ReadLogicalSectors		; FAT16+36
 
-
-FileSegments    dw 0x0000		; FAT16+36
-DirSegments     dw 0x0000		; FAT16+38
-LoadingDir      db 0			; FAT16+40
+FileSegments    dw 0x0000		; FAT16+39
+DirSegments     dw 0x0000		; FAT16+41
+LoadingDir      db 0			; FAT16+43
 	
-SYS.VM db 0						; FAT16+32
-FileVM  times 11 db 0			; FAT16+33
-ClusterFile     dw  0x0000		; FAT16+44
+SYS.VM db 0						; FAT16+44
+FileVM  times 11 db 0			; FAT16+45
+ClusterFile     dw  0x0000		; FAT16+56
 
 kernel_call 	db 0
 file_pointer 	dd 0
@@ -40,6 +40,7 @@ SHELL.ErrorFile  EQU  (SHELL16+26)
 DATASTART            DW   0x0000
 FATSTART             DW   0x0000 
 ROOTDIRSTART         DW   0x0000
+PARTITION 			 DD   0x00000000
 
 BYTES_PER_SECTOR     EQU  512
 MAX_ROOT_ENTRIES     EQU  512
@@ -93,13 +94,16 @@ LoadDriver db 0
 
 LoadDirectory:
 	pusha
+	xor eax, eax
 	mov ax, ROOT_SEGMENT
 	mov es, ax
 	mov ax, [ROOTDIRSTART]
 	mov bx, 0x0000
 	mov cx, 2		;DIRECTORY_SIZE = 32
+	add eax, [PARTITION]
 	call ReadLogicalSectors
 	popa
+	mov bx, 16*2
 ret
 	
 LoadFAT:
@@ -111,6 +115,7 @@ LoadFAT:
 	mov ax, [FATSTART]  	 		; Setor Lógico inicial para ler
 	mov  cx, SECTORS_PER_FAT 		;  Metade da fat (246 / 2).
     mov  bx, 0x0000                 ;  Determinando o offset da FAT.
+	add eax, [PARTITION]
     call  ReadLogicalSectors
 	mov ax, ROOT_SEGMENT
 	mov es, ax
@@ -122,12 +127,15 @@ LoadStartData:
 	push 	es
 	xor 	ax, ax
 	mov 	es, ax
-	mov 	ax, WORD[es:0x600 + 0x4E]
+	mov 	ax, WORD[es:0x600 + 0x3E]
 	mov 	[DATASTART], ax
-	mov 	ax, WORD[es:0x600 + 0x50]
+	mov 	ax, WORD[es:0x600 + 0x40]
 	mov 	[FATSTART], ax
-	mov 	ax, WORD[es:0x600 + 0x52]
+	mov 	ax, WORD[es:0x600 + 0x42]
 	mov 	[ROOTDIRSTART], ax
+	mov 	eax, DWORD[es:0x600 + 0x4A]
+	mov 	[PARTITION], eax
+	xor 	eax, eax
 	pop 	es
 	popa
 ret
@@ -477,22 +485,25 @@ WriteThisEntry:
 	mov 	es, ax 		; ES = CD_SEGMENT
 	xor 	di, di		; ES:DI = 0x0200:0x0000 = 0x2000
 SearchEntry:
-	push 	cx			; Empilha a quantidade de chars
+	push 	cx			; Empilha a quantidade de entradas
 	mov 	cx, 11 		; 11 caracteres do nome de arquivo na entrada
 	push 	si			; Empilha nome de arquivo a ser buscado
 	push 	di			; Empilha nome de arquivo da entrada
 	rep 	cmpsb		; Compare os 2 nomes de arquivos
 	pop 	di			; Desempilha nome de arquivo da entrada
 	pop 	si			; Desempilha nome de arquivo a ser buscado
-	pop 	cx			; Desempilha a quantidade de chars
+	pop 	cx			; Desempilha a quantidade de entradas
 	jne 	SearchNextE	; Caso os nomes não forem iguais, procure a próxima entrada
 	call 	ChangeEntry ; Altera entrada
 	jmp 	RetWriteEnt ; Retorne a rotina de escrita
 SearchNextE:
 	add  	di, DIRECTORY_SIZE		; Desloca para próxima entrada
-	cmp 	word[es:di], 0x0000		; Verifique se a entrada é zerada
-	jne 	SearchEntry 			; Caso não for, continue buscando arquivo
+	;cmp 	word[es:di], 0x0000		; Verifique se a entrada é zerada
+	;jne 	SearchEntry 			; Caso não for, continue buscando arquivo
+	loop 	SearchEntry
+	mov 	al, 1
 	stc
+	pop 	es
 	ret
 RetWriteEnt:
 	clc
@@ -521,9 +532,12 @@ SearchToDel:
 	jmp 	RetDelFile 	; Retorne a rotina de escrita
 NextToDel:
 	add  	di, DIRECTORY_SIZE		; Desloca para próxima entrada
-	cmp 	word[es:di], 0x0000		; Verifique se a entrada é zerada
-	jne 	SearchToDel 			; Caso não for, continue buscando arquivo
+	;cmp 	word[es:di], 0x0000		; Verifique se a entrada é zerada
+	;jne 	SearchToDel 			; Caso não for, continue buscando arquivo
+	loop 	SearchToDel
+	mov 	al, 0x01				; Error Code: Arquivo não encontrado
 	stc
+	pop 	es
 	ret
 RetDelFile:
 	clc
@@ -571,6 +585,7 @@ ClearFatFile:
 	mov 	ax, FAT_SEGMENT			; Defina Segmento do FAT
 	mov 	es, ax					; Para o Registrador ES = ES:BX
 	mov 	ax, [InitialFAT]		; AX = Setor do FAT inicial pré-calculado
+	add 	eax, [PARTITION]
 	call  	WriteLogicalSectors		; Escreva CX setor(es) de ES:BX a partir do Setor AX
 	
 	pop 	es
@@ -634,6 +649,7 @@ Save_Entry:
 	mov 	ax, 499				; Setor inicial do diretório raíz
 	xor  	cx, cx				; Zera cx
     mov  	cl, 2				; Setores Sequenciais do deslocamento de CD -> 0x40 = 0x400
+	add 	eax, [PARTITION]
     call  	WriteLogicalSectors	; Escreve ES:BX (Dir. Raíz Adaptado) no setor 499 e 500
 	jmp 	Ret.ChEntry			; 
 	
@@ -653,6 +669,7 @@ Write_Entry:
     call  	ClusterLBA
 	xor  	cx, cx
     mov  	cl, SECTORS_PER_CLUSTER    ; 1 Setor para escrever
+	add 	eax, [PARTITION]
     call  	WriteLogicalSectors
 	
 	push 	bx						  ; bx = bx + 512
@@ -805,6 +822,7 @@ NoClearSize:
 	mov 	ax, 499				; Setor inicial do diretório raíz
 	xor  	cx, cx				; Zera cx
     mov  	cl, 2				; Setores Sequenciais do deslocamento de CD -> 0x40 = 0x400
+	add 	eax, [PARTITION]
     call  	WriteLogicalSectors	; Escreve ES:BX (Dir. Raíz Adaptado) no setor 499 e 500
 	jmp 	WriteFAT			; Salta para escrita do FAT
 	
@@ -824,6 +842,7 @@ WriteEntry:
     call  	ClusterLBA
 	xor  	cx, cx
     mov  	cl, SECTORS_PER_CLUSTER    ; 1 Setor para escrever
+	add 	eax, [PARTITION]
     call  	WriteLogicalSectors
 	
 	push 	bx						  ; bx = bx + 512
@@ -923,6 +942,7 @@ SetRealOffset:						; Se for diferente, então BX tem que valer próximos offset
 WriteFatFile:
 	mov 	cx, ax					; CX = Quantidade de setores FAT
 	mov 	ax, [InitialFAT]		; AX = Setor do FAT inicial pré-calculado
+	add 	eax, [PARTITION]
 	call  	WriteLogicalSectors		; Escreva CX setor(es) de ES:BX a partir do Setor AX
 	pop 	ecx						; Restaure o contador de setores de dados
 	
@@ -946,6 +966,7 @@ WriteDataFile:
     call  	ClusterLBA						; Converta Nº Cluster para setor lógico
 	xor  	cx, cx							; Zera cx
     mov  	cl, SECTORS_PER_CLUSTER    		; CX = 1 setor para escrever
+	add 	eax, [PARTITION]
     call  	WriteLogicalSectors				; Escreva CX setor(es) a partir do setor lógico AX
 											; O dado que está em ES:BX = 0x3000:BufferWrite
 	
@@ -1110,13 +1131,13 @@ FreeCluster 	dw 0x0000
 AddrCluster 	dd 0x00000000
 
 WriteLogicalSectors:
-    mov 	WORD [DAPBuffer]   ,bx
-    mov 	WORD [DAPBuffer+2] ,es  ; ES:BX de onde os dados serão lidos pra escrever
-    mov 	WORD [DAPStart]    ,ax  ; Setor lógico inicial para escrever
+    mov 	[DAPBuffer]   ,bx
+    mov 	[DAPBuffer+2] ,es  ; ES:BX de onde os dados serão lidos pra escrever
+    mov 	[DAPStart]    ,eax  ; Setor lógico inicial para escrever
 _MAIN_WRITE:
     mov 	di, 0x0005	  ; 5 tentativas de leitura
 _SECTORWRITE:
-    push  	ax
+    push  	eax
     push  	bx
     push  	cx
 
@@ -1133,7 +1154,7 @@ _SECTORWRITE:
     
     pop  	cx
     pop  	bx
-    pop  	ax
+    pop  	eax
 	
     jnz  	_SECTORWRITE   
 	jmp 	BOOT_FAILED
@@ -1141,7 +1162,7 @@ _SECTORWRITE:
 _SUCCESS_WRITE:
     pop  	cx
     pop  	bx
-    pop  	ax
+    pop  	eax
 	
     ; Queue next buffer.
     add 	bx, BYTES_PER_SECTOR
@@ -1149,18 +1170,19 @@ _SUCCESS_WRITE:
     jne 	_NEXTSECTORWRITE
 
     ; Trocando de segmento.
-    push 	ax
+    push 	eax
     mov  	ax, es
     add  	ax, 0x1000
     mov  	es, ax
-    pop  	ax
+    pop  	eax
 	
 _NEXTSECTORWRITE:
-    inc  	ax                     	; Incrementa 1 setor
-    mov 	WORD [DAPBuffer], bx
-	mov 	WORD [DAPBuffer+2],es   ; ES:BX para onde os dados vão
-    mov 	WORD [DAPStart], ax
+    inc  	eax                     	; Incrementa 1 setor
+    mov 	[DAPBuffer], bx
+	mov 	[DAPBuffer+2],es   ; ES:BX para onde os dados vão
+    mov 	[DAPStart], eax
     loop  	_MAIN_WRITE             ; Write next sector.
+	xor 	eax, eax
 ret
 
 ; TODO:
@@ -1240,6 +1262,8 @@ LoadBinaryFile:
 	
 SetOtherSegments:
 	
+	mov 	byte[sectors_count], 0
+	
 	mov 	ax, ROOT_SEGMENT
     mov 	fs, ax
 	
@@ -1252,7 +1276,10 @@ ReadDataFile:
     call  	ClusterLBA          		 ; Conversão de Cluster para LBA.
     xor  	cx, cx
     mov  	cl, SECTORS_PER_CLUSTER    ; 1 Setores para ler
+	add 	eax, [PARTITION]
     call  	ReadLogicalSectors
+	
+	inc 	word[sectors_count]
 	
 	cmp 	byte[kernel_call], 1
 	jz 		no_ret_read
@@ -1308,26 +1335,38 @@ EndOfFile:
 	cmp 	byte[LoadDriver], 0
 	jz  	SaveNextOffset
 	
-	push 	di
-	push 	si
-	mov 	si, StringID
-	call 	Print_String
-	sub 	di, NAME_LENGTH
-	call 	PrintNameFile
-	mov 	si, StringDvr
-	call 	Print_String
-	mov 	ax, bx
-	call 	Print_Hexa_Value16
-	call 	Break_Line
-	pop 	si
-	pop 	di
+	; Imprimir carregamento de drivers
+	; Observações: Existirá uma aplicação que fará isso
+	;push 	di
+	;push 	si
+	;mov 	si, StringID
+	;call 	Print_String
+	;sub 	di, NAME_LENGTH
+	;call 	PrintNameFile
+	;mov 	si, StringDvr
+	;call 	Print_String
+	;mov 	ax, bx
+	;call 	Print_Hexa_Value16
+	;call 	Break_Line
+	;pop 	si
+	;pop 	di
 	
 	mov 	edx, DWORD[es:di + (FSIZE_ENTRY - NAME_LENGTH)]
 	
 SaveNextOffset:
+	cmp 	byte[LoadingDir], 1
+	jz 		RetCountEntries	
 	add 	bx, dx
 	add 	bx, 2
-ret
+	ret
+RetCountEntries:
+	mov 	ax, [sectors_count]
+	mov 	bx, 16
+	xor 	dx, dx
+	mul 	bx
+	mov 	bx, ax
+	ret
+	
 RetLoadFile:
 	pop 	cx
 	pop 	dx
@@ -1335,6 +1374,7 @@ RetLoadFile:
 	pop 	di
 ret
 HandlerReaded	dw 0x0000
+sectors_count 	dw 0x0000
 
 CheckBufferLoaded:
 	cmp 	byte[kernel_call], 1
@@ -1665,13 +1705,14 @@ ret
 
 	
 ReadLogicalSectors:
-    mov 	WORD [DAPBuffer]   ,bx
-    mov 	WORD [DAPBuffer+2] ,es  ; ES:BX para onde os dados vão
-    mov 	WORD [DAPStart]    ,ax  ; Setor lógico inicial para ler
+    mov 	[DAPBuffer]   ,bx
+    mov 	[DAPBuffer+2] ,es  ; ES:BX para onde os dados vão
+    mov 	[DAPStart]   ,eax  ; Setor lógico inicial para ler
+	push 	di
 _MAIN:
     mov 	di, 0x0005	  ; 5 tentativas de leitura
 _SECTORLOOP:
-    push  	ax
+    push  	eax
     push  	bx
     push  	cx
 
@@ -1688,7 +1729,7 @@ _SECTORLOOP:
     
     pop  	cx
     pop  	bx
-    pop  	ax
+    pop  	eax
 	
     jnz  	_SECTORLOOP    
 	jmp 	BOOT_FAILED
@@ -1696,7 +1737,7 @@ _SECTORLOOP:
 _SUCCESS:
     pop  	cx
     pop  	bx
-    pop  	ax
+    pop  	eax
 	
     ; Queue next buffer.
     add 	bx, BYTES_PER_SECTOR
@@ -1704,18 +1745,20 @@ _SUCCESS:
     jne 	_NEXTSECTOR
 
     ; Trocando de segmento.
-    push 	ax
+    push 	eax
     mov  	ax, es
     add  	ax, 0x1000
     mov  	es, ax
-    pop  	ax
+    pop  	eax
 	
 _NEXTSECTOR:
-    inc  	ax                     	; Queue next sector.
-    mov 	WORD [DAPBuffer], bx
-	mov 	WORD [DAPBuffer+2],es  ; ES:BX para onde os dados vão
-    mov 	WORD [DAPStart], ax
+    inc  	eax                     	; Queue next sector.
+    mov 	[DAPBuffer], bx
+	mov 	[DAPBuffer+2],es  ; ES:BX para onde os dados vão
+    mov 	[DAPStart], eax
     loop  	_MAIN                 	; Read next sector.
+	xor 	eax, eax
+	pop 	di
 ret
 
 	

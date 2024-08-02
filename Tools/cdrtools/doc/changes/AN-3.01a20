@@ -1,0 +1,197 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-3.01a20:
+
+This is the first localization step for cdrtools. All programs now (hopefully)
+call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries.
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to cdrtools should *****
+*****		call all programs from cdrtools in the "C" locale *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		  *****
+*****		unless these frontends support localized strings  *****
+*****		used by the cdrtools with NLS support.		  *****
+
+This version compiles on Win-DOS using the Microsoft compiler cl.exe but
+warning: due to missing POSIX compliance with basic features (e.g. stat()
+does not return inode numbers), there are many problems with the resulting
+code and thus it is recommended to better use a POSIX layer on top of 
+WIN-DOS.
+
+All:
+
+-	New Schily Makefiles rules for armv7l-linux
+
+-	autoconf/xconfig.h.in now treats MinGW32 the same as when compiling
+	with cl.exe
+
+Libschily:
+
+-	libschily::format.c (printf) now supports length modifiers
+	like h hh l ll t z for the %n format.
+
+-	libschily::format.c has been restructured for parsing the
+	field width parameters in a way that would allow to later
+	introduce support for %n$
+
+-	Try to take care about the fact that MinGW32 does not support
+	a standard compliant mkdir() function with two parameters.
+	This applies top libschily/mkdirat.c and libschily/mkdirs.c
+
+-	Corrected a typo in libschily/mkfifoat.c that called mkdir()
+	instead of mkfifo()
+
+-	libschily/getdtablesize.c needs the same treatment for MinGW32 as for
+	cl.exe
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+-	libparanoia now implements the first stage in C2 error pointer
+	support: it now is able to deal with input data that contains
+	C2 pointers and it implements new callbacks to report C2
+	statistics back to the caller.
+
+-	libparanoia now supports to control the size of the read ahead buffer.
+	This allows libparanoia to be adopted to the current constraints.
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+
+Libmdigest:
+
+Libsiconv:
+
+Libscg:
+
+
+Libscgcmd:
+
+Libmdigest:
+
+Rscsi:
+
+Cdrecord:
+
+-	Fixed some typos in cdrecord
+
+-	Better comment about cdrecord specific enhancements in CUE files.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	cdda2wav now prints the number of read operations per track when
+	in paranoia mode
+
+-	cdda2wav now prints the read overhead (in percent) per track when
+	in paranoia mode
+
+-	cdda2wav adds a new paraopts= mode: "c2check" to run libparanoia
+	in C2 mode.
+
+-	cdda2wav did get a major overhoul for libparanoia that may
+	make the extract quality better up to a factor of 100x:
+
+	A new suboption "readahead=" for paraopts= allows to modify
+	the read ahead buffer size to make it large ebough for the amount
+	of RAM in modern drives.
+
+	The interpratation of "problem sectors" was changed to better deal
+	with the fact that in case of bad areas, the libparanoia code
+	tends to do repeated reads in those bad areas. The computaion
+	of the percentage of bad sectors now takes care of reread sectors.
+	Repeated reads still increase the value but no longer in a
+	quadratical way.
+
+-	Better documentation for the libparanoia interface in cdda2wav
+	allows to better understand how it works and how modifying 
+	parameters could influence the extract quality.
+
+-	Add another instance of #undef interface in hope to help with
+	compiling using MinGW32
+
+Readcd:
+
+-	readcd -c2scan now also prints the percentage of sectors with C2 errors.
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Fixed a typo in the mkisofs man page (had \-max\-ISO-9660\-filenames
+	instead of \-max\-iso9660\-filenames)
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

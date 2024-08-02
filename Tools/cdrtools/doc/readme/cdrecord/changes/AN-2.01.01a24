@@ -1,0 +1,247 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a24:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	distibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	-I. removed from standard c-compiler include path
+
+-	/usr/src/linux/include is no longer included if it contains
+	broken include files.
+
+	Please send a bug report to the Linux Kernel maintainers in case
+	that the makefile system reports broken Linux kernel include files.
+
+-	Support for WIN-NT-5.2 (MS-Windows 2003) added to the makefile system
+
+-	No longer using -ztext linker option for creating shared libs with GCC
+	as GCC does not create 100% correct binaries and this would abort
+	the process of creating a shared library.
+
+-	Better setup for the environment variables that are needed for the
+	Microsoft "cl" compiler.
+
+	NOTE: The current setup is for "english" versions of MS-WIN.
+	You may need to edit the files DEFAULTS/vc6-setup or DEFAULTS/vc7-setup
+	depending on your locale version and the "c"-compiler version you
+	are using.
+
+-	Prevent MSVC ("cl") from creating silly messages
+	like: "... Consider using strerror_s instead."
+
+-	Prevent MSVC ("cl") from complaining about deprecated 
+	option "-ofilename"
+
+-	New autoconf tests for POSIX compliant time functions in libc
+
+-	GCC Warning setup no longer includes -Wtraditional
+
+-	Dynamic libraries are now supported for Mac OS X
+
+-	smake CCOM=xx will now result in writing DEFCCOM=xx into incs/Dcc.<platform>
+	if this is done on the initial make run.
+	conf/cc-config.sh now has one additional parameter
+
+-	Include $(DEFLTSROOT)/$(DEFLTSDIR)/$(VCSETUP) from
+	DEFAULTS/Defaults.cygwin32_nt already to allow the script
+	conf/cc-config.sh to detect that "cl" is working. 
+
+-	DEFAULTS/vc7-setup & DEFAULTS/vc6-setup now set
+	.NOWARN: := to tell smake-1.2a41 or newer not to warn
+	about a nonportable assignment (we do
+	not have a UNIX "make" in Cygwin).
+
+-	smake COPTX=-DNO_LARGEFILES now allows to compile in non-largefile mode
+
+-	New targets "html" and "htmlx" for Manual page makefiles
+	allows to convert man pages using "man2html"
+
+-	New include file schily/wchar.h
+
+-	New include file schily/schilyp.h
+
+-	Typo in schily/param.h fixed
+
+-	schily/jmpdefs.h now includes support for sigsetjmp()
+
+-	configure now checks for ctime cftime ascftime strftime and
+	for libresolv and whether /bin/sh is bash
+
+-	remove libxxx.so link before trying to create it
+
+-	Allow a mixture of static and dynamic libraries to link against
+	a program
+
+
+Libschily:
+
+-	getnum()/getllnum() & gettnum()/getlltnum() have been moved to libschily
+
+-	printf()/fprintf()/sprintf()/snprintf() have been removed from libschily
+	we now use js_*printf() instead via -DSCHILY_PRINT
+
+-	Workaround for a Mac OS X linker bug
+
+-	New set of functions: __jmalloc()/__jrealloc()/__jsavestr()
+
+-	New set of functions: __fjmalloc()/__fjrealloc()/__fjsavestr()
+
+-	New set of functions: fcomerr()/fcomerrno()/ferrmsg()/ferrmsgno()
+
+-	getargs() now allows '+' to appear in longopt=
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+-	paranoia_init() interface change to work around a deficit
+	in the Mac OS X linker.
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+-	getnum()/getllnum() & gettnum()/getlltnum() have been moved to libschily
+
+-	Using js_*printf() instead of *printf() via -DSCHILY_PRINT
+
+-	Avoid a core dump caused by probably uninitialized data
+	when using -exec ... {} +
+
+-	Workaround for a Mac OS X linker bug
+
+-	find_parser() now does no longer call exit() on errors.
+
+-	New funtion b_find(int argc, char ** argv, vound * dummmy)
+	implements the ksh93 builtin function interface
+
+-	b_find() sets the flag WALK_NOEXIT for treewalk to make sure that
+	the complete find implementation does not call exit() anymore.
+
+-	new function walkinitstate()
+
+Libfile:
+
+-	Workaround for a Mac OS X linker bug
+
+-	Using js_*printf() instead of *printf() via -DSCHILY_PRINT
+
+Libhfs_iso:
+
+-	Workaround for a Mac OS X linker bug
+
+Libscg:
+
+-	Using js_*printf() instead of *printf() via -DSCHILY_PRINT
+
+-	add the new scg_numbus() to the Solaris linker map file
+	to allow again dynamic linking
+
+Rscsi:
+
+Cdrecord:
+
+-	getnum -> libschily
+
+-	Using js_*printf() instead of *printf() via -DSCHILY_PRINT
+
+-	Some %d -> %u changes in printf() formats.
+
+-	Fixed MMC-4 Profile 0x14 name to "DVD-RW sequential recording"
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	getnum -> libschily
+
+-	Using js_*printf() instead of *printf() via -DSCHILY_PRINT
+
+-	Use the new paranoia_init() interface
+
+Readcd:
+
+-	Using js_*printf() instead of *printf() via -DSCHILY_PRINT
+
+Scgcheck:
+
+-	Using js_*printf() instead of *printf() via -DSCHILY_PRINT
+
+Scgskeleton:
+
+-	Using js_*printf() instead of *printf() via -DSCHILY_PRINT
+
+Btcflash:
+
+-	Using js_*printf() instead of *printf() via -DSCHILY_PRINT
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	The option -stream-file-name has been implemented to allow
+	setting a user defined file name with -stream-media-size
+	When using -stream-file-name, mkisofs always uses "-iso-level 4"
+
+-	A bug has been fixed, that caused mkisofs to archive a wrong
+	time zone offset in case that it was used on a timezone east
+	to GMT and the local time was already in e.g. Y-2007 while
+	GMT was still at Y-2006.
+
+-	Several printf format changes from %d -> %u to reflect the changes
+	that recently made the blocknumber related variables unsigned.
+
+-	Some small typo corrections in the man page
+
+-	getnum()/getllnum() & gettnum()/getlltnum() have been moved to libschily
+
+-	Using js_*printf() instead of *printf() via -DSCHILY_PRINT
+
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

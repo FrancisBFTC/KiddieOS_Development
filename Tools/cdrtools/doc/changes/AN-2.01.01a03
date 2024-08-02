@@ -1,0 +1,150 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a02:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of dirtibutions.
+	The only reason is to add certain new CD/DVD features that are important.
+
+	So _please_ do not send any patches except when you like to fix extreme bugs.
+	I am currently mainly working on stable incremental restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+All:
+
+-	Now using "makefiles-1.5"
+
+-	Compilation on OS/ should work again (-Zexe -> -o xxx.$(EXEEXT)
+
+-	Sleeptime to allow reading Gmake warning reduced to 2 seconds.
+	I am still waiting for GNU make to fix the bugs I did report in 1999.
+
+-	Support for 'make DESTDIR=xxx install' added
+
+-	Workaround for a Shell Bug on BSDi
+
+-	Install workaround for the fact that BSDI has chown(1) in /usr/sbin/
+
+-	cc-config shell script reworked
+
+-	Better configure tests for procfs include files
+
+-	Configure tests for fchown, chmod, fchmod, lchmod, futimes, lutimes
+
+-	Configure tests for fdopendir
+
+-	Configure tests for broken ext2fs includes files in Linux kernel
+
+-	Better SRCROOT search function in makefiles shell scripts
+
+-	libunls reworked
+
+-	New autoconf tests for broken <linux/ext2_fs.h>, <scsi/scsi.h> & <scsi/sg.h>
+	on various Linux systems
+
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libscg:
+
+-	Trying to introduce a workaround for broken <scsi/scsi.h> & <scsi/sg.h>
+	on various Linux systems.
+
+-	Trying to introduce a workaround for the changed SCSI generic Linux
+	Kernel interface from Linux-2.6.8.1 and newer.
+
+	Be very careful with testing. The Linux adption layer for libscg
+	is already full of workarounds for bugs, unstable interfaces and
+	unwillingness of the Linux Kernel maintainers to give access to the
+	needed information for libscg. I am not sure whether this workaround
+	will not have problems. It has been tested on a Pegasus PPC running
+	Linux-2.6.8.1
+
+Rscsi:
+
+Cdrecord:
+
+-	Allow the -shorttrack option for RAW mode, thanks to a report
+	from Sebastian Trueg
+
+-	Enhance the minimal grace time from 2 to 3 seconds to make sure
+	that cdrecord will not get out of sync with locks from the 
+	Volume management system.
+
+-	Better checks and better error messages for /etc/default/cdrecord
+
+-	Correct verbose print mode for old pre-MMC TEAC drives.
+
+-	Added support for Ultra speed+ CD-RW media recognition and a check
+	whether the drive supports Ultra speed+ CD-RW media.
+	(Thanks to Alexander Noé).
+	
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	Better error messages with wrong Eltorito boot options
+
+-	Man page is now more explicit about requirements for DVD-video
+	directory trees.
+
+-	Better warning text for missing Rock Ridge in multi.c
+
+-	Bugs in README.sunx86boot corrected
+
+-	Multi Volume code for reading old image now gives different
+	error messages on read errors and short reads.
+
+-	Diagnostic programs isodump, isoinfo, ... no longer dump core 
+	when called with dev=<SCSI addr> parameters.
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

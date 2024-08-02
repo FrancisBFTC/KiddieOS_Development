@@ -1,0 +1,111 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a11:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of dirtibutions.
+	The only reason is to add certain new CD/DVD features that are important.
+
+	So _please_ do not send any patches except when you like to fix extreme bugs.
+	I am currently mainly working on stable incremental restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	The makefile system has been completely rewritten to be more reusable
+	and to not replicate code.
+
+-	The makefile system now supports to compile under "Services For Unix",
+	a free POSIX add on from Microsoft (identifies as "Interix").
+	Note that you need the latest 'smake' relase smake-1.2a36 or never
+	from ftp://ftp.berlios.de/pub/smake/alpha/
+
+	Currently, cdrecord is not able to send SCSI commands from this
+	environment. I am looking for help from experienced users.
+
+-	The makefile system now supports to compile using the Microsoft
+	C-Compiler "cl". 
+	Note that you need the latest 'smake' relase smake-1.2a36 or never
+	from ftp://ftp.berlios.de/pub/smake/alpha/
+	This compilation currently may only be cone from a "Cygwin" environment
+	using smake with the Environment variables set up in a way that allows
+	"cl" to work (find it's include files and libraries).
+
+	Run "smake CCOM=cl" for this kiond of compilation.
+
+	Cdrecord has not yet been verified to compile in this environment.
+
+	Note that I am interested in feedback for these new compile possibilities.
+
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+-	Avoid a GCC warning in the code that works around a Linux DMA residual bug.
+
+
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+-	Some modifications needed because of the restructured makefiles.
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

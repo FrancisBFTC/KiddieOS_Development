@@ -11,12 +11,18 @@
 ;[BITS 32]
 ;[ORG PCI]
 
+;%IFDEF 	_PROTECTED_MODE
+;	ALIGN	4
+;	BITS 	32
+;	SECTION protectedmode vstart=0x150000, valign=4
+;%ELSE
+;	[BITS 16]  ; Definir pra 32
+;	[ORG  PCI]
+;%ENDIF
 
-;ALIGN 4	; Descomentar
-[BITS 16]  ; Definir pra 32
-[ORG   PCI]	; Comentar
-
-;SECTION protectedmode vstart=0x150000, valign=4  ; Descomentar
+ALIGN	4
+BITS 	32
+SECTION protectedmode vstart=0x150000, valign=4
 
 %IFNDEF		__CONFPCI_ASM__
 %DEFINE 	__CONFPCI_ASM__
@@ -33,6 +39,19 @@ jmp 	Get_Interface_Name
 jmp 	Get_Device_Name
 jmp 	Get_Vendor_Name
 jmp 	Get_Classes_Number
+jmp 	PCI_Read_Word
+jmp 	PCI_Write_Word
+jmp 	PCI_Read_Dword
+jmp 	PCI_Get_VendorID
+jmp 	PCI_Get_DeviceID
+jmp 	PCI_Check_All_Buses
+
+Vendor 	dw 	0x0000
+Device 	dw 	0x0000
+pdata 	dd  0x00000000
+PCI_bus db 	0x00
+PCI_dev db 	0x00
+PCI_fun db 	0x00
 
 HeaderMain:  ; Main Header for all Devices, Size=16 bytes + 4
 	.VendorID    dw 0
@@ -124,7 +143,6 @@ bus 	db 0
 slot 	db 0
 func 	db 0
 offs 	db 0
-pdata 	dd 0
 
 PCIEnabled  db 0
 
@@ -140,7 +158,7 @@ Init_PCI:
 	sete 	dl				; Set byte if equal, otherwise clear
 	mov 	byte [PCIEnabled], dl
 	;call 	PCI_Check_All_Buses
-	call 	Scan_PCI_Devices
+	;call 	Scan_PCI_Devices
 ret
 
 
@@ -269,9 +287,14 @@ PCI_Reg 	dd 0x00000000
 ; 		DL  = Offset number
 ; OUT:	None.
 PCI_Write_Word:
+	push 	eax
 	push 	ebx
 	push 	ecx
 	push 	edx
+	
+	and 	eax, 0xFF
+	and 	ebx, 0xFF
+	and 	ecx, 0xFF
 	
 	shl 	eax, 16
 	shl 	ebx, 11
@@ -287,6 +310,44 @@ PCI_Write_Word:
 	mov 	dx, PCI_DATA
 	mov 	eax, [pdata]
 	out 	dx, eax
+	
+	pop 	edx
+    pop 	ecx
+	pop 	ebx
+	pop 	eax
+ret
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; PCI_Read_Dword - Ler de um registro um dispositivo PCI
+; IN:   AL  = Bus number
+;		BL  = Device/Slot number
+;		CL  = Function number
+; 		DL  = Offset number
+; OUT:	EAX = Register information
+PCI_Read_Dword:
+	push 	ebx
+	push 	ecx
+	push 	edx
+	
+	and 	eax, 0xFF
+	and 	ebx, 0xFF
+	and 	ecx, 0xFF
+	
+	shl 	eax, 16
+	shl 	ebx, 11
+	or 		eax, ebx
+	shl 	ecx, 8
+	or 		eax, ecx
+	and 	edx, 0xFC
+	or 	 	eax, edx
+	and 	eax, 0x00FFFFFF
+	or 		eax, 0x80000000
+	mov 	dx, PCI_ADDRESS
+	out 	dx, eax
+	mov 	dx, PCI_DATA
+    in 		eax, dx
+	mov 	[PCI_Reg], eax
 	
 	pop 	edx
     pop 	ecx
@@ -313,7 +374,7 @@ PCI_Check_Device:
 	
 	; EXIBIR INFORMAÇÕES ----------------
 	;call 	PCI_Show_Full
-	call 	Show_Name_Devices
+	;call 	Show_Name_Devices
 	;call 	PCI_Get_Info
 	; -----------------------------------
 	
@@ -343,7 +404,7 @@ Multi_Func_Dev:                    ; Se tiver, É um dev multifunção
 	
 		; EXIBIR INFORMAÇÕES ----------------
 		;call 	PCI_Show_Full
-		call 	Show_Name_Devices
+		;call 	Show_Name_Devices
 		;call 	PCI_Get_Info
 		; -----------------------------------
 	
@@ -522,9 +583,9 @@ Loop_DevID:
 	stc
 	jmp 	Ret_GetDev
 Get_NameDev:
-	shl 	ebx, 1
+	shl 	ebx, 2
 	mov 	esi, Array_DevID
-	mov 	si, WORD [esi + ebx]
+	mov 	esi, DWORD [esi + ebx]
 	mov 	DWORD [AddrStr], esi
 Ret_GetDev:
 	popad
@@ -712,11 +773,15 @@ ret
 
 ; -----------------------------------------------------------------------------
 ; PCI_Check_All_Buses - Brute Force Scan - All bus, All Slots & All Possibly funcs
-; IN:   None.
-; OUT:	None.
+; IN:   AX = DeviceID/Driver Model/Version
+; OUT:	ESI = String device name
+;		AL = bus
+;		BL = device
+;		CL = function
 ;	Registradores preservados
 PCI_Check_All_Buses:
 	pushad
+	mov 	[DriverID], ax
 	xor 	eax, eax
 	xor 	ebx, ebx
 	xor 	ecx, ecx
@@ -736,16 +801,55 @@ PCI_Check_All_Buses:
 	loop_all_buses2:
 		cmp 	bl, 32
 		jnb 	return_all_buses
-		call 	PCI_Check_Device
+	
+		call 	PCI_Get_DeviceID
+		push 	ax
+		mov 	ax, [DriverID]
+		cmp 	[Device], ax
+		jz 		found_driver
+		pop 	ax
+		
 		inc 	bl
 		jmp 	loop_all_buses2
-		
+	
+	found_driver:
+		pop 	ax
+		mov 	[PCI_bus], al
+		mov 	[PCI_dev], bl
+		mov 	[PCI_fun], cl
+		call 	Get_Device_Name
+		cmp 	esi, 0
+		jz 		return_unknown
+		jmp 	return_found
 	return_all_buses:
 		inc 	al
 		jmp 	loop_all_buses1
+		
+return_unknown:
+	popad
+	mov 	esi, unknown_dev
+	mov 	al, [PCI_bus]
+	mov 	bl, [PCI_dev]
+	mov 	cl, [PCI_fun]
+	clc
+ret
 return_checkb:
 	popad
+	mov 	ax, 0xFFFF
+	stc
 ret
+return_found:
+	mov 	[addr_save], esi
+	popad
+	mov 	esi, [addr_save]
+	mov 	al, [PCI_bus]
+	mov 	bl, [PCI_dev]
+	mov 	cl, [PCI_fun]
+	clc
+ret
+addr_save 	 dd 0x00000000
+DriverID	 dw 0x0000
+unknown_dev  db "Unknown Device not implemented!",0
 ; -----------------------------------------------------------------------------
 
 
@@ -829,7 +933,7 @@ PCI_Get_VendorID:
 	
 	pop 	eax
 ret
-Vendor 	dw 	0x0000
+
 ; -----------------------------------------------------------------------------
 
 ; -----------------------------------------------------------------------------
@@ -847,7 +951,7 @@ PCI_Get_DeviceID:
 
 	pop 	eax
 ret
-Device 	dw 	0x0000
+
 ; -----------------------------------------------------------------------------
 
 
@@ -1496,11 +1600,13 @@ DevIDs:
 	; ----------------------------------------------------------------------------------------
 	dd 0x03641106, 0x13641106, 0x23641106, 0x33641106, 0x43641106, 0x53641106, 0x63641106, 0x73641106, 0xB1981106, 0x33711106, 0xA3641106
 	dd 0xC3641106, 0x05911106, 0x05711106, 0x30381106, 0x31041106, 0x33371106, 0x287E1106, 0x30651106, 0x337B1106, 0x337A1106, 0x32881106
+	dd 0x816910EC, 0x816810EC, 0x816110EC, 0x813610EC, 0x43001186 
 	; ----------------------------------------------------------------------------------------
 SizeDevID  dw ($-DevIDs)
 	
-Array_DevID dw ID1, ID2, ID3, ID4, ID5, ID6, ID7, ID8, ID9, ID10, ID11, ID12, ID13, ID14, ID15, ID16, ID17
-            dw ID18, ID19, ID20, ID21, ID22, ID23, ID24, ID25, ID26, ID27, ID28, ID29, ID30, ID31, ID32, ID33
+Array_DevID dd ID1, ID2, ID3, ID4, ID5, ID6, ID7, ID8, ID9, ID10, ID11, ID12, ID13, ID14, ID15, ID16, ID17
+            dd ID18, ID19, ID20, ID21, ID22, ID23, ID24, ID25, ID26, ID27, ID28, ID29, ID30, ID31, ID32, ID33
+			dd ID34, ID35, ID36, ID37, ID38
 		
 		 
 	; Oracle VirtualBox
@@ -1542,6 +1648,12 @@ ID30    db " (VT6102/VT6103 [Rhine-II])",0                   ; Via technologies,
 ID31    db " (VT8237A Host Bridge)",0                        ; Via technologies, Inc.
 ID32    db " (VT8237A PCI to PCI Bridge)",0                  ; Via technologies, Inc.
 ID33    db " (VX900/VT8xxx High Definition Audio)",0         ; Via technologies, Inc.
+
+ID34 	db "Realtek PCI GbE Family Controller",0			 ; Realtek
+ID35 	db "Realtek PCIe GbE Family Controller",0			 ; Realtek
+ID36 	db "Realtek PCIe GbE Family Controller",0			 ; Realtek
+ID37 	db "Realtek PCIe FE Family Controller",0			 ; Realtek
+ID38 	db "Realtek PCI GbE Family Controller",0			 ; D-LINK
 	; ----------------------------------------------------------------------------------------
    
 PCIListStr:

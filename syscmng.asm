@@ -19,6 +19,7 @@ Counter 	 db 0
 Params       dd 0
 ArgsAddr 	 dd 0
 Out_Of_Shell db 0
+ack_net_int  db 0
 
 
 ; ==================================================================
@@ -68,8 +69,8 @@ SwitchTo32BIT:
     ; // OCW1
 	; Exemplo: BIT<0> de 0x21 = TIMER, BIT<1> de 0x21 = KEYBOARD
 	; BIT<4> de 0xA1 = Mouse PS/2
-    __WritePort 0x21, 11111111b  ; Desabilita todas as interrupções (Não-Mascaráveis)
-    __WritePort 0xA1, 11111111b
+    __WritePort 0x21, 11111011b  ; Desabilita todas as interrupções (Não-Mascaráveis)
+    __WritePort 0xA1, 11111001b
 	
 	sti
 	
@@ -182,9 +183,10 @@ ProtectedMode16:
 	mov 	cr0, eax
 	
 	
-	push 	cx
-	push 	RealMode16
-	retf
+	jmp 	0x3000:RealMode16
+	;push 	cx
+	;push 	RealMode16
+	;retf
 	
 ; Ponto de entrada de modo real de 16 bits
 RealMode16:
@@ -247,17 +249,12 @@ ERROR:
 Code32Bit:
 BITS 32
 
-	
+%DEFINE PM_MODE_VSTART 1	
 SECTION protectedmode vstart=CODE32_VRAM, valign=4
 
 Start32:
-	;mov 	ebx, esi             ; Armazene o endereço dos argumentos Shell em EBX
-	;mov 	si, dx               ; Coordenadas de cursor de DX para SI
 	mov 	ebp, esp
-	;mov 	[Params], edx        ; Transfira Byte Alto de EDX para EAX (Quantidade de Args da CLI)
-	                             ; E Byte Baixo sendo região do Cursor
 	mov 	edx, ss
-	
 	
     cld
     mov 	eax,DATA_SEG32              ; 0x10 = é um seletor plano para dados
@@ -268,15 +265,12 @@ Start32:
     mov 	ss,eax
     mov 	esp,STACK32_TOP             ; Deve definir ESP para um local de memória utilizável
 	
-	push 	CODE_SEG16                 ; Coloque o ponto de entrada remoto 0x18 do modo protegido de 16 bits: ProtectedMode16
-    push 	edi
+	;push 	CODE_SEG16                 ; Coloque o ponto de entrada remoto 0x18 do modo protegido de 16 bits: ProtectedMode16
+    ;push 	edi
 	
 	push 	edx
 	push 	ebp
 	push 	ecx
-	
-	;mov 	dx, si
-	;mov 	eax, [Params]
 	
 	; A pilha vai crescer para baixo a partir deste local
 	push 	esi
@@ -287,11 +281,13 @@ Start32:
 	pop 	esi
 	call 	CODE_SEG32:EntryCode32
 	
-	
 	pop 	ecx
 	pop 	ebp
 	pop 	edx
-	retf
+	
+	; Elimina a necessidade dos dois PUSH's comentados lá em cima
+	jmp 	CODE_SEG16:ProtectedMode16+0x30000
+	;retf		; Era isto
 	
 
 EntryCode32:
@@ -350,8 +346,10 @@ DefineCursors:
 	rep 	stosb
 	pop 	eax	
 	; --------------------------------------------------
+	
 retf
 WindowManager  db "WINMNG32KXE"
+
 
 BITS 32
 LIB_String32:
@@ -385,6 +383,10 @@ MonitorRoutines:
 	dd Malloc		            ; Função 31 (0x1F)
 	dd Free 		            ; Função 32 (0x20)
 	dd Float_To_String 			; Função 33 (0x21)
+	dd Get_Hexa_Value8          ; Função 34 (0x22)
+	
+	; Rotinas de serviços de IRQs
+	dd IRQ_Handler_Register 	; Função 35 (0x23)
 	
 Print_String32:
 	pop 	ebx
@@ -452,7 +454,17 @@ Start_PZT:
 	inc 	byte[CursorCol]
 	jmp 	Start_PZT
 LineBreak:
+	push 	edx
 	inc 	byte[CursorRaw]
+	cmp 	byte[CursorRaw], 25
+	jnz 	NoScrollingScreen
+;Wait_Enter_Key:
+;	__ReadPort 	0x60
+;	cmp 	al, 0x9C
+;	jnz 	Wait_Enter_Key
+	call 	ScrollingScreen
+NoScrollingScreen:
+	pop 	edx
 	cmp 	byte[Out_Of_Shell+0x30000], 1
 	je 		ClearCursorCol1
 	mov 	byte[CursorCol], 12
@@ -467,6 +479,21 @@ Exit_PZT:
 	popad
 	;inc 	byte[CursorRaw]
 iretd
+
+ScrollingScreen:
+	pushad
+	cld
+	dec 	byte[CursorRaw]
+	mov 	edi, VIDEO_MEMORY
+	mov 	esi, VIDEO_MEMORY+(80*2)
+	mov 	ecx, (80*2)*(25-1)
+	rep 	movsb
+	mov 	ecx, (80*2)
+	xor 	eax, eax
+	mov 	edi, VIDEO_MEMORY+(80*2)*(25-1)
+	rep 	stosb
+	popad
+ret
 
 Get_String:
 	pop 	ebx
@@ -515,6 +542,32 @@ Print_Hexa32:
 iretd
 VetorHexa db "0123456789ABCDEF",0
 
+Get_Hexa_Value8:
+	pop 	ebx
+	pushad
+	XOR 	BH, BH
+	mov 	SI, BX
+	mov     DX, 0x00F0
+	mov 	CL, 4
+Print_Hexa8:
+	xor 	EBX, EBX
+	mov 	BX, SI
+	and 	BX, DX
+	shr 	BX, CL
+	push 	SI
+	mov 	esi, VetorHexa
+	mov 	al, byte[esi + ebx]
+	stosb
+	pop 	SI
+	cmp 	CL, 0
+	jz      RetHexa8
+	sub 	CL, 4
+	shr 	DX, 4
+	jmp 	Print_Hexa8
+RetHexa8:
+	popad
+iretd
+
 Get_Hexa_Value16:
 	pop 	ebx
 	pushad
@@ -522,7 +575,7 @@ Get_Hexa_Value16:
 	mov     DX, 0xF000
 	mov 	CL, 12
 Print_Hexa16:
-	xor 	BX, BX
+	xor 	EBX, EBX
 	mov 	BX, SI
 	and 	BX, DX
 	shr 	BX, CL
@@ -548,6 +601,13 @@ Get_Dec_Value32:
 	mov 	eax, ebx
 	cmp 	eax, 0
 	je      ZeroAndExit
+	test 	eax, (1 << 31)
+	jz 		is_positive
+	mov 	byte[edi], '-'
+	inc 	edi
+	not 	eax
+	add 	eax, 1
+is_positive:
 	xor 	edx, edx
 	mov 	ebx, 10
 	mov 	ecx, 1000000000
@@ -676,7 +736,7 @@ Malloc:
 	pop 	ebx
 	pushad
 	
-	mov  	edi, DWORD[PROGRAM_BUFFER+13]
+	mov  	edi, [0x104000+13]
 	push 	edi
 	
 	cmp 	ebx, 1
@@ -689,17 +749,17 @@ Malloc:
 	
 	Alloc_Size8:  
 		mov 	dword[Size_Busy], ecx
-		rep 	stosb
+		;rep 	stosb
 		jmp 	Return_Call
 	Alloc_Size16: 
 		mov 	dword[Size_Busy], ecx
 		shl 	dword[Size_Busy], 1
-		rep 	stosw
+		;rep 	stosw
 		jmp 	Return_Call
 	Alloc_Size32: 
 		mov 	dword[Size_Busy], ecx
 		shl 	dword[Size_Busy], 2
-		rep 	stosd
+		;rep 	stosd
 		jmp 	Return_Call
 	
 Return_Call:
@@ -722,11 +782,11 @@ Memory_Busy       db 0
 Free:
 	pop 	ebx
 	pushad
-	mov 	edi, dword[ebx]
+	mov 	edi, [ebx]
 	mov 	dword[ebx], 0x00000000
 	
 	mov 	eax, 0
-	mov 	ecx, dword[Size_Busy]
+	mov 	ecx, [Size_Busy]
 	rep 	stosb
 	
 	mov 	dword[Size_Busy], 0
@@ -860,6 +920,8 @@ Init_Device:
     mov 	esi, (PCI+0x30000)    ; ESI = Endereço Linear do programa (0x0900:0)
     mov 	ecx, (PCI_NUM_SECTORS*512)               ; ECX = numero de DWORDs para copiar
     rep 	movsb	   	           ; Copiar todas as ECX dwords de ESI para EDI
+	
+	call 	PCI_ADDR+(5*0)
 	popad
 iret
 
@@ -955,6 +1017,21 @@ Get_Classes:
 	pop 	ebx
 iret
 
+IRQ_Handler_Register:
+	pop 	ebx
+	pushad
+	
+	shl 	ebx, 2
+	mov 	eax, esi
+	mov 	edi, IRQ_Table_Handler
+	add 	edi, ebx
+	stosd
+	
+	;mov 	[IRQ_Table_Handler + (ebx * 4)], esi
+	
+	popad
+iretd
+
 
 ;----------------------------------------------------
 ; TODO criar mais ISRs aqui de Dispositivos
@@ -1029,6 +1106,24 @@ Show_Window:
 	call 	CODE_SEG32:PROGRAM_VRAM+8
 iretd
 
+IRQ_Table_Handler:
+	dd 0x00000000	 ; System intervals timer - IRQ0
+	dd 0x00000000	 ; PS/2 Keyboard - IRQ1
+	dd 0x00000000	 ; Cascade (Catched to IRQ9) - IRQ2
+	dd 0x00000000	 ; COM2 & COM4 - IRQ3
+	dd 0x00000000	 ; COM1 & COM3 - IRQ4
+	dd 0x00000000	 ; LPT2 or Sound board - IRQ5
+	dd 0x00000000	 ; Floppy Disk - IRQ6
+	dd 0x00000000	 ; LPT1 - IRQ7
+	dd 0x00000000	 ; Real Time Clock (RTC) - IRQ8
+	dd 0x00000000	 ; Cascade (Catched to IRQ2) - IRQ9
+	dd 0x00000000	 ; Undefined - IRQ10
+	dd 0x00000000	 ; Undefined - IRQ11
+	dd 0x00000000	 ; PS/2 Mouse - IRQ12
+	dd 0x00000000	 ; Math co-processor - IRQ13
+	dd 0x00000000	 ; Primary IDE drive - IRQ14
+	dd 0x00000000	 ; Secundary IDE drive - IRQ15
+	
 IRQ_Timer:
 	pushad
 	__WritePort 0x20, 0x20
@@ -1058,6 +1153,19 @@ IRQ_Keyboard:
 	popad
 iretd
 BufferKey db "Teclado",0
+
+; IRQ 0x0A
+IRQ_Network:
+	pushad
+	cld
+
+	call 	DWORD[IRQ_Table_Handler + (10 * 4)]
+
+	__WritePort 0xA0, 0x20
+	__WritePort 0x20, 0x20
+	
+	popad
+iretd
 
 ; ISR 0
 DE_Exception:

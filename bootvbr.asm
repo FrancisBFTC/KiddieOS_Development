@@ -12,7 +12,7 @@ BytesPerSector        dw 0x0200
 SectorsPerCluster     db 1   ;8
 ReservedSectors       dw 4      ;4 -> funcionando
 TotalFATs             db 0x02
-MaxRootEntries        dw 0x0200
+MaxRootEntries        dw 0200h
 TotalSectorsSmall     dw 0x0000
 MediaDescriptor       db 0xF8    ; 0xF8
 SectorsPerFAT         dw 246     ; 246   
@@ -33,10 +33,10 @@ DAPTransfer     dw 0001h
 DAPBuffer       dd 00000000h
 DAPStart        dq 0000000000000000h
 
-DATASTART      EQU 	0x0600 + 0x4E	; era DW
-FATSTART       EQU 	0x0600 + 0x50	; era DW
-ROOTDIRSTART   EQU 	0x0600 + 0x52	; era EQU BUFFER_NAME
-ROOTDIRSIZE    EQU 	0x0600 + 0x56	; era EQU BUFFER_NAME+4
+DATASTART      EQU 	0x0600 + 0x3E	; era DW
+FATSTART       EQU 	0x0600 + 0x40	; era DW
+ROOTDIRSTART   EQU 	0x0600 + 0x42	; era EQU BUFFER_NAME
+ROOTDIRSIZE    EQU 	0x0600 + 0x46	; era EQU BUFFER_NAME+4
 
 BAD_CLUSTER      EQU 0xFFF7
 END_OF_CLUSTER   EQU 0xFFF8
@@ -52,6 +52,7 @@ NAME_LENGTH      EQU 8
 Extension       db "OSF"
 ClusterFile     dw  0x0000
 FileFound       db 0
+Partition 		dd 0
 
 Boot_Begin:
     cli
@@ -67,7 +68,8 @@ Boot_Begin:
 	mov 	ax, 3
 	int 	0x10
 	
-	mov 	byte [DriveNumber], dl
+	mov 	[DriveNumber], dl
+	mov 	[Partition], ebx
 	
 	call 	LoadRootDirectory
 	call 	LoadFAT
@@ -79,9 +81,9 @@ Boot_Begin:
 	
 LoadRootDirectory:
 	xor  	cx, cx
-	mov  	ax, WORD [ReservedSectors]  
-    add  	ax, WORD [HiddenSectors]
-	mov  	WORD [es:FATSTART], ax
+	mov  	ax, WORD [ReservedSectors]  ; 4  
+    add  	ax, WORD [HiddenSectors]    ; 3
+	mov  	WORD [es:FATSTART], ax      ; 7
 	
     mov  	ax, DIRECTORY_SIZE
     mul  	WORD [MaxRootEntries]
@@ -103,6 +105,7 @@ LoadRootDirectory:
 	mov 	ax, ROOT_SEGMENT
 	mov 	es, ax
     pop 	ax                        ; setor inicial para ler
+	add 	eax, [Partition]
     mov  	bx, 0x0000				  ; era 0x0200, de 0x2000 descendo até 0x0800 é a pilha
     call  	ReadLogicalSectors
 ret
@@ -116,6 +119,7 @@ LoadFAT:
 	mov 	ax, WORD [fs:FATSTART]  		; Setor Lógico inicial para ler
 	mov  	cx, WORD [SectorsPerFAT]  	; Era Metade da fat (246/2).
     mov  	bx, 0x0000          		; Era 0x17C0:0x0200, agora é 0x0001:0x0000
+	add 	eax, [Partition]
     call  	ReadLogicalSectors
 ret	
 	
@@ -169,6 +173,7 @@ ReadDataFile:
 	
     mov  	ax, WORD [ClusterFile]   
     call  	ClusterLBA              		 ; Conversão de Cluster para LBA.
+	add 	eax, [Partition]
     xor  	cx, cx
     mov  	cl, BYTE [SectorsPerCluster]    ; 1 Setor para ler
     call  	ReadLogicalSectors
@@ -214,13 +219,13 @@ ret
 
 	
 ReadLogicalSectors:
-    mov 	WORD [DAPBuffer]   ,bx
-    mov 	WORD [DAPBuffer+2] ,es  ; ES:BX para onde os dados vão
-    mov 	WORD [DAPStart]    ,ax  ; Setor lógico inicial para ler
+    mov 	[DAPBuffer]   ,bx
+    mov 	[DAPBuffer+2] ,es  ; ES:BX para onde os dados vão
+    mov 	[DAPStart]    ,eax  ; Setor lógico inicial para ler
 _MAIN:
     mov 	di, 0x0005	  ; 5 tentativas de leitura
 _SECTORLOOP:
-    push  	ax
+    push  	eax
     push  	bx
     push  	cx
 
@@ -237,7 +242,7 @@ _SECTORLOOP:
     
     pop  	cx
     pop  	bx
-    pop  	ax
+    pop  	eax
 	
     jnz  	_SECTORLOOP
 	jmp 	BOOT_FAILED
@@ -245,7 +250,7 @@ _SECTORLOOP:
 _SUCCESS:
     pop  	cx
     pop  	bx
-    pop  	ax
+    pop  	eax
 
     ; Queue next buffer.
     add 	bx, WORD [BytesPerSector] 
@@ -253,18 +258,19 @@ _SUCCESS:
     jne 	_NEXTSECTOR
 
     ; Trocando de segmento.
-    push 	ax
+    push 	eax
     mov  	ax, es
     add  	ax, 0x1000   ; era 0x1000, porém agora foi alterado para linear
     mov  	es, ax
-    pop  	ax
+    pop  	eax
 	
 _NEXTSECTOR:
-    inc  	ax                     ; Queue next sector.
-    mov 	WORD [DAPBuffer], bx
-	mov 	WORD [DAPBuffer+2],es  ; ES:BX para onde os dados vão
-    mov 	WORD [DAPStart], ax
+    inc  	eax                     ; Queue next sector.
+    mov 	[DAPBuffer], bx
+	mov 	[DAPBuffer+2],es  ; ES:BX para onde os dados vão
+    mov 	[DAPStart], eax
     loop  	_MAIN                 ; Read next sector.
+    xor     eax, eax
 ret
 
 BOOT_FAILED:

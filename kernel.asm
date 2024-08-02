@@ -62,6 +62,9 @@ SIZE EQU ($ - Vector) / 2
 %INCLUDE "Hardware/fontswriter.lib"
 %INCLUDE "Hardware/win16.lib"
 %INCLUDE "Hardware/speaker.lib"
+;%INCLUDE "Library/Drv/pci.asm"
+;%INCLUDE "Library/Drv/net/rtl8169.asm"
+
 
 	
 NameSystem db "KiddieOS",0
@@ -77,6 +80,14 @@ Extension  db "DRV"
 
 PressKey   db "Press any key to continue...",0
 
+;eth_prefix    db "[ETH] ",0
+;eth_msg 	  db "RTL8169 driver initialized!",0x0D,0x0A,0
+;mac_addr 	  db "MAC = ",0
+
+;buffer_transmit db "Hello World Realtek!",0
+;buffer_transmit.size EQU ($-buffer_transmit)
+
+;buffer_receipt 	times 50 db 0
 ; _____________________________________________
 
 %DEFINE DRIVERS_OFFSET  	  KEYBOARD
@@ -94,6 +105,7 @@ PressKey   db "Press any key to continue...",0
 
 %DEFINE PCI.Init_PCI 	PCI
 
+SHELL.Execute 		EQU 	SHELL16+3
 SHELL.Format_Command_Line EQU (SHELL16+6)
 SHELL.PrintData 	 EQU 	(SHELL16+9)
 SHELL.Copy_Buffers 	 EQU 	(SHELL16+12)
@@ -112,11 +124,240 @@ SHELL.BufferArgs 	EQU 	(SHELL16+272)
 SHELL.BufferKeys 	EQU 	(SHELL16+392)
 SHELL.CursorRaw 	EQU 	(SHELL16+512)
 SHELL.CursorCol 	EQU 	(SHELL16+513)
+SHELL.VolumeStruct	EQU 	(SHELL16+516)
 
-FAT16.FileSegments    EQU   (FAT16+36)
-FAT16.DirSegments 	  EQU   (FAT16+38)
-FAT16.LoadingDir      EQU   (FAT16+40)
+FAT16.FileSegments    EQU   (FAT16+39)
+FAT16.DirSegments 	  EQU   (FAT16+41)
+FAT16.LoadingDir      EQU   (FAT16+43)
+FAT16.ReadSectors  	  EQU	(FAT16+36)
 			  
+
+paint_line:
+	pusha
+	push 	es
+	push	ax
+	mov 	[sizetotal], bx
+	mov   	ax, 0xA000
+	mov   	es, ax
+	mov   	ax, 320
+	mov   	bx, dx
+	xor   	dx, dx
+	mul   	bx
+	mov   	di, ax
+	add   	di, cx
+	pop 	ax
+	cmp 	al, 0
+	jz 		line_vert_intro
+	call 	div_line
+	line_vert_intro:
+		mov 	cx, [partscnt]
+	line_vert:
+		push 	cx
+		mov 	cx, [sizecurr]
+		rep 	stosb
+		mov 	cx, [sizecurr]
+		add 	[sumpixels], cx
+		pop 	cx
+		sub 	di, 320
+		loop 	line_vert
+		mov 	cx, [sizetotal]
+		sub 	cx, [partscnt]
+		sub 	cx, [sumpixels]
+		cmp 	cx, 0
+		jz 		ret.paintline
+		rep 	stosb
+ret.paintline:
+	mov 	word[sumpixels], 0
+	pop 	es
+	popa
+ret
+
+div_line:
+	push 	ax
+	xor 	dx, dx
+	mov 	ax, [partscnt]
+	;mov 	bx, 2
+	;mul 	bx
+	inc 	ax
+	xor 	dx, dx
+	mov 	[partscnt], ax
+	mov 	bx, ax
+	mov 	ax, [sizetotal]
+	sub 	ax, bx
+	div 	bx
+	mov 	[sizecurr], ax
+	pop 	ax
+ret
+
+sizetotal	dw 0
+sizecurr	dw 0
+partscnt	dw 1
+sumpixels 	dw 0
+
+some_paint:
+  pusha
+  push 	es
+  push	ax
+  mov   ax, 0xA000
+  mov   es, ax
+  mov   ax, 320
+  mov   bx, dx
+  xor   dx, dx
+  mul   bx
+  mov   di, ax
+  add   di, cx
+  pop 	ax
+  paint_first:
+    cld
+    mov  cx, [sizey]
+	rep  stosb
+    mov  cx, [sizex]
+    paintfl1:
+	  mov 	[es:di], al
+      add   di, 320
+      loop  paintfl1
+      std
+      mov   cx, [sizey]
+      rep   stosb
+      mov   cx, [sizex]
+	  cld
+    paintfl2:
+	  mov 	[es:di], al
+      sub  di, 320
+      loop  paintfl2
+      cld
+  pop 	es
+  popa
+ret
+
+WaitTime:
+	pusha
+	mov 	ah, 86h
+	mov 	dx, bx
+	shr 	ebx, 16
+	mov 	cx, bx
+	int 	15h
+	popa
+ret
+
+move_effect:
+	mov 	[sizex], ch
+	mov 	[sizey], cl
+	mov 	[colorw], al
+	mov 	[countm], dx
+	push 	ebx
+	xor 	cx, cx
+	xor 	dx, dx
+	mov 	bx, 320
+	sub 	bx, [sizex]
+	mov 	[posx], bx
+	mov 	bx, 200
+	sub 	bx, [sizey]
+	mov 	[posy], bx
+	pop 	ebx
+effect:
+	mov 	al, [colorw]
+	call 	some_paint
+	call 	WaitTime
+	mov 	al, 0x00
+	call 	some_paint
+	
+	cmp 	byte[inccx], 1
+	jz 		inc_cx
+dec_cx:
+	dec 	cx
+	cmp 	cx, 0
+	jz 		chgcxinc
+	jmp 	cmp_dx
+inc_cx:
+	inc 	cx
+	cmp 	cx, [posx]
+	jz 		chgcxdec
+cmp_dx:
+	cmp 	byte[incdx], 1
+	jz 		inc_dx
+dec_dx:
+	dec 	dx
+	cmp 	dx, 0
+	jz 		chgdxinc
+	jmp 	effect
+inc_dx:
+	inc 	dx
+	cmp 	dx, [posy]
+	jz 		chgdxdec
+	jmp 	effect
+	
+chgcxinc:
+	mov 	byte[inccx], 1
+	call 	dec_count
+	jc 		reteffect
+	jmp 	inc_cx
+chgdxinc:
+	mov 	byte[incdx], 1
+	call 	dec_count
+	jc 		reteffect
+	jmp 	inc_dx
+chgcxdec:
+	mov 	byte[inccx], 0
+	call 	dec_count
+	jc 		reteffect
+	jmp 	dec_cx
+chgdxdec:
+	mov 	byte[incdx], 0
+	call 	dec_count
+	jc 		reteffect
+	jmp 	dec_dx
+	
+dec_count:
+	dec 	word[countm]
+	cmp 	word[countm], 0
+	jnz 	reteffect
+	stc
+	ret
+reteffect:
+	clc
+	ret
+sizex 	dw 0
+sizey 	dw 0
+colorw 	db 0
+inccx 	db 1
+incdx 	db 1
+posx  	dw 0
+posy  	dw 0
+countm	dw 0
+
+	
+Effect_Screen_Rest:
+	pusha
+	mov 	ax, 13h
+	int 	0x10
+
+	mov 	ch, 50
+	mov 	cl, 50
+	mov 	al, 3
+	mov 	dx, 15
+	mov 	ebx, 12000
+	call 	move_effect
+	
+	mov 	cx, 50
+rotate_line:
+	push 	cx
+	mov 	cx, 50
+	mov 	dx, 150
+	mov 	al, 2
+	mov 	bx, 250
+	call 	paint_line
+	mov 	ebx, 125000
+	call 	WaitTime
+	mov 	cx, 50
+	mov 	dx, 150
+	mov 	al, 0
+	mov 	bx, 250
+	call 	paint_line
+	pop 	cx
+	loop 	rotate_line
+	popa
+ret
 
 ; _____________________________________________
 ; Starting the System _________________________
@@ -146,7 +387,12 @@ OSMain:
 	add 	bx, 2
 	mov 	word[es:bx], ax
 	pop 	es
-	 
+	; ===============================================
+	
+	
+	; call 	Effect_Screen_Rest
+	
+;	jmp 	$
 	; ===============================================
 	
 	;call 	VGA.SetVideoMode
@@ -170,42 +416,28 @@ OSMain:
 	;call 	PCI.Init_PCI
 	clc
 	
-; Descomente o código abaixo da linha '----' até a mesma linha '----' para testar a 
-; a resolução do bug de travamento quando buffers são zerados.
-; também der um enter no Shell sem digitar nada pra ver as modificações
-; ----------------------------------------------------------------------------
-;FirstCmd:
-;	mov 	si, permission1
-;	call 	Shell.Execute
-;	cmp 	ax, 0xFF
-;	jz 		PrintErr1
-;	mov 	si, suc1
-;	call 	Print_String
-;SecondCmd:
-;	mov 	si, permission
-;	call 	Shell.Execute
-;	cmp 	ax, 0
-;	jz 		PrintSuc1
-;	mov 	si, err1
-;	call 	Print_String
-;	jmp 	Load_Menu
+	mov 	ah, 00h
+	int 	16h
+
+	call 	Check_Volumes
 	
-;PrintErr1:
-;	mov 	si, err1
-;	call 	Print_String
-;	jmp 	SecondCmd
-;PrintSuc1:
-;	mov 	si, suc1
-;	call 	Print_String
-;	jmp 	Load_Menu
+	;mov 	si, SHELL.VolumeStruct
+	;jmp 	$
+	; -------------------------------------------------------------------------
+	; CÓDIGO PRA INICIALIZAR DRIVERS PCI E SERVIÇOS DE REDE VIA APLICAÇÃO
+	mov 	si, pci_program
+	call 	SHELL.Execute
+	mov 	ebx, 1000000		; 2 seconds
+	call 	Delay_us
+	xor 	ebx, ebx
+	mov 	si, rtl_program
+	call 	SHELL.Execute
 	
-;Shell.Execute: jmp 	SHELL16+3
-;	nop
-;	nop
-;	permission db "chmod u=mdxrw kiddieos\system16\winmng32.kxe",0  ; Adicione um '0,' antes de '"chmod' para testar
-;	permission1 db 0,0,0,0
-;	err1 db "Erro de buffer zerado",0x0D,0x0A,0
-;	suc1 db "Comando 'chmod' executado com sucesso",0x0D,0x0A,0
+	; --------------------------------------------------------------------------
+	jmp 	Load_Menu
+	
+	pci_program db "K:\KiddieOS\Programs\devmgr.kxe",0
+	rtl_program db "K:\KiddieOS\System16\netapp.kxe",0
 ; ----------------------------------------------------------------------------
 
 	
@@ -214,7 +446,6 @@ Load_Menu:
 	call 	Print_String
 	mov 	ah, 00h
 	int 	16h
-	
 
 Kernel_Menu:
 	call 	Hide_Cursor   ; Set Cursor Shape Hide
@@ -408,9 +639,258 @@ Kernel_Menu:
 ; _____________________________________________
 	
 
+Check_Volumes:
+	pusha
+	push 	es
+	xor 	ax, ax
+	mov 	es, ax
+	mov 	si, 0x600 + 0x1BE
+	mov 	ecx, 4
+	xor 	bx, bx
+	mov 	di, SHELL.VolumeStruct
+	mov 	byte[VolumeLetters], 'K'
+ChV.read_partitions:
+	push 	cx
+	cmp 	byte[es:si + 4], 0x00
+	jz 		ChV.next_partition
+	cmp 	byte[es:si + 4], 0x0F
+	jz 		ChV.extended_found
+	cmp 	byte[es:si + 4], 0x05
+	jz 		ChV.extended_found
+	jmp 	ChV.get_info_part
+
+	ChV.extended_found:
+		mov 	eax, [es:si + 12]
+		mov 	[lba_size_extended], eax
+
+		cmp 	byte[isLogical], 1
+		jz 		ChV.next_partition
+
+		mov 	eax, [es:si + 8]
+		mov 	[lba_begin_extended], eax
+		inc 	bx
+		jmp 	ChV.next_partition
+		
+	ChV.get_info_part:
+		inc 	bx
+		
+		;cmp 	byte[isLogical], 1
+		;jz 		PR.skip_lba_read
+
+		; Talvez este código tenha que executar em cada partição lógica
+		; para conhecer a VBR dela (se houver). Neste caso, comentei o código acima.
+		mov 	eax, [es:si + 8]	; bp 3000:000008c2
+		mov 	dx, VBR_buffer
+		call 	ReadBootRecord
+
+	ChV.skip_lba_read:
+		push 	si
+		mov 	al, [es:si + 4]
+		mov 	edx, [es:si + 8]
+		mov 	si, VBR_buffer 
+		call 	check_filesystem
+		pop 	si
+
+	ChV.next_partition:
+		add 	si, 16
+		pop 	cx
+		dec 	cx
+		cmp 	cx, 0
+		jnz 	ChV.read_partitions
+		
+		pop 	es
+
+		cmp 	dword[lba_size_extended], 0		; bp 3000:000008fb
+		jz 		RET.Check_Volumes
+
+		mov 	eax, [lba_begin_extended]
+		cmp 	byte[isLogical], 1
+		jnz 	ChV.without_logical
+
+		sub 	si, 16
+		mov 	edx, [es:si + 8]
+		add 	eax, edx
+		mov 	[lba_begin_logical], edx
+
+	ChV.without_logical:
+		mov 	dx, EBR_buffer
+		call 	ReadBootRecord
+
+		mov 	si, EBR_buffer + 0x1BE
+		mov 	cx, 2
+		mov 	dword[lba_size_extended], 0
+
+		push 	ds
+		pop 	es
+		mov 	eax, [lba_begin_extended]	; depurar bp 3000:0000093E
+		add 	eax, [es:si + 8]
+		add 	eax, [lba_begin_logical]
+		mov 	[es:si + 8], eax
+		mov 	byte[isLogical], 1
+
+		push 	es
+		jmp 	ChV.read_partitions
+RET.Check_Volumes:
+	mov 	dword[lba_size_extended], 0
+	mov 	dword[lba_begin_extended],0
+	mov 	dword[lba_begin_logical], 0
+	mov 	byte[isLogical], 0
+	popa
+ret
+
+ReadBootRecord:
+	push 	bx
+	push 	es
+	mov 	bx, dx
+	mov 	cx, 1
+	push 	ds
+	pop 	es
+	call 	FAT16.ReadSectors
+	pop 	es
+	pop 	bx
+ret
+
+check_filesystem:
+	pusha			; bp 3000:0000097b
+	push 	es
+	push 	ds
+	pop 	es
+
+check_fs_struct:
+	push 	di
+	mov 	di, format_types
+	mov 	cx, COUNT_FORMAT_TYPES
+loop_fs_check:
+	cmp 	[ds:di], al
+	jz 		fs_found
+loop_fs_check2:
+	add 	di, 9
+	loop 	loop_fs_check
+	jmp 	fs_not_found
+
+fs_found:
+	push 	di
+	inc 	di
+	cmp 	al, 0x06
+	jz 		check_fat_struct
+	cmp 	al, 0x0B
+	jz 		check_fat_struct
+	cmp 	al, 0x0C
+	jz 		check_fat_struct
+	cmp 	al, 0x07
+	jz 		check_ntfs_exfat_struct
+	jmp 	RET.check_filesystem_fail
+
+check_ntfs_exfat_struct:
+	push 	si
+	add		si, 3
+	mov 	word[label_offset], 512
+	jmp 	other_found
+
+check_fat_struct:
+	push 	si
+	cmp 	al, 0x0C
+	jz 		fat32_found
+	add 	si, 54
+	mov 	word[label_offset], 43
+	jmp 	other_found
+fat32_found:
+	add 	si, 82
+	mov 	word[label_offset], 71
+
+other_found:
+	push 	cx
+	mov 	cx, 8
+	repe 	cmpsb
+	pop 	cx
+	pop 	si
+	pop 	di
+	jne 	loop_fs_check2
+	;jne 	fs_not_found
+
+	mov 	cx, [ds:si + 0x1FE]
+	cmp 	cx, 0xAA55
+	jnz 	fs_not_found
+
+	mov 	[save_value_si], si
+	mov 	cx, 8
+	mov 	si, di
+	pop 	di
+	push 	di
+	inc 	si
+	add 	di, 17
+	rep 	movsb
+	mov 	si, [save_value_si]
+
+	pop 	di
+
+	mov 	[di + 0], bl		; partition id
+	mov 	[di + 1], al 		; filesystem id
+	mov 	[di + 2], edx		; initial lba
+	mov 	al, [VolumeLetters]
+	mov 	byte[di + 25], al	; drive letter
+	inc 	byte[VolumeLetters]
+
+	push 	di
+	push 	si
+	add 	si, [label_offset]
+	add  	di, 6
+	mov 	cx, 11		; Depuração parou aqui! Endereço -> bp 3000:000009ba (Verificar DS:DI)
+	rep 	movsb
+	pop 	si
+	pop 	di
+
+	; DI + 17 is the FS String
+
+	jmp 	RET.check_filesystem_ok
+	
+fs_not_found:
+	pop 	di
+	jmp 	RET.check_filesystem_fail
+
+RET.check_filesystem_fail:
+	pop 	es
+	popa
+ret
+RET.check_filesystem_ok:
+	pop 	es
+	popa
+	add 	di, 26
+ret
+
+lba_size_extended 	dd 0
+lba_begin_extended 	dd 0
+lba_begin_logical	dd 0
+isLogical 			db 0
+label_offset 		dw 0
+save_value_si 		dw 0
+EBR_buffer: 		times 512 db 0
+VBR_buffer: 		times 512 db 0
+
+ntfs_label 	db "NO NAME    "
+
+format_types:
+	db 0x06, "FAT16   "
+	db 0x0B, "FAT32   "
+	db 0x0C, "FAT32   "
+	db 0x07, "NTFS    "
+	db 0x07, "EXFAT   "
+COUNT_FORMAT_TYPES 	EQU ($-format_types)/9
+
+VolumeLetters db 'K'
 ; _____________________________________________
 ; Kernel Sub-Routines _________________________
 
+; IN: EBX = microseconds
+Delay_us:
+	pusha
+	mov 	ah, 86h
+	mov 	dx, bx
+	shr 	ebx, 16
+	mov 	cx, bx
+	int 	15h
+	popa
+ret
 
 Print_Fat_Time:
 	pusha

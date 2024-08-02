@@ -1,0 +1,197 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-3.01a21:
+
+This is the first localization step for cdrtools. All programs now (hopefully)
+call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries.
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to cdrtools should *****
+*****		call all programs from cdrtools in the "C" locale *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		  *****
+*****		unless these frontends support localized strings  *****
+*****		used by the cdrtools with NLS support.		  *****
+
+This version compiles on Win-DOS using the Microsoft compiler cl.exe but
+warning: due to missing POSIX compliance with basic features (e.g. stat()
+does not return inode numbers), there are many problems with the resulting
+code and thus it is recommended to better use a POSIX layer on top of 
+WIN-DOS.
+
+All:
+
+-	Define DEV_NULL in include/schily/mconfig.h to address the missing
+	/dev/null on DOS
+
+-	New autoconf tests for:
+	getc_unlocked getchar_unlocked putc_unlocked putchar_unlocked
+	flockfile funlockfile ftrylockfile
+
+-	Symlinks for 
+	armv4tl-linux-cc.rul s390x-linux-cc.rul armv5tel-linux-cc.rul
+	new, to support non-automake aware make programs such as gmake.
+
+
+-	Do not define a gethostname() prototype in schily/hostname.h
+	for MinGW, as MinGW as a wrong prototype is in the non-standard
+	file winsock.h
+
+-	include/schily/stdio.h now implements code that partially unhides
+	the FILE * data structures from the 64 bit Solaris libc.
+	This allows to implement a getc_unlocked() macro even for 64 bit
+	Solaris as done by libc, so libschily is able to achieve similar
+	stdio I/O performance, which is needed to be able to implement
+	a printf() in libschily that is faster than printf() from libc.
+
+Libschily:
+
+-	New functions xcomerr(), xcomerrno(), fxcomerr(), fxcomerrno()
+	in libschily allow error message and exit with an exit value
+	that differs from errno.
+
+-	a bug in libschily/format.c that caused %.*s to be printed
+	incorrectly has been fixed.
+
+-	libschily/format.c has been redesigned to allow the code to be
+	reused for fprformat() via #include.
+
+-	libschily/fprformat.c
+	New function fprformat() in libschily is implementing the same
+	direct interface as doprnt() from libc and thus allows to implement
+	printf() faster than the printf() from libc on Solaris.
+
+-	libschily/jsprintf.c
+	For Solaris, jsprintf() now is implemented based on fprformat().
+	This allows printf() from libschily to be aprox. 33% faster than
+	printf() from libc on Solaris and aprox. 2x as fast as jsprintf()
+	in libschily has been before. This gives another performance boost
+	for printf() bound programs like hdump/od that is used as a OSS
+	replacement for the closed source od(1) on OpenSolaris. This
+	now makes the OSS od(1) on OpenSolaris typically 5x faster then
+	the closed source version.
+
+-	libschily/getdtablesize.c now treats MinGW the same as when compiling
+	on Win-DOS using cl.exe.
+
+-	libschily/mkdirat.c and libschily/mkdirs.c now take care of the fact
+	that MinGW has a non standard compliant mkdir()
+
+-	libschily/mkfifoat.c fixed a type from, cut/paste the file from mkdirat.c
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+
+Libmdigest:
+
+Libsiconv:
+
+Libscg:
+
+
+Libscgcmd:
+
+Libmdigest:
+
+Rscsi:
+
+Cdrecord:
+
+-	cdrecord/cue.c now has a better comment related to cdrtools specific
+	CUE enhancements.
+
+-	Fixed a typo in cdrecord.dfl
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Avoid a redefined xxx warning for cdda2wav/exitcodes.h
+
+-	Added a #undef interface to cdda2wav/interface.h to make sure that
+	the #define interface from windows.h does not cause problems even
+	when using MinGW
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	mkisofs/mkisofs.8 fixed illegal troff sequence "\\" to "\e"
+
+-	Try to avoid a direct string "/dev/null" in mkisofs.c to allow
+	it to work on Win-DOS without POSIX layer.
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg
