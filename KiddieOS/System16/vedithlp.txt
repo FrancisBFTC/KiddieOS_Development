@@ -1,0 +1,51 @@
+                        Line Editor
+   ----------------------------------------------------------
+    This editor is based on the unix VI visual editor
+             By: John Endler
+           Date: 10/07/2020
+        Version: 0.2.6 
+
+                     i = Insert text Mode
+                     r = Replace text Mode
+             shift + : = Command Mode
+
+                   Command Mode
+   ----------------------------------------------------------
+                     w = Save File
+                     s = Save File As
+                     n = New File
+                     x = Save File & Exit VI
+                     r = Run Basic Program
+                     h = ledit help
+                     q = Exit ledit
+
+                   Move Mode
+   ----------------------------------------------------------                
+     Arrow keys & hjkl = cursor movment
+                     0 = move cursor to beginning of line
+             shift + $ = move cursor to end of line
+                     w = jump to next word on line
+                     b = jump to previous word on line
+                     x = delete character
+             shift + d = delete line 
+                     o = open new text line below
+             shift + o = open new text line above
+                    F1 = Help
+
+                 Insert Mode
+    ---------------------------------------------------------
+                   Del = remove character under cursor
+             Backspace = remove previous character
+                 Enter = Start newline cursor at end
+                         of line newline starts below,
+                         cursor at start of line new line
+                         starts above.
+                   ESC = return to Move Mode 
+
+                 Replace Mode
+    ---------------------------------------------------------
+                     r = replace characters until ESC pressed  
+             Backspace = undo replaced characters
+                   ESC = return to Move Mode
+
+

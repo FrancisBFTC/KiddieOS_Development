@@ -1325,7 +1325,6 @@ Exec:
 		jmp 	TryFind
 		
 	ExtensionFound:
-		pop 	cx
 		sub 	si, 3
 		;call 	Cursor.CheckToRollEditor
 		
@@ -1335,10 +1334,12 @@ Exec:
 		; EXEMPLO: PROG       => PROG    KXE | PROG    EXE
 		; ======================================================
 		mov 	bx, si    		; BX = Endereço da Extensão KXE,EXE,...
+		pop 	cx
 		pop 	di				; ENTRADA FAT
 		pop 	si       		; NOME FORMATADO
 		push 	si
 		push 	di
+		push 	cx
 		mov 	di, si    		; DI = Nome de arquivo com espaços
 		add 	di, 8     		; Desloca até posição da extensão
 		mov 	si, bx    		; SI = Extensão
@@ -1349,13 +1350,20 @@ Exec:
 		rep  	movsb	        ; move CX bytes de DS:SI para ES:DI 
 		xor 	ax, ax
 		stosb			        ; Após a extensão será 0
+		pop 	cx
 		pop 	di
 		pop 	si              ; Recupera endereço de SI para leitura
 		; ======================================================
 		
-		
+		cmp 	cx, 1 		; Extensão BIN
+		jnz 	IsNotBin
+		mov 	ax, 0x2000	; segmento de binários de outros OSes
+		push 	ax
+		jmp 	LoadProgInMemory
+	IsNotBin:
+		mov 	ax, 0x5000 	; segmento de processos KiddieOS
+		push 	ax
 	LoadProgInMemory:
-		mov 	ax, 0x5000 ; segmento de processos 0x5000
 		mov 	word[FAT16.FileSegments], ax
 		mov 	ax, word[CD_SEGMENT]
 		mov 	word[FAT16.DirSegments], ax
@@ -1364,9 +1372,10 @@ Exec:
 		push 	di
 		call 	FAT16.LoadThisFile
 		pop 	di
-		jnc 	Detect_MZ
+		jnc 	Detect_Executable
 		call 	CheckErrorFile
 		
+		pop 	ax
 		pop 	di
 		; -- provisory ------------------
 		pop 	word[CD_SEGMENT]
@@ -1379,6 +1388,13 @@ Exec:
 	; do endereço carregado e efetuar o procedimento para execução
 	; do programa MZ em modo real
 	
+	Detect_Executable:
+		pop 	ax
+		cmp 	ax, 0x2000
+		jnz 	Detect_MZ
+
+		jmp 	2000h:0h		; Salta para outros .BIN
+
 	Detect_MZ:
 		mov 	[SIZE_DATA_PROG], dx
 		
@@ -6498,7 +6514,7 @@ MediaDescriptor:
 ; ------------------------------------------------------------------------		 
 	
 
-ProgExtension   db "KXE", "EXE", "APP"
+ProgExtension   db "KXE", "EXE", "APP", "BIN"
 EXTENSIONS_COUNT EQU ($ - ProgExtension) / 3
 
 ProgTerminate1: db "Process exited after 0x"

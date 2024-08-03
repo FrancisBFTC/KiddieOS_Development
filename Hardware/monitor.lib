@@ -171,6 +171,233 @@ Waiting:
 	popa
 ret
 
+paint_line:
+	pusha
+	push 	es
+	push	ax
+	mov 	[sizetotal], bx
+	mov   	ax, 0xA000
+	mov   	es, ax
+	mov   	ax, 320
+	mov   	bx, dx
+	xor   	dx, dx
+	mul   	bx
+	mov   	di, ax
+	add   	di, cx
+	pop 	ax
+	cmp 	al, 0
+	jz 		line_vert_intro
+	call 	div_line
+	line_vert_intro:
+		mov 	cx, [partscnt]
+	line_vert:
+		push 	cx
+		mov 	cx, [sizecurr]
+		rep 	stosb
+		mov 	cx, [sizecurr]
+		add 	[sumpixels], cx
+		pop 	cx
+		sub 	di, 320
+		loop 	line_vert
+		mov 	cx, [sizetotal]
+		sub 	cx, [partscnt]
+		sub 	cx, [sumpixels]
+		cmp 	cx, 0
+		jz 		ret.paintline
+		rep 	stosb
+ret.paintline:
+	mov 	word[sumpixels], 0
+	pop 	es
+	popa
+ret
+
+div_line:
+	push 	ax
+	xor 	dx, dx
+	mov 	ax, [partscnt]
+	;mov 	bx, 2
+	;mul 	bx
+	inc 	ax
+	xor 	dx, dx
+	mov 	[partscnt], ax
+	mov 	bx, ax
+	mov 	ax, [sizetotal]
+	sub 	ax, bx
+	div 	bx
+	mov 	[sizecurr], ax
+	pop 	ax
+ret
+
+sizetotal	dw 0
+sizecurr	dw 0
+partscnt	dw 1
+sumpixels 	dw 0
+
+some_paint:
+  pusha
+  push 	es
+  push	ax
+  mov   ax, 0xA000
+  mov   es, ax
+  mov   ax, 320
+  mov   bx, dx
+  xor   dx, dx
+  mul   bx
+  mov   di, ax
+  add   di, cx
+  pop 	ax
+  paint_first:
+    cld
+    mov  cx, [sizey]
+	rep  stosb
+    mov  cx, [sizex]
+    paintfl1:
+	  mov 	[es:di], al
+      add   di, 320
+      loop  paintfl1
+      std
+      mov   cx, [sizey]
+      rep   stosb
+      mov   cx, [sizex]
+	  cld
+    paintfl2:
+	  mov 	[es:di], al
+      sub  di, 320
+      loop  paintfl2
+      cld
+  pop 	es
+  popa
+ret
+
+WaitTime:
+	pusha
+	mov 	ah, 86h
+	mov 	dx, bx
+	shr 	ebx, 16
+	mov 	cx, bx
+	int 	15h
+	popa
+ret
+
+move_effect:
+	mov 	[sizex], ch
+	mov 	[sizey], cl
+	mov 	[colorw], al
+	mov 	[countm], dx
+	push 	ebx
+	xor 	cx, cx
+	xor 	dx, dx
+	mov 	bx, 320
+	sub 	bx, [sizex]
+	mov 	[posx], bx
+	mov 	bx, 200
+	sub 	bx, [sizey]
+	mov 	[posy], bx
+	pop 	ebx
+effect:
+	mov 	al, [colorw]
+	call 	some_paint
+	call 	WaitTime
+	mov 	al, 0x00
+	call 	some_paint
+	
+	cmp 	byte[inccx], 1
+	jz 		inc_cx
+dec_cx:
+	dec 	cx
+	cmp 	cx, 0
+	jz 		chgcxinc
+	jmp 	cmp_dx
+inc_cx:
+	inc 	cx
+	cmp 	cx, [posx]
+	jz 		chgcxdec
+cmp_dx:
+	cmp 	byte[incdx], 1
+	jz 		inc_dx
+dec_dx:
+	dec 	dx
+	cmp 	dx, 0
+	jz 		chgdxinc
+	jmp 	effect
+inc_dx:
+	inc 	dx
+	cmp 	dx, [posy]
+	jz 		chgdxdec
+	jmp 	effect
+	
+chgcxinc:
+	mov 	byte[inccx], 1
+	call 	dec_count
+	jc 		reteffect
+	jmp 	inc_cx
+chgdxinc:
+	mov 	byte[incdx], 1
+	call 	dec_count
+	jc 		reteffect
+	jmp 	inc_dx
+chgcxdec:
+	mov 	byte[inccx], 0
+	call 	dec_count
+	jc 		reteffect
+	jmp 	dec_cx
+chgdxdec:
+	mov 	byte[incdx], 0
+	call 	dec_count
+	jc 		reteffect
+	jmp 	dec_dx
+	
+dec_count:
+	dec 	word[countm]
+	cmp 	word[countm], 0
+	jnz 	reteffect
+	stc
+	ret
+reteffect:
+	clc
+	ret
+sizex 	dw 0
+sizey 	dw 0
+colorw 	db 0
+inccx 	db 1
+incdx 	db 1
+posx  	dw 0
+posy  	dw 0
+countm	dw 0
+
+	
+Effect_Screen_Rest:
+	pusha
+	mov 	ax, 13h
+	int 	0x10
+
+	mov 	ch, 50
+	mov 	cl, 50
+	mov 	al, 3
+	mov 	dx, 15
+	mov 	ebx, 12000
+	call 	move_effect
+	
+	mov 	cx, 50
+rotate_line:
+	push 	cx
+	mov 	cx, 50
+	mov 	dx, 150
+	mov 	al, 2
+	mov 	bx, 250
+	call 	paint_line
+	mov 	ebx, 125000
+	call 	WaitTime
+	mov 	cx, 50
+	mov 	dx, 150
+	mov 	al, 0
+	mov 	bx, 250
+	call 	paint_line
+	pop 	cx
+	loop 	rotate_line
+	popa
+ret
+
 
 LIB_Monitor32:
 

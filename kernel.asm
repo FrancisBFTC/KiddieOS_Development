@@ -1,11 +1,19 @@
+; ----------------------------------------------------
+; Binary files functions address
 %INCLUDE "Hardware/memory.lib"
 %INCLUDE "Hardware/info.lib"
+%INCLUDE "Includes/drivers.inc"
+%INCLUDE "Includes/shell.inc"
+%INCLUDE "Includes/fat.inc"
+; ----------------------------------------------------
+
 [BITS SYSTEM]
 [ORG KERNEL]
 
-	
+; *********************************************************************
+; KERNEL SYSTEM CALLS	
 OS_VECTOR_JMP:
-	jmp OSMain                ; 0000h (called by VBR)
+	jmp Kernel_Entry          ; 0000h (called by VBR)
 	jmp PrintNameFile         ; 0003h
 	jmp Print_Hexa_Value16    ; 0006h
 	jmp Print_String          ; 0009h
@@ -29,7 +37,7 @@ OS_VECTOR_JMP:
 	jmp Calloc                ; 003Fh
 	jmp Free                  ; 0042h
 	jmp Parse_Dec_Value		  ; 0045h
-	jmp END                   ; 0048h
+	jmp Reboot_System         ; 0048h
 	
 ; --------------------------------------------------
 ; Saltos para serem chamados por CALL FAR
@@ -38,393 +46,72 @@ OS_VECTOR_JMP:
 	jmp winmng.video			; 004Eh
 	jmp shell.cmd				; 0051h
 	jmp tone.play 				; 0054h
-	
-syscall.prog: 	call SYSCMNG
-				retf
-winmng.video:	call WINMNG+3
-				retf
-shell.cmd:		call SHELL16+3
-				retf
-tone.play:		call Play_Speaker_Tone
-				retf
+
+; --------------------------------------------------
+; *********************************************************************
+
+; --------------------------------------------------
+; Directives and Inclusions
+
+%INCLUDE "Hardware/speaker.lib"
+%INCLUDE "Includes/kerneldat.inc"
+
 ; --------------------------------------------------
 
-; _____________________________________________
-; Directives and Inclusions ___________________
 
-Vector:
-	dw 	NameSystem
-SIZE EQU ($ - Vector) / 2
+; --------------------------------------------------
+; THE KERNEL ENTRY MAIN
 
-%INCLUDE "Hardware/monitor.lib"
-%INCLUDE "Hardware/disk.lib"
-%INCLUDE "Hardware/keyboard.lib"
-%INCLUDE "Hardware/fontswriter.lib"
-%INCLUDE "Hardware/win16.lib"
-%INCLUDE "Hardware/speaker.lib"
-;%INCLUDE "Library/Drv/pci.asm"
-;%INCLUDE "Library/Drv/net/rtl8169.asm"
-
-
-	
-NameSystem db "KiddieOS",0
-
-VetorHexa  db "0123456789ABCDEF",0
-VetorCharsLower db "abcdefghijklmnopqrstuvwxyz",0
-VetorCharsUpper db "ABCDEFGHIJKLMNOPQRSTUVWXYZ",0
-
-VetorDec 	db "0123456789",0
-Zero 		db 0
-
-Extension  db "DRV"
-
-PressKey   db "Press any key to continue...",0
-
-;eth_prefix    db "[ETH] ",0
-;eth_msg 	  db "RTL8169 driver initialized!",0x0D,0x0A,0
-;mac_addr 	  db "MAC = ",0
-
-;buffer_transmit db "Hello World Realtek!",0
-;buffer_transmit.size EQU ($-buffer_transmit)
-
-;buffer_receipt 	times 50 db 0
-; _____________________________________________
-
-%DEFINE DRIVERS_OFFSET  	  KEYBOARD
-%DEFINE FAT16.LoadAllFiles    FAT16
-%DEFINE FAT16.LoadFatVbrData  FAT16+15
-%DEFINE FAT16.OpenThisFile 	  FAT16+24
-%DEFINE FAT16.LoadFile 		  FAT16+27
-%DEFINE FAT16.SetSeek 		  FAT16+30
-%DEFINE FAT16.CloseFile 	  FAT16+33
-%DEFINE MEMX86.Detect_Low_Memory 	MEMX86+0
-%DEFINE KEYBOARD.Initialize 		KEYBOARD+0
-%DEFINE KEYBOARD.Enable_Scancode 	KEYBOARD+3
-%DEFINE KEYBOARD.Disable_Scancode 	KEYBOARD+6
-%DEFINE KEYBOARD.Set_Default_Parameters 	KEYBOARD+9
-
-%DEFINE PCI.Init_PCI 	PCI
-
-SHELL.Execute 		EQU 	SHELL16+3
-SHELL.Format_Command_Line EQU (SHELL16+6)
-SHELL.PrintData 	 EQU 	(SHELL16+9)
-SHELL.Copy_Buffers 	 EQU 	(SHELL16+12)
-SHELL.Load_File_Path EQU 	(SHELL16+15)
-SHELL.Store_Dir 	 EQU 	(SHELL16+18)
-SHELL.Restore_Dir 	 EQU 	(SHELL16+21)
-
-SHELL.CounterFName   EQU	(SHELL16+24)
-SHELL.IsCommand 	 EQU	(SHELL16+27)
-SHELL.CD_SEGMENT	 EQU	(SHELL16+28)
-
-SHELL.DOS_HEADER_BYTES EQU  (SHELL16+30)
-SHELL.BufferAux 	EQU 	(SHELL16+32)
-SHELL.BufferAux2 	EQU 	(SHELL16+152)
-SHELL.BufferArgs 	EQU 	(SHELL16+272)
-SHELL.BufferKeys 	EQU 	(SHELL16+392)
-SHELL.CursorRaw 	EQU 	(SHELL16+512)
-SHELL.CursorCol 	EQU 	(SHELL16+513)
-SHELL.VolumeStruct	EQU 	(SHELL16+516)
-
-FAT16.FileSegments    EQU   (FAT16+39)
-FAT16.DirSegments 	  EQU   (FAT16+41)
-FAT16.LoadingDir      EQU   (FAT16+43)
-FAT16.ReadSectors  	  EQU	(FAT16+36)
-			  
-
-paint_line:
-	pusha
-	push 	es
-	push	ax
-	mov 	[sizetotal], bx
-	mov   	ax, 0xA000
-	mov   	es, ax
-	mov   	ax, 320
-	mov   	bx, dx
-	xor   	dx, dx
-	mul   	bx
-	mov   	di, ax
-	add   	di, cx
-	pop 	ax
-	cmp 	al, 0
-	jz 		line_vert_intro
-	call 	div_line
-	line_vert_intro:
-		mov 	cx, [partscnt]
-	line_vert:
-		push 	cx
-		mov 	cx, [sizecurr]
-		rep 	stosb
-		mov 	cx, [sizecurr]
-		add 	[sumpixels], cx
-		pop 	cx
-		sub 	di, 320
-		loop 	line_vert
-		mov 	cx, [sizetotal]
-		sub 	cx, [partscnt]
-		sub 	cx, [sumpixels]
-		cmp 	cx, 0
-		jz 		ret.paintline
-		rep 	stosb
-ret.paintline:
-	mov 	word[sumpixels], 0
-	pop 	es
-	popa
-ret
-
-div_line:
-	push 	ax
-	xor 	dx, dx
-	mov 	ax, [partscnt]
-	;mov 	bx, 2
-	;mul 	bx
-	inc 	ax
-	xor 	dx, dx
-	mov 	[partscnt], ax
-	mov 	bx, ax
-	mov 	ax, [sizetotal]
-	sub 	ax, bx
-	div 	bx
-	mov 	[sizecurr], ax
-	pop 	ax
-ret
-
-sizetotal	dw 0
-sizecurr	dw 0
-partscnt	dw 1
-sumpixels 	dw 0
-
-some_paint:
-  pusha
-  push 	es
-  push	ax
-  mov   ax, 0xA000
-  mov   es, ax
-  mov   ax, 320
-  mov   bx, dx
-  xor   dx, dx
-  mul   bx
-  mov   di, ax
-  add   di, cx
-  pop 	ax
-  paint_first:
-    cld
-    mov  cx, [sizey]
-	rep  stosb
-    mov  cx, [sizex]
-    paintfl1:
-	  mov 	[es:di], al
-      add   di, 320
-      loop  paintfl1
-      std
-      mov   cx, [sizey]
-      rep   stosb
-      mov   cx, [sizex]
-	  cld
-    paintfl2:
-	  mov 	[es:di], al
-      sub  di, 320
-      loop  paintfl2
-      cld
-  pop 	es
-  popa
-ret
-
-WaitTime:
-	pusha
-	mov 	ah, 86h
-	mov 	dx, bx
-	shr 	ebx, 16
-	mov 	cx, bx
-	int 	15h
-	popa
-ret
-
-move_effect:
-	mov 	[sizex], ch
-	mov 	[sizey], cl
-	mov 	[colorw], al
-	mov 	[countm], dx
-	push 	ebx
-	xor 	cx, cx
-	xor 	dx, dx
-	mov 	bx, 320
-	sub 	bx, [sizex]
-	mov 	[posx], bx
-	mov 	bx, 200
-	sub 	bx, [sizey]
-	mov 	[posy], bx
-	pop 	ebx
-effect:
-	mov 	al, [colorw]
-	call 	some_paint
-	call 	WaitTime
-	mov 	al, 0x00
-	call 	some_paint
-	
-	cmp 	byte[inccx], 1
-	jz 		inc_cx
-dec_cx:
-	dec 	cx
-	cmp 	cx, 0
-	jz 		chgcxinc
-	jmp 	cmp_dx
-inc_cx:
-	inc 	cx
-	cmp 	cx, [posx]
-	jz 		chgcxdec
-cmp_dx:
-	cmp 	byte[incdx], 1
-	jz 		inc_dx
-dec_dx:
-	dec 	dx
-	cmp 	dx, 0
-	jz 		chgdxinc
-	jmp 	effect
-inc_dx:
-	inc 	dx
-	cmp 	dx, [posy]
-	jz 		chgdxdec
-	jmp 	effect
-	
-chgcxinc:
-	mov 	byte[inccx], 1
-	call 	dec_count
-	jc 		reteffect
-	jmp 	inc_cx
-chgdxinc:
-	mov 	byte[incdx], 1
-	call 	dec_count
-	jc 		reteffect
-	jmp 	inc_dx
-chgcxdec:
-	mov 	byte[inccx], 0
-	call 	dec_count
-	jc 		reteffect
-	jmp 	dec_cx
-chgdxdec:
-	mov 	byte[incdx], 0
-	call 	dec_count
-	jc 		reteffect
-	jmp 	dec_dx
-	
-dec_count:
-	dec 	word[countm]
-	cmp 	word[countm], 0
-	jnz 	reteffect
-	stc
-	ret
-reteffect:
-	clc
-	ret
-sizex 	dw 0
-sizey 	dw 0
-colorw 	db 0
-inccx 	db 1
-incdx 	db 1
-posx  	dw 0
-posy  	dw 0
-countm	dw 0
-
-	
-Effect_Screen_Rest:
-	pusha
-	mov 	ax, 13h
-	int 	0x10
-
-	mov 	ch, 50
-	mov 	cl, 50
-	mov 	al, 3
-	mov 	dx, 15
-	mov 	ebx, 12000
-	call 	move_effect
-	
-	mov 	cx, 50
-rotate_line:
-	push 	cx
-	mov 	cx, 50
-	mov 	dx, 150
-	mov 	al, 2
-	mov 	bx, 250
-	call 	paint_line
-	mov 	ebx, 125000
-	call 	WaitTime
-	mov 	cx, 50
-	mov 	dx, 150
-	mov 	al, 0
-	mov 	bx, 250
-	call 	paint_line
-	pop 	cx
-	loop 	rotate_line
-	popa
-ret
-
-; _____________________________________________
-; Starting the System _________________________
-
-OSMain:
-		cld
-		mov 	ax, 0x3000		;0x0C00
-		mov 	ds, ax
-		mov 	es, ax
-		mov 	fs, ax
-		mov 	gs, ax
-		mov 	ax, 0x0000		;0x07D0
-		mov 	ss, ax
-		mov 	sp, 0x1990		;0xFFFF
-
-	; ===============================================
-	; Fill IVT with DOS Interrupt Vector
-	
-	push 	es
-	xor 	ax, ax
+Kernel_Entry:
+	cld
+	mov 	ax, 0x3000		;0x0C00
+	mov 	ds, ax
 	mov 	es, ax
-	xor 	bx, bx
-	push 	ds
-	pop 	ax
-	add 	bx, (21h * 4)
-	mov 	word[es:bx], DOS_INT_21H
-	add 	bx, 2
-	mov 	word[es:bx], ax
-	pop 	es
-	; ===============================================
+	mov 	fs, ax
+	mov 	gs, ax
+	mov 	ax, 0x0000		;0x07D0
+	mov 	ss, ax
+	mov 	sp, 0x1990		;0xFFFF
+
+	; Uncomment only for debugging of the kernel
+	;mov 	ah, 00h
+	;int 	16h
+
+	; -------------------------------------------------------------------------
+	; CÓDIGOS PARA CRIAR A INT 21H DO DOS PELA IVT
 	
-	
-	; call 	Effect_Screen_Rest
-	
-;	jmp 	$
-	; ===============================================
-	
-	;call 	VGA.SetVideoMode
-	;call 	EffectInit
-	;call 	Play_Sound
+	mov 	bx, 21h
+	mov 	si, DOS_INT_21H
+	call 	Create_IVT_Intr
+
+	; -------------------------------------------------------------------------
 	
 	; Text Mode
 	mov 	ah, 00h
 	mov 	al, 03h
 	int 	10h
 	
+	; -------------------------------------------------------------------------
+	; INICIALIZAÇÃO DO SISTEMA DE ARQUIVOS
 	call 	FAT16.LoadFatVbrData
-	
+
 	mov 	si, Extension
 	mov 	bx, DRIVERS_OFFSET
 	mov 	word[FAT16.DirSegments], 0x0200	; era 0x07C0
-	
 	call 	FAT16.LoadAllFiles
-	;call 	KEYBOARD.Initialize
 	call 	MEMX86.Detect_Low_Memory
+
+	call 	Check_Volumes		; Configura partições & volumes
+	; -------------------------------------------------------------------------
+
+	;call 	KEYBOARD.Initialize 		; Há alguns problemas a ser resolvidos
 	;call 	PCI.Init_PCI
+
 	clc
 	
-	mov 	ah, 00h
-	int 	16h
 
-	call 	Check_Volumes
-	
-	;mov 	si, SHELL.VolumeStruct
-	;jmp 	$
 	; -------------------------------------------------------------------------
-	; CÓDIGO PRA INICIALIZAR DRIVERS PCI E SERVIÇOS DE REDE VIA APLICAÇÃO
+	; INICIALIZAÇÃO DE DRIVER PCI E SERVIÇOS DE REDE VIA APLICAÇÃO
 	mov 	si, pci_program
 	call 	SHELL.Execute
 	mov 	ebx, 1000000		; 2 seconds
@@ -436,11 +123,9 @@ OSMain:
 	; --------------------------------------------------------------------------
 	jmp 	Load_Menu
 	
-	pci_program db "K:\KiddieOS\Programs\devmgr.kxe",0
-	rtl_program db "K:\KiddieOS\System16\netapp.kxe",0
-; ----------------------------------------------------------------------------
-
 	
+; ----------------------------------------------------------------------------
+; KERNEL INITIAL USER-INTERFACE
 Load_Menu:
 	mov 	si, PressKey
 	call 	Print_String
@@ -595,7 +280,6 @@ Kernel_Menu:
 		mov 	byte[SHELL.CursorRaw], 0
 		mov 	byte[SHELL.CursorCol], 0
 		jmp 	Kernel_Menu
-		;jmp 	OSMain
 		
 		
 	SHELL16_INIT:
@@ -622,7 +306,7 @@ Kernel_Menu:
 		int 	16h
 		jmp 	Back_Blue_Screen
 		
-		Informations:
+	Informations:
 		SystemName  db "System Name  : KiddieOS",0
 		Version 	db "Version      : ",VERSION,0
 		Author      db "Author       : Francis (BFTC)",0
@@ -633,11 +317,41 @@ Kernel_Menu:
 		SourceCode  db "Source-Code  : Assembly x86",0
 		Lang        db "Language     : English (US)",0
 		DateTime    db "Date/Time    : 05/01/2021 08:31",0
+; ----------------------------------------------------------------------------
+
 		
-		
-		
-; _____________________________________________
+; ----------------------------------------------------------------------------
+; KERNEL FUNCTIONS LIBRARY
+
+syscall.prog: 	
+	call SYSCMNG
+retf
+
+winmng.video:	
+	call WINMNG+3
+retf
+
+shell.cmd:		
+	call SHELL16+3
+retf
+
+tone.play:		
+	call Play_Speaker_Tone
+retf
 	
+Create_IVT_Intr:
+	pusha
+	push 	es
+	xor 	ax, ax
+	mov 	es, ax
+	shl 	bx, 2
+	mov 	ax, ds
+	mov 	word[es:bx], si
+	add 	bx, 2
+	mov 	word[es:bx], ax
+	pop 	es
+	popa
+ret
 
 Check_Volumes:
 	pusha
@@ -857,29 +571,6 @@ RET.check_filesystem_ok:
 	popa
 	add 	di, 26
 ret
-
-lba_size_extended 	dd 0
-lba_begin_extended 	dd 0
-lba_begin_logical	dd 0
-isLogical 			db 0
-label_offset 		dw 0
-save_value_si 		dw 0
-EBR_buffer: 		times 512 db 0
-VBR_buffer: 		times 512 db 0
-
-ntfs_label 	db "NO NAME    "
-
-format_types:
-	db 0x06, "FAT16   "
-	db 0x0B, "FAT32   "
-	db 0x0C, "FAT32   "
-	db 0x07, "NTFS    "
-	db 0x07, "EXFAT   "
-COUNT_FORMAT_TYPES 	EQU ($-format_types)/9
-
-VolumeLetters db 'K'
-; _____________________________________________
-; Kernel Sub-Routines _________________________
 
 ; IN: EBX = microseconds
 Delay_us:
@@ -1848,20 +1539,7 @@ retf
 ; --------------------------------------------------------
 
 
-END:
-; Zera na reinicialização todos os endereços de memória utilizados
-	; ________________________________________________________________
-	mov word[fs:POSITION_X], 0000h
-	mov word[fs:POSITION_Y], 0000h
-	mov word[fs:QUANT_FIELD], 0000h
-	mov word[fs:LIMIT_COLW], 0000h
-	mov word[fs:LIMIT_COLX], 0000h
-	mov word[fs:QuantPos], 0000h
-	mov word[CountPositions], 0000h
-	mov byte[fs:StatusLimitW], 0
-	mov byte[fs:StatusLimitX], 0
-	mov byte[fs:CursorTab], 0
-	; ________________________________________________________________
+Reboot_System:
 	; Reinicia sistema
 	; _________________________________________
 	mov ax, 0040h
