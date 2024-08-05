@@ -15,6 +15,8 @@ jmp 	Load_File_Path 		; SHELL16+15
 jmp 	Store_Dir 			; SHELL16+18
 jmp 	Restore_Dir 		; SHELL16+21
 
+
+
 Shell.CounterFName db 0		; SHELL16+24
 ErrorDir           db 0		; SHELL16+25
 ErrorFile          db 0		; SHELL16+26
@@ -1358,8 +1360,19 @@ Exec:
 		cmp 	cx, 1 		; Extensão BIN
 		jnz 	IsNotBin
 		mov 	ax, 0x2000	; segmento de binários de outros OSes
+		mov 	word[FAT16.FileSegments], ax
+		mov 	ax, word[CD_SEGMENT]
+		mov 	word[FAT16.DirSegments], ax
+		mov 	byte[FAT16.LoadingDir], 0
+		mov 	bx, 0x8000
+		mov 	si, basic_program
+		push 	di
+		call 	FAT16.LoadThisFile
+		pop 	di
+		mov 	ax, 0x2000	; segmento de binários de outros OSes
 		push 	ax
 		jmp 	LoadProgInMemory
+		basic_program 	db "SUDOKU  BAS",0
 	IsNotBin:
 		mov 	ax, 0x5000 	; segmento de processos KiddieOS
 		push 	ax
@@ -1390,10 +1403,23 @@ Exec:
 	
 	Detect_Executable:
 		pop 	ax
+		pop 	di
 		cmp 	ax, 0x2000
 		jnz 	Detect_MZ
 
-		jmp 	2000h:0h		; Salta para outros .BIN
+		;pop 	word[CD_SEGMENT]
+		;call 	Restore_Dir
+
+		mov 	ds, ax
+		mov 	es, ax
+		push 	ds
+		push 	WORD 0000h
+		mov 	bp, sp
+		mov 	ax, 32768
+		mov 	si, 0
+		call 	WORD FAR[bp]		; Chama programa em 2000h:0h
+
+		jmp 	RetSFTE
 
 	Detect_MZ:
 		mov 	[SIZE_DATA_PROG], dx
@@ -1403,8 +1429,6 @@ Exec:
 		
 		cmp 	WORD[es:0x0], "MZ"
 		jne 	Run_32BIT_Prog
-		
-		pop 	di
 		
 		; -- provisory ------------------
 		pop 	word[CD_SEGMENT]
@@ -1535,8 +1559,6 @@ Exec:
 	; MANIPULANDO ARGUMENTOS DA CLI
 		mov 	ax, 0x3000
 		mov 	es, ax
-		
-		pop 	di
 		
 		; -- provisory ------------------
 		pop 	word[CD_SEGMENT]
