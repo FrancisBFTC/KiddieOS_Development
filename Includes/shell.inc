@@ -20,6 +20,9 @@ SHELL.BufferArgs 	EQU 	(SHELL16+272)
 SHELL.BufferKeys 	EQU 	(SHELL16+392)
 SHELL.CursorRaw 	EQU 	(SHELL16+512)
 SHELL.CursorCol 	EQU 	(SHELL16+513)
-SHELL.VolumeStruct	EQU 	(SHELL16+516)
+SHELL.Out_Of_Shell  EQU     (SHELL16+516)
+SHELL.New_Line      EQU     (SHELL16+517)
+SHELL.Reload_Dir    EQU     (SHELL16+520)
+SHELL.VolumeStruct	EQU 	(SHELL16+523)
 
 %ENDIF

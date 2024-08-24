@@ -28,7 +28,7 @@ VolumeLetters db 'K'
 
 ; Services Initialization Datas
 pci_program db "K:\KiddieOS\Programs\devmgr.kxe",0
-rtl_program db "K:\KiddieOS\System16\netapp.kxe",0
+rtl_program db "K:\KiddieOS\Programs\netapp.kxe",0
 ; --------------------------------------------------------
 
 ; --------------------------------------------------------
