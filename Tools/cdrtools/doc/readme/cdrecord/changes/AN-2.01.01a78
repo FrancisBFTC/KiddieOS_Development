@@ -1,0 +1,174 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a78:
+
+*******
+NOTE: cdrtools is currently in a state of a release candidate for the next
+major release.	
+
+*******
+
+******* All man pages have been rewritten for the upcomming final release ******
+******* Please read the man pages and report hints and proposals          ******
+
+
+All:
+
+-	New autoconf test checks whether fnmatch() has a working FNM_IGNORECASE
+
+-	New autoconf test for strlcat() wcslcat()  strnlen() wcsnlen()
+
+
+Libschily:
+
+-	Schily fnmatch() now supports FNM_IGNORECASE
+
+-	New files strlcat.c wcslcat.c  strnlen.c wcsnlen.c
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+-	libfind bumped to version 1.5
+
+-	New file libfind/find_tok.h to separate the token names from the rest of the implementation.
+
+-	Moved token definitions from find.c to find_tok.h
+
+-	The primary -perm now implements a new feature:
+
+	-perm +mode will evaluate as true if any of the bits set in mode are set in the
+	permission bits fro a file.
+
+-	A bug with -exec introduced with using vfork() instead of fork() was fixed.
+	The replacement of the string "{}" now works correctly again even if the location
+	of the path in memory was changed during a realloc().
+
+-	New primary operators:
+		-amin			deprecated - only for GNU find compatibility
+		-cmin			deprecated - only for GNU find compatibility
+		-mmin			deprecated - only for GNU find compatibility
+		-empty			TRUE zero sized plain file or empty directory
+		-execdir program [argument ...] \\;
+		-fls file     		list files similar to 'ls -ilds' into 'file' (always TRUE)
+		-fprint file		print file names line separated into 'file' (always TRUE)
+		-fprint0 file		print file names nul separated into 'file' (always TRUE)
+		-fprintnnl file		print file names space separated into 'file' (always TRUE)
+		-ilname glob		TRUE if symlink name matches shell glob
+		-ilpat pattern		TRUE if symlink name matches pattern
+		-iname glob		TRUE if path component matches shell glob
+		-ipat pattern		TRUE if path component matches pattern
+		-ipath glob		TRUE if full path matches shell glob
+		-ippat pattern		TRUE if full path matches pattern
+		-okdir program [argument ...] \\;
+		-print0			print file names nul separated to stdout (always TRUE)
+		-executable		TRUE if file is executable by real user id of process
+		-readable		TRUE if file is readable by real user id of process
+		-writable		TRUE if file is writable by real user id of process
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+Libscgcmd:
+
+Libmdigest:
+
+Rscsi:
+
+Cdrecord:
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Do no longer archive the output file if it is part of the archives directory
+	tree.
+
+-	New option -data-change-warn allows to prevent mkisofs from aborting when
+	a file changes size.
+
+	-data-change-warn is implemented via errctl="WARN|GROW|SHRINK *"
+
+-	Print a hint to the option -data-change-warn if a shrunk/grown file is detected.
+
+-	Print a hint to the option -no-limit-pathtables in case that there are more
+	than 65535 parent directories in the target filesystem.
+
+-	Print hints on using -joliet-long or on avoiding -J in case that there are
+	file names that do not fit into 64 chars.
+
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

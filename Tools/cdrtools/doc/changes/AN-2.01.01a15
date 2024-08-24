@@ -1,0 +1,138 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a15:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of dirtibutions.
+	The only reason is to add certain new CD/DVD features that are important.
+
+	So _please_ do not send any patches except when you like to fix extreme bugs.
+	I am currently mainly working on stable incremental restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	include file system completely restructured to avoid future name conflicts.
+	The include files now have completely moved to include/schily/.
+	This also allows to make all include files available in /usr/include/schily/
+	in the future. 
+
+-	fixed a type in include/schily/termios.h thanks to Steven M. Schweda for
+	reporting.
+
+-	All libraries now include support for compiling the code as shared library.
+	The code has been tested on Solaris but should also work in *BSD and Linux.
+
+	In order to compile with shared libraries, either call:
+
+		make LINKMODE=dynamic
+
+	or change the line
+
+		DEFLINKMODE=    static
+
+	to
+		DEFLINKMODE=    dynamic
+
+	for your os in DEFAULTS/Defaults.<os_name>
+
+	I am interested in feedback for various OS platforms........
+
+
+-	The order for compiling the libraries has been changed to make the
+	compile process insensitive against old static libraris in the
+	library search path.
+
+-	New Schily autoconf text for gettext() and libintl
+
+-	include/schily/nlsdefs.h now also checks for the exstance of HAVE_GETTEXT
+
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+-	libfind no longer uses static global data. This version of libfind
+	is the first real library version that even allows to implement
+	the find(1) program in less than 200 lines of code.
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+-	cdrecord now supports to set the layer break for DVD+R/DL.
+	This reduces the write time but as there is currently no way
+	to specify the layer break by hand, dual layer DVD-Video does
+	not yet work.
+
+-	cdrecord -atip now also prints the rzone info for DVD+ media
+
+-	cdrecord -atip now prints more information for DVD-R/DL media
+
+-	cdrecord now also supports to write to DVD-RAM
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+-	Fixed a typo in scsi_cmds.c thanks to Steven M. Schweda for reporting.
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	Fixed a buggy error message (a result from the option parser
+	rewrite, thanks to Steven M. Schweda for reporting.
+
+-	Makefile now uses $(LIB_INTL) because of gettext() in libfind
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

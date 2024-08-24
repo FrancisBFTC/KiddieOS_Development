@@ -1,0 +1,143 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a60:
+
+*******
+NOTE: cdrtools is currently in a state just before a new major release.
+	
+
+*******
+
+
+All:
+
+-	Trying to work around nasty Linux distributions that try to fool autoconf
+	function tests and thus may result in incorrect results for the functions
+	fexecl fexecle fexecv fexecve fspawnv fspawnl fspawnv_nowait getline fgetline
+
+-	New include files include/schily/dlfcn.h and include/schily/shcall.h
+
+-	New autoconf tests for dlopen() and similar functions
+
+-	Fixed a typo in include/schily/fnmatch.h that prevented compilation on BeOS
+
+-	Fixed a typo in include/schily/libport.h that prevented compilation on BeOS
+
+-	New makefile "Mocsw" allows to create packages for "opencsw"
+
+-	RULES/rules.csw enhanced to allow to overwrite EMAIL= and HOTLINE= from
+	the make command line.
+
+-	New autoconf test for getprogname()/setprogname()
+
+-	Support for using Microsoft "cl" to compile 64 bit binaries from Cygwin now
+	has been finished
+
+Libschily:
+
+-	Code in libschily/fexec.c cleaned up for better readability
+
+
+-	libschily/checkerr.c now correctly handles the "WARN" directive.
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+Libscgcmd:
+
+Rscsi:
+
+Cdrecord:
+
+-	Cdrecord now calls read_format_capacities() in silent mode in order to
+	check whether the current drive supports this SCSI command.
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	cdda2wav now gives better readable text with cdda2wav -help
+
+-	BeOS has a /boot/develop/headers/be/support/ByteOrder.h that also defines
+	_BYTEORDER_H and thus interferes with our cdda2wav/byteorder.h
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	libschily/checkerr.c (used by mkisofs) now correctly handles the "WARN" directive.
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

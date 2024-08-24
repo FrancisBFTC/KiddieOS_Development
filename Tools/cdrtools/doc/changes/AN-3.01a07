@@ -1,0 +1,280 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-3.01a07:
+
+This is the first localization step for cdrtools. All programs now (hopefully)
+call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries.
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to cdrtools should *****
+*****		call all programs from cdrtools in the "C" locale *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		  *****
+*****		unless these frontends support localized strings  *****
+*****		used by the cdrtools with NLS support.		  *****
+
+This version compiles on Win-DOS using the Microsoft compiler cl.exe but
+warning: due to missing POSIX compliance with basic features (e.g. stat()
+does not return inode numbers), there are many problems with the resulting
+code and thus it is recommended to better use a POSIX layer on top of 
+WIN-DOS.
+
+All:
+
+-	The file COPYING has been reworded to be more obvious with
+	explaining work limits.
+
+-	A workaround for a bug in llvm-gcc-4.2 has been introduced in
+	inc/avoffset.c. The llvm-gcc-4.2 bug caused an endless loop at an
+	unexpected place.
+
+-	New target "htmlxn" to only rebuild html versions of man pages
+	only in case there was a change
+
+-	The CSW packaging definitions in the schily makefilesystem was 
+	enhanced to permit referencing files in the package definition directory
+
+-	include/schily/sigset.h added new macros: blocked_sigs(),
+	block_sigs()
+
+-	include/schily/fcntl.h now includes O_SEARCH for POSIX.1-2008 compliance.
+
+-	Schily autoconf now tests for the size of mode_t, uid_t, gid_t, pid_t,
+	dev_t, major_t, minor_t
+
+-	Schily autoconf now defines a promoted type for mode_t that can be
+	used together with varargs. This is needed as mode_t is smaller than
+	int on some systems.
+
+-	New autoconf tests for getdelim() and strncasecmp()
+
+-	Added a workaround fot a auto-dependency creation bug in the HP-UX
+	c-compiler that resulted in wrong dependency files for all files
+	in libshcily/stdio/ and for these files prevented an automated
+	recompilation in case that an include file was changed.
+
+-	Added links for:
+
+	amd64-freebsd-cc.rul
+	amd64-freebsd-gcc.rul
+
+	amd64-openbsd-cc.rul
+	amd64-openbsd-gcc.rul
+
+	x86_64-darwin-cc.rul
+	x86_64-darwin-gcc.rul
+	x86_64-darwin-cc64.rul
+	x86_64-darwin-gcc64.rul
+	x86_64-darwin-cc32.rul
+	x86_64-darwin-gcc32.rul
+
+-	RULES/rules.loc now makes $(PTARGET) to depend on $(ARCHDIR) to 
+	support make -j 2
+
+-	New include files include/schily/inttypes.h and include/schily/stdint.h
+
+-	The script conf/makeinc is no longer confused by OpenBSD
+	that has man.7 and mandoc.7 and both match on man*
+
+
+Libschily:
+
+-	New functions strstr() and wcsstr()
+
+-	New libschily::fgetaline() and libschily::getaline() implement the
+	functionality of the POSIX violating "getline()" from POSIX.1-2008.
+
+-	New file libschily/abspath.c
+
+-	New file libschily/resolvepath.c
+
+-	New file libschily/mkdirs.c
+
+-	An openat() emulation was added to libschily for platforms that
+	miss openat().
+
+-	An fchdir() emulation was added to libschily for platforms that
+	miss fchdir()
+
+-	libschily/at-defs.h new support file for internals from the *at()
+	emulation
+
+-	libschily/lxchdir.c new file to support chdir() to long
+	path names
+
+-	libschily/procnameat.c new file to support *at() functions in case
+	that a newer /proc file system implementation is available
+
+-	libschily/savewd.c new file to support to save the current working
+	directory regardless of whether fchdir() is present or not.
+
+-	libschily/wdabort.c new file with abort functions that are needed
+	in libschily for the case that no system fchdir is available and 
+	an attempt to emulate *at() functions fails
+
+-	New functions strcasecmp() and strncasecmp() for libschily.
+
+-	New functions diropen() dirrdopen() dirclose() for libschily.
+	These functions are needed in order to emulate fchdir() on platforms
+	that do not support fchdir().
+
+-	file_raise(NULL, FALSE) now also affects files that have been
+	opened before the file_raise() call.
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libcdrdeflt:
+
+Libdeflt:
+
+-	The function defltcntl() in libdeflt is now working and allows to
+	select a case insensitive mode.
+
+-	New function defltsect() in libdeflt allows to create sub-sections
+	in configuration files. These subsections need to be named:
+	"[section-name]" and the '[' must be at the beginning of a line.
+
+Libfind:
+
+-	libfind/walk.c now uses O_SEARCH to open directories
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+
+Libscgcmd:
+
+Libmdigest:
+
+Rscsi:
+
+Cdrecord:
+
+-	cdrecord man page corrected some small typos in the EXAMPLES section.
+
+-	cdrecord has been converted to be able to run completely root-less
+	and suid-root-less and with no script that calls pfexec(1). This
+	works on OpenSolaris ONNV_140 or later because the functionality
+	of pfexec(1) has been integrated into the kernel.
+
+	To enable this feature. edit the file /etc/security/exec_attr and add:
+
+	Basic Solaris User:solaris:cmd:::/usr/bin/cdrecord:privs=file_dac_read,sys_devices,proc_lock_memory,proc_priocntl,net_privaddr
+	or
+	Basic Solaris User:solaris:cmd:::/opt/schily/bin/cdrecord:privs=file_dac_read,sys_devices,proc_lock_memory,proc_priocntl,net_privaddr
+
+	depending on where you install cdrecord.
+	No special shell is needed anymore.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	cdda2wav has been converted to be able to run completely root-less
+	and suid-root-less and with no script that calls pfexec(1). This
+	works on OpenSolaris ONNV_140 or later because the functionality
+	of pfexec(1) has been integrated into the kernel.
+
+	To enable this feature. edit the file /etc/security/exec_attr and add:
+
+	Basic Solaris User:solaris:cmd:::/usr/bin/cdda2wav:privs=file_dac_read,sys_devices,proc_priocntl,net_privaddr
+	or
+	Basic Solaris User:solaris:cmd:::/opt/schily/bin/cdda2wav:privs=file_dac_read,sys_devices,proc_priocntl,net_privaddr
+
+	depending on where you install cdda2wav.
+	No special shell is needed anymore.
+
+
+Readcd:
+
+-	readcd has been converted to be able to run completely root-less
+	and suid-root-less and with no script that calls pfexec(1). This
+	works on OpenSolaris ONNV_140 or later because the functionality
+	of pfexec(1) has been integrated into the kernel.
+
+	To enable this feature. edit the file /etc/security/exec_attr and add:
+
+	Basic Solaris User:solaris:cmd:::/usr/bin/readcd:privs=file_dac_read,sys_devices,net_privaddr
+	or
+	Basic Solaris User:solaris:cmd:::/opt/schily/bin/readcd:privs=file_dac_read,sys_devices,net_privaddr
+
+	depending on where you install readcd.
+	No special shell is needed anymore.
+
+
+Scgcheck:
+
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

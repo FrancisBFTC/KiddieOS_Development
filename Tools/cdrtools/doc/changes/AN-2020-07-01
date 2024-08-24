@@ -1,0 +1,664 @@
+New features with AN-2020-07-01:
+
+This is the first localization step for the schily source consolidation. Many
+programs now (hopefully) call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries and the
+	missing programs
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to the tools should *****
+*****		call all programs in the "C" locale		   *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		   *****
+*****		unless these frontends support localized strings   *****
+*****		used by the cdrtools with NLS support.		   *****
+
+		*** WARNING        ***
+		*** Need new smake ***
+
+	*** Due to the fact that schily-tools 2014-04-03 introduced to use new macro
+	*** expansions and a related bug fix in smake, you need a newer smake
+	*** to compile this source. If your smake is too old and aborts, ensure to
+	*** use the recent smake by calling:
+
+	cd ./psmake
+	./MAKE-all
+	cd ..
+	psmake/smake
+	psmake/smake install
+
+	The new smake version mentioned above is smake-1.2.4
+	The recent smake version is smake-1.3
+
+	*** Due to the fact that schily-tools 2018-01-26 introduced
+	*** optimizations for the Schily version of SunPro Make, you
+	*** need at least the dmake version from 2018/01/11 with support
+	*** for the "export" directive to compile with this makefile system.
+
+
+	WARNING: the new version of the isoinfo program makes use of the 
+		*at() series of functions that have been introduced by Sun
+		in August 2001 and added to POSIX.1-2008. For older platforms,
+		libschily now includes emulations for these functions but
+		these emulations have not yet been tested thoroughly.
+		Please report problems!
+
+	BUG WARNING: Please never report bugs only to Linux distributions as
+		they usually do not forward these bug reports upstream and as
+		the Linux distributions typically do not let skilled people
+		check the bugs. We did not hear about a FIFO problem in star
+		for a long time. Then a problem on Linux occurred once
+		every 6000-10000 tries but it did not happen on Solaris after
+		even 10 million tries, so it was not known besides Linux.
+
+	BUG WARNING: GNU make release 4.3 starts too early with parallel
+		execution (when reading Makefiles and evaluating rules for
+		"include" statements already). Since GNU make does not
+		support a concept for correct ordering of such actions,
+		you need to be prepared to see gmake-4.3 fail in parallel
+		mode. If you are interested in reliable parallel execution,
+		it is recommended to use the included "dmake" program with
+		a command line like:
+
+			dmake -j10 -f SMakefile
+
+		from the top level directory
+
+
+-	star: Backslashes are now honored when looking for the substitution
+	separators in options like -s /from/to/ or -pax-s /from/to/
+
+	Previously, -s '/xxx\/yy//' was interpreted in a way that made
+	the **to string** "yy" and the **from string** "xxx\" instead of
+	making the from string "xxx\/yy" and the to string empty.
+
+-	Bourne Shell: A command like
+
+		bosh -c 'var=$({ echo value >&3; } 3>&1); echo $var'
+
+	Did not print "value" as expected, but rather bosh: 3: bad file number
+
+	This is related to the fact that curly brackets do not have an
+	own binary node type in the parsed output and the recursive parser
+	from the $(cmd) execution needs to reconstruct the text form
+	of a command tree. As a result, the command has been translated
+	into:
+
+		bosh -c 'var=$( echo value >&3 3>&1); echo $var'
+
+	and this caused the observed problem.
+
+	Note that this basic problem may not be finally fixed, so please 
+	report in case that other commands with curly brackets together 
+	with $(cmd) cause problems.
+
+	Thanks to Koichi Nakashima for reporting.
+
+-	Bourne Shell: Added a unit test for the bug above.
+
+-	cdda2wav: The default for the CDDB database has been changed from
+	"freedb.freedb.org" -> "gnudb.gnudb.org" because freedb.freedb.org
+	has been shut down forerver.
+
+-	cdrtools: Assigend a new version date to inform people about the new
+	cdda2wav version with the updated CDDB default host.
+
+-	SCCS: This is a huge step towards the planned project mode of SCCS.
+
+	We now fully support SCCSv6 history files and and all tools now
+	work in the "new mode" that is based on unified path name rewriting
+	controlled by the option -NSCCS and by the directory $PROJECT_HOME/.sccs
+	Please carefully read the following description:
+
+-	SCCS: A new sccs(1) subcommand "histfile" has been implemented in
+	order to convert g-filenames into s-filenames. This is needed as
+	it is hard to find the related history file in case that the
+	repository is an off-tree repository.
+
+	A command like "sccs histfile xec.c" could e.g. result in:
+
+		../.sccs/data/sh/SCCS/s.xec.c
+
+	So if you like to have the SCCS history file for the file xec.c in
+	the curent directory in your editor, you could call:
+
+		$EDITOR $(sccs histfile xec.c)
+
+	regardless of which model to store SCCS history files is used.
+
+	The argument to "sccs histfile" may be a directory. In this case
+	the result is the directory that holds the correcponding SCCS
+	history files.
+
+-	SCCS: The sccs(1) man page now mentions the new command "histfile"
+
+-	SCCS: The sccs(1) online help now mentions the new command "histfile"
+
+-	SCCS: sccs(1) now calls the new function bulkchdir() when in
+	NewMode after bulkprepare() has been used inside getN().
+	bulkchdir() performs an fchdir() back to the original "." dir before
+	leaving the function getN().
+
+-	SCCS: admin(1) now correcly supports -version and --version.
+
+	There was a problem because in the admin program, -V/-version
+	is an option shared with -V4/-V6 (-V with argument) and we only
+	distinct between both variants via the "option requires an argument"
+	error, from getopt(). But getopt() translates "-version" into -V and
+	for this reason, we need to distinct between an illegal -V parameter
+	and the legal option -version.
+
+-	SCCS: libcomobj the function bulkprepare() is now more accurate in
+	case that the file argument is an existing directory. This is needed
+	for the new "sccs histfile" command.
+
+-	SCCS: libcomobj the function bulkprepare() now moved the previously
+	static file descriptor for doing a fchdir() back to the directory "."
+	into a new member of the structure Nparms.
+
+-	SCCS: libcomobj the function bulkprepare() now supports a new flag
+	NP_NOCHDIR to forbid a chdir() which is needed for "sccs histfile"
+	in order to print the complete path name instead of doing a chdir
+	to a part of the path and reporting back only the remaining path
+	components.
+
+-	SCCS: libcomobj: a new struct member n_error has been added to
+	struct Nparms
+
+-	SCCS: libcomobj: a new function bulkchdir() has been added.
+
+-	SCCS: libcomobj: a new function bulkclosedir() has been added.
+
+-	SCCS: libcomobj: a new function bulkerror() has been added.
+
+-	SCCS: libcomobj: The function bulkprepare() now remembers whether it
+	did perform a chdir().
+
+-	SCCS: libcomobj: The function bulkchdir() now only peforms a
+	fchdir() back in case that struct Nparms remembered a previous chdir().
+
+-	SCCS: libcomobj: The function bulkprepare() now calls resolvenpath()
+	a second time (this time with the complete resulting path). This
+	prevents us from trying to use constructed and non-working 
+	path names like:
+
+		../.sccs/data/non-exist/../SCCS/s.foo
+
+	by converting them to something like:
+
+		../.sccs/data/SCCS/s.foo
+
+	before we use them.
+
+-	SCCS: libcomobj: The function bulkprepare() for now no longer
+	performs a chdir() at all. The related code has been commented out.
+	We first need to make the code work correctly in all cases before we
+	can think about performance or other goals.
+
+	BTW: the reason why the chdir() has been implemented in 2015 was that
+	the historic behavior of all SCCS low level commands was to use
+	filenames relative to the current directory only.
+
+-	SCCS: mpwlib::lockit.c some better comment has been added.
+
+-	SCCS: mpwlib::lockit.c If a SCCS lock file is seen that is related to
+	a process that no longer exists, lockit() no longer waits 10 seconds
+	after the file has been removed, before retrying to create a new lock.
+
+-	SCCS: mpwlib::lockit.c If a SCCS lock file is seen that is empty and
+	older than at least 60 seconds, lockit() no longer waits for
+	10 seconds after the file has been removed, before retrying to create
+	a new lock.
+
+-	SCCS: mpwlib::lockit.c If a SCCS lock file seems to be empty when
+	checking, the check for a potential later modification not also checks
+	nanoseconds in the time stamp when deciding whether the file is
+	currently not in an active creation procedure and thus must be a dead
+	file.
+
+-	SCCS: mpwlib::lockit.c No longer uses O_DSYNC since we believe that
+	it does not give more security against locking problems but on the
+	other side just slows down the write() call to the lock file. On
+	Solaris, the related approx. performance loss is 18ms, but on Linux
+	it is approx. 50ms.
+
+	Since we need an additional global lock with the upcoming project
+	mode, this would delay locked operations on Linux by 100ms. This is
+	a lot of time, as a delta(1) command call for a small file takes less
+	than 10ms otherwise.
+
+-	SCCS: mpwlib::lockit.c ismylock() now checks whether a local process
+	that holds the lock still exists. In this case, a new return code -2
+	is used. This is needed to reduce the number of cased that need a
+	check on wether a recovery procedure is needed.
+
+-	SCCS: mpwlib::lockit.c now implements a new function lockrefresh().
+	This is needed to keep locks over NFS active for more than 60 seconds.
+
+	With the classic SCCS, this never was a problem, but the project mode
+	may need longer lasting locks on the global changeset file. If we like
+	to support concurrent attempts to update a project from different NFS
+	based machines, this is an important enhancement.
+
+-	SCCS: libcomobj: A new file lockchset.c has been added with functions
+	to manage the project global lock file. The new functions are:
+
+	lockchset()	Lock the project.
+
+	unlockchset()	Unlock the project.
+
+	refreshchsetlock() refresh the mtime of the global lock file to be able
+			to hold the project lock for a time longer than
+			60 seconds even over NFS.
+
+-	SCCS: The man page sccsfile.4 now includes a list of SCCS programs that
+	create lock files for SCCS history files.
+
+-	SCCS: The commands admin and delta now support a new option -Xuser=name
+	that allows to specify a different user (programmer) name for a delta.
+	By default, the logname is used as it has been always done before.
+
+-	SCCS: admin fixed a potential buffer overflow related to the user
+	(programmer) name that is used in the delta table.
+
+-	SCCS: "sccs help Xopts" now mentions -Xuser=name
+
+-	SCCS: all commands have been converted to use the new function
+	bulkerror() from libcomobj::bulk.c
+
+-	SCCS: A new flag SCCS_NEWMODE has ben addded to make the
+	getenv("SCCS_NMODE") control from sccs(1) visible to all SCCS
+	library code as well, without a need to access the variable
+	NewMode from sccs.c
+
+-	SCCS: "sccs root -v" added a new column NEWMODE to show whether
+	the current mode in use is the NewMode.
+
+-	SCCS: The commands admin, delta, get, unget, sccscvt, rmdel, cdc
+	now all manage a project global lock file when a populated directory
+	$PROJECTHOME/.sccs exists that is created via "sccs init dir".
+
+	Since all needed commands now support the global lock, it is now safe
+	to switch to SCCSv6 history files.
+
+-	SCCS: The command "sccs cvt" now supports a new -o (old date) option
+	that retains the original time stamp of the history file that has been
+	present before conversion, -oo to make the new time stamp the old time
+	stamp + 1ns, -ooo to make the new time stamp the old time stamp + 1us,
+	-oooo to make the new time stamp the old time stamp + 1s.
+
+	The reason for the increment variants is to make sure that when
+	copying the SCCS history files via star, or other programs that only
+	extract from the archive if the new file is newer than on disk, the
+	converted variants overwrite the old ones in the filesystem. If it may
+	be possible that the copy might be targeted to UFS as well, it is
+	recommended to use -ooo to get a time stamp that is one microsecond
+	newer than the original time. For historic UNIX versions with only 1s
+	time stamp resolution, -oooo is recommended.
+
+-	SCCS: The sccs command now explixitly disables chdir() for
+	bulkprepare() in more subcommands. This is needed since otherwise
+	these sub-commands would run from a different directory than expected.
+
+-	SCCS: The command "sccs unedit" now works in NewMode with a directory
+	parameter != ".".
+
+-	SCCS: The unget command now correctly works when using the -N 
+	option together with a file that is not in the curent directory.
+
+-	SCCS: The unit tests now added checks in the NewMode methods that run
+	after a chdir to "subdir" and with a file path of "../tfile" in order
+	to verify that the new path manipulating routines in NewMode not only
+	work correctly for files in the current directory.
+
+-	SCCS: The unit tests now copy the whole test suite to /tmp/sccstests/
+	before starting the tests. This is needed because we now may have
+	a directory .sccs in our project root directory and this changes
+	the behavior of SCCS. By copying the test suite to /tmp/sccstests/,
+	there is no .sccs directory anymore in the path above our tests.
+	Well, unless a bad guy created /tmp/.sccs or /.sccs
+
+	WARNING: This new method for the SCCS unit tests require "star" to
+	be installed and accessible from $PATH.
+
+-	SCCS: The unit test commands now unset SCCS_NMODE before starting
+	the tests to let SCCS work in default mode. If SCCS_NMODE is needed
+	for a specific test in the test suite, it is set by that test.
+
+-	SCCS: The unit tests for the three operation modes of sccs(1) now
+	call "sccs init ." instead of just "sccs init" in order to make
+	shure that this command does not apply to an already existing
+	higher level .sccs directory.
+
+-	SCCS: libcomobj: A new variable changesetgfile has been added with
+	the path to the filename $PROJECT_HOME/.sccs/changeset
+
+-	SCCS: "sccs root -v" now also prints the path for
+	$PROJECT_HOME/.sccs/changeset
+
+-	SCCS: The commands admin(1) and delta(1) now write changeset records
+	into the changeset file in $PROJECT_HOME/.sccs/changeset if that
+	file exists. This file is to collect the entries for a future
+	project aware SCCS before they are prepended to the changeset
+	history file $PROJECT_HOME/.sccs/SCCS/s.changeset with a commit
+	operation. The new code is currently only used to debug the future
+	interface used for "sccs commit".
+
+-	SCCS: "sccs cvt" now is usable with directory arguments in NewMode.
+	If you call "sccs cvt -V6 .", this first converts the current directory
+	to the correcsponding directory with SCCS history files. This
+	directory is then opened and scanned for s.files ant these files are
+	converted back to plain file names in the current directory.
+
+-	SCCS: "sccs log" command did incorrectly use a GMT offset of 1 second
+	if it encountered a SCCSv6 delta entry with nanoseconds. This has
+	been fixed and the GMT offset from the entry is used.
+
+-	SCCS: "man sccs-cvt" now includes a better description on how directory
+	type arguments are handled.
+
+-	SCCS: "man sccs-cvt" now includes a hint on the name of the binary
+	package that contains the software.
+
+-	SCCS: "man sccs-cvt" now lists more utilities via "SEE ALSO"
+
+-	SCCS: "man sccs-get" now includes a hint on the name of the binary
+	package that contains the software.
+
+-	SCCS: "man sccs-get" now lists more utilities via "SEE ALSO"
+
+-	SCCS: "man sccs-init" now includes a hint on the name of the binary
+	package that contains the software.
+
+-	SCCS: "man sccs-init" now lists more utilities via "SEE ALSO"
+
+-	SCCS: "man sccs-log" now includes a hint on the name of the binary
+	package that contains the software.
+
+-	SCCS: "man sccs-log" now lists more utilities via "SEE ALSO"
+
+-	SCCS: "man sccs-root" now includes a hint on the name of the binary
+	package that contains the software.
+
+-	SCCS: "man sccs-root" now lists more utilities via "SEE ALSO"
+
+-	SCCS: A new man page for "man sccs-edit" has been created.
+
+-	SCCS: A new man page for "man sccs-editor" has been created.
+
+-	SCCS: A new man page for "man sccs-check" has been created.
+
+-	SCCS: A new man page for "man sccs-info" has been created.
+
+-	SCCS: A new man page for "man sccs-tell" has been created.
+
+-	SCCS: A new man page for "man sccs-delget" has been created.
+
+-	SCCS: A new man page for "man sccs-deledit" has been created.
+
+-	SCCS: A new man page for "man sccs-histfile" has been created.
+
+-	SCCS: A new man page for "man sccs-istext" has been created.
+
+-	SCCS: "man sccs-init" a typo in the man page has been fixed. We now
+	see the expected sccs-init(1) instead of val(1).
+
+-	SCCS: A typo in help.d/cmds has been fixed
+
+-	SCCS: a new version date has been created to mark this new version.
+
+-	SCCS: *** The SCCS history for the SCCS project has been converted ***
+	*** into SCCSv6 history files. ***
+
+From the previous TODO list:
+
+	-	Find a way to decide when to use SCCS V6 type history files.
+
+		For the project mode, this is needed in order to prevent 
+		historic SCCS implementations to believe they could modify
+		files without knowing about project global locks.
+
+		Done: The only program that creates new SCCS history files
+		and thus controls the format used when they are created
+		is "admin" and "admin" now by default creates an SCCSv6
+		history file if a valid .sccs directory exists in the
+		project home directory.
+
+		This helps to avoid a need for converting the files
+		when the repository is later converted into a repository
+		using the upcommig project mode.
+
+	-	Add code to all programs that modify the SCCS history files
+		(currently admin, cdc, delta, rmdel, sccscvt to maintain a
+		lock (for the file $PROJECTHOME/.sccs/SCCS/s.changeset, that
+		would be in the file $PROJECTHOME/.sccs/SCCS/z.changeset) to
+		maintain a project global lock.
+
+		There is now a new global lock stratey implemented in all
+		needed binaries, which are binaries that modify history
+		files (s.files) or binaries that modify permssion lock
+		files (p.files).
+
+Conclusions from the last changes:
+
+-	SCCS: sccs(1) should now be finally usable in NewMode to check
+	the correctness of the current state of the implementation beyond the
+	existing unit tests.
+
+	To switch into this test mode do this:
+
+		cd path/to/project/root
+		sccs init -i .
+		SCCS_NMODE=
+		export SCCS_NMODE
+
+	export SCCS_NMODE= should be placed into a shell startup script.
+
+	By calling:
+
+		:> .sccs/changeset
+
+	debugging for admin(1) and delta(1) is enabled and both programs will
+	write changeset entries into that file. If this debugging is enabled,
+	the file .sccs/changeset needs to be removed in the future before the
+	final project mode support is used when it is ready.
+
+	The commands above initialize the project with an in-tree repository
+	that has the SCCS history files in the traditional location. The whole
+	repository is initialized as a traditional repository for a collection
+	of single files and an empty .sccs/SCCS/s.changeset is created. All
+	newly created SCCS history files are created as SCCSv6 files in this
+	mode. Note that these SCCSv6 history files are not understood by old
+	SCCS implementations unless they are converted back to V4 via
+	"sccs cvt".
+
+	Since the initial .sccs/SCCS/s.changeset file is present, this enforces
+	SCCS to create a global project lock for every operation. This helps to
+	check for unexpected behavior with this new feature.
+
+	As we removed O_DSYNC while writing the lock files, this additional lock
+	does not make SCCS slower than it has been before.
+
+	As this version implements the new global project locking rules, it
+	is safe to start with creating SCCSv6 history files by default. The
+	new enhanced SCCSv6 history file format has been designed to be
+	intentionally incompatible to historic SCCS implementations, to make
+	sure that all software that supports SCCSv6 is aware about the need for
+	the project global lock file.
+
+	***
+	The SCCSv6 hisory file format typically causes 3% larger SCCS history
+	files and causes SCCS to consume 10% more CPU time.
+	***
+
+	To convert a project into SCCSv6, the following procedure is currently
+	recommended:
+
+	1)	Set up the project home directory for an in-tree NewMode
+		repository.
+
+	2)	Call "sccs cvt -V6 -k -ooo ." for every directory in the
+		project.
+
+	Later, when the project mode is ready, it is recommended to convert
+	the in-tree repository into an off-tree repository.
+
+	NOTE:
+
+	*** The SCCS sourcecode has been converted to use the	***
+	*** SCCSv6 history file format last week		***
+
+	IMPORTANT: *** the -R option has been introduced in 2008 as a hack ***
+	This hack has been introduced in order to make the historic old mode
+	usable for another few years. We decide later how the -R option will
+	be integrated into the new mode in the future.
+
+	The basic background is that the historic SCCS system did not deal with
+	filenames that are not from the current working directory. As a
+	workaround, we introduced -R, but this uses an internal option "-C dir"
+	that does not work well together with the NewMode.
+
+	In the old mode, "sccs delget ../data/file" does not work, but
+	"sccs -R delget ../data/file" is needed.
+
+	In NewMode, "sccs delget ../data/file" does work.
+
+
+-	SCCS TODO:
+
+	-	Convert sccs.c to use -NSCCS in the back end programs instead
+		of converting g-file names from the command line into s.file
+		names in the frontend in order to forward s.file names to the
+		backend programs. Doing it this way allows us to have the SCCS
+		history files "off tree" in a separate directory tree starting
+		with ".sccs/" at the "project root" directory, as the related
+		code to convert path names is in libcomobj::bulkprepare().
+
+		*** This is mostly done for now ***
+
+	-	Add code to admin(1) and delta(1) to retrieve the list of
+		new or modified files in order to have all important code
+		for a "sccs commit" in a single program that does not need to
+		deal with ARG_MAX limitations.
+
+		*** Done, but sccs(1) should implement a counterpart. ***
+
+	-	Add code to sccs(1) to give the list of affected files to
+		admin(1) and delta(1) via stdin to overcome ARG_MAX limitations.
+
+	-	Add code to admin(1), delta(1) and get(1) to maintain/understand
+		the changeset file.
+
+		This is mainly writing out the sccschangeset(4) entries to an
+		imtermediate store if a single file has been treated
+		succsessfully.
+
+	-	sccs -R tell (and probably other subcommands?) does not yet
+		work in NewMode
+
+	-	Add code to libcomobj to understand the changeset file,
+		which is needed in order to e.g. know the file names and file
+		specific SIDs/state that correspond to a project global SID.
+
+	-	Add code to all programs that modify the SCCS history files
+		(currently admin, cdc, delta, rmdel, sccscvt to maintain a
+		lock (for the file $PROJECTHOME/.sccs/SCCS/s.changeset, that
+		would be in the file $PROJECTHOME/.sccs/SCCS/z.changeset) to
+		maintain a project global lock.
+
+		*** Done, see above. ***
+
+	-	Find/verify a complete transactional model that allows to repair
+		complex changes to the set of files for a project that have
+		been aborted in the middle. The current idea is to create the
+		file $PROJECTHOME/.sccs/changeset with the deltas to the
+		changeset during a complex update operation.
+
+		*** A concept for global locks has been implemented ***
+		*** We still need the repair model ***
+
+	-	Find a way to decide when to use SCCS V6 type history files.
+
+		For the project mode, this is needed in order to prevent 
+		historic SCCS implementations to believe they could modify
+		files without knowing about project global locks.
+
+		*** Done, see above. ***
+
+	-	Find a decision on how to deal with the admin flags that are
+		currently implemented as global flags and thus do not depend on
+		the SID (version) if the history file.
+
+	-	Aborting a transaction via ^C currently requires a manual
+		removal of the global lock file. Find a way to avoid this in
+		case that a commit has been aborted while being prompted for
+		a commit message (which is before any real action happened).
+
+	-	Make the loking method more robust against long running
+		programs. The challenge is a program on a different NFS
+		connected computer and long delays, e.g. via a conguestion
+		on the Wlan. The best way to do this is most likely to
+		install a signal controlled timer that refreshes the lock
+		file every 45 or every 30 seconds.
+
+	-	Enhance "sccs log" to let it ignore the nanoseconds and probably
+		seconds as well when comparing the SCCS delta commants for
+		initial SCCS history file creation.
+
+	-	Add the missing separate man pages: sccs-branch.1
+		sccs-clean.1 sccs-create.1 sccs-diffs.1 sccs-fix.1
+		sccs-print.1 sccs-unedit.1
+
+
+
+
+-	Bourne Shell Missing features for POSIX compliance:
+
+	- Support for $'...' quoting (this is not needed for the current
+					version of POSIX but for the next POSIX
+					version that will be named SUSv8).
+					The development of SUSv8 will start in
+					late 2016.
+
+	We are now expecting the Bourne Shell to be fully POSIX compliant.
+
+-	Bourne Shell further TODO list:
+
+	-	Finish loadable builtin support.
+
+	-	POSIX does not allow us to implement ". -h", so we will
+		add a "source" builtin to be able to implement "source -h"
+
+-	The following builtins (that are available in bsh) are still missing in
+	the Bourne Shell:
+
+	err			echo with output going to stderr
+	glob			echo with '\0' instead of ' ' between args
+	env			a builtin version of /usr/bin/env
+
+	The following bsh intrinsics are still missing in the Bourne Shell:
+
+	-			the restricted bsh has restriction features that
+				are missing in the Bourne shell.
+
+	-	source -h	read file into history but do not execute
+
+	and probably more features not yet identified to be bsh unique.
+
+
+
+Author:
+
+Joerg Schilling
+D-13353 Berlin
+Germany
+
+Email: 	joerg@schily.net, joerg.schilling@fokus.fraunhofer.de
+
+Please mail bugs and suggestions to me.

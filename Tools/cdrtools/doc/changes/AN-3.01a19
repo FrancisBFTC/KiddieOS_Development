@@ -1,0 +1,257 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-3.01a19:
+
+This is the first localization step for cdrtools. All programs now (hopefully)
+call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries.
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to cdrtools should *****
+*****		call all programs from cdrtools in the "C" locale *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		  *****
+*****		unless these frontends support localized strings  *****
+*****		used by the cdrtools with NLS support.		  *****
+
+This version compiles on Win-DOS using the Microsoft compiler cl.exe but
+warning: due to missing POSIX compliance with basic features (e.g. stat()
+does not return inode numbers), there are many problems with the resulting
+code and thus it is recommended to better use a POSIX layer on top of 
+WIN-DOS.
+
+All:
+
+-	New autoconf tests for:
+
+	-	NFSv4 ACL support
+
+	-	issetugid()
+
+	-	lpathconf()
+
+	-	utimens()
+	-	futimens()
+	-	lutimens()
+
+
+-	The rules in the Schily Makefilesystem have been restructured in order
+	to allow to avoid problems on platforms like FreeBSD and Mac OS X:
+
+	FreeBSD and Mac OS X banned the not-free-enough (because GPLd)
+	software to /usr/local, forcing us to add -I/usr/local/include
+	and -L/usr/local/lib. Unfortunately, /usr/local/include frequently
+	carries a _very_ outdated and thus wrong copy of "cdda_paranoia.h"
+	which is more than 10 years old and definitely incompatible with
+	dynamic linking on Mac OS X. This defective copy was first in the
+	search path and prevented compilation. 
+
+	We now have a new macro: DEFOSINCDIRS= that grants to add include
+	directories to the end of the search PATH to allow us to find the
+	correct "cdda_paranoia.h" first.
+
+	Please test and report in case of problems.
+
+-	gmake and SunPro make include COMPILE.c with wrong content in their
+	built-in rules. We now clear this macro un RULES/rules.top. It is
+	still possible to provice a modified version from command line
+	or from the environment.
+
+-	include/schily/stdio.h was reordered, as it prevented compilation
+	of the "bsh" on Linux. This was a problem recently introduced,
+	when we added #ifndef NO_SCHILY_STDIO_H
+
+-	Fixed autoconf typo HAVE_MKNODKAT -> HAVE_MKNODAT
+
+-	include/schily/intcvt.h is now self contained.
+
+-	include/schily/windows.h now includes the same type workaround
+	for MINGW32 as fir the Microsoft C compiler, as there are the same
+	autoconf detection problems.
+
+-	Addded missing include/schily/err_type.h
+
+-	New file include/schily/shedit.h
+
+Libschily:
+
+-	New files for libschily:
+
+	at-base.c	generic implementation for *at() functions.
+	fchownat.c	fchownat()
+	fdopendir.c	fdopendir()
+	fstatat.c	fstatat()
+	futimens.c	futimens()
+	futimesat.c	futimesat() Solaris specific old for utimensat()
+	lutimens.c	lutimens()
+	linkat.c	linkat()
+	mkdirat.c	mkdirat()
+	mkfifo.c	mkfifo()
+	mkfifoat.c	mkfifoat()
+	mknodat.c	mknodat()
+	readlinkat.c	readlinkat()
+	renameat.c	renameat()
+	symlinkat.c	symlinkat()
+	unlinkat.c	unlinkat()
+	utimens.c	utimens()
+	utimensat.c	utimensat()
+	at-base.c	The base code for all single fd *at() functions.
+	at-base2.c	The base code for all double fd *at() functions.
+
+	contain emulations for system interfaces introduced in summer 2001 by Sun
+	and with POSIX.1-2008.
+
+-	New functions in libschily:
+
+	absfpath()
+	resolvefpath()
+
+	allow to better control the behavior using flags.
+
+-	The linker map file for libschily now adds some forgotten functions.
+
+-	libschily/strstr.c and libschily/wcsstr.c now include a 
+	CDDL License hint
+
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+-	Libfind now allows to check for -type P (Solaris event port).
+	A missing "case 'P':" was added to the parser.
+
+Libfile:
+
+Libhfs_iso:
+
+
+Libmdigest:
+
+Libsiconv:
+
+Libscg:
+
+
+Libscgcmd:
+
+Libmdigest:
+
+Rscsi:
+
+Cdrecord:
+
+-	Trying to avoid to confuse users
+	on Solaris and Linux where a fine grained privilege implementation
+	exists. Before, fine grained privileges have been given up after
+	initializing the program and this may result in a root user that
+	is treated as a normal user that cannot write into directories 
+	without global write permission. The named programs now no longer
+	give up privileges in case they have been called with the needed
+	privileges already and thus the programs cannot be used for
+	privilege escalations anymore.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Trying to avoid to confuse users
+	on Solaris and Linux where a fine grained privilege implementation
+	exists. Before, fine grained privileges have been given up after
+	initializing the program and this may result in a root user that
+	is treated as a normal user that cannot write into directories 
+	without global write permission. The named programs now no longer
+	give up privileges in case they have been called with the needed
+	privileges already and thus the programs cannot be used for
+	privilege escalations anymore.
+
+-	Cddda2wav now flushes stderr before asking for a specific cddb
+	entry index. It seems that on Linux stderr may not be unbuffered
+	as expected.
+
+-	Cdda2wav moved the option parsing code into a separate function
+	gargs().
+
+Readcd:
+
+-	Trying to avoid to confuse users
+	on Solaris and Linux where a fine grained privilege implementation
+	exists. Before, fine grained privileges have been given up after
+	initializing the program and this may result in a root user that
+	is treated as a normal user that cannot write into directories 
+	without global write permission. The named programs now no longer
+	give up privileges in case they have been called with the needed
+	privileges already and thus the programs cannot be used for
+	privilege escalations anymore.
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

@@ -1,0 +1,423 @@
+New features with AN-2020-06-09:
+
+This is the first localization step for the schily source consolidation. Many
+programs now (hopefully) call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries and the
+	missing programs
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to the tools should *****
+*****		call all programs in the "C" locale		   *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		   *****
+*****		unless these frontends support localized strings   *****
+*****		used by the cdrtools with NLS support.		   *****
+
+		*** WARNING        ***
+		*** Need new smake ***
+
+	*** Due to the fact that schily-tools 2014-04-03 introduced to use new macro
+	*** expansions and a related bug fix in smake, you need a newer smake
+	*** to compile this source. If your smake is too old and aborts, ensure to
+	*** use the recent smake by calling:
+
+	cd ./psmake
+	./MAKE-all
+	cd ..
+	psmake/smake
+	psmake/smake install
+
+	The new smake version mentioned above is smake-1.2.4
+	The recent smake version is smake-1.3
+
+	*** Due to the fact that schily-tools 2018-01-26 introduced
+	*** optimizations for the Schily version of SunPro Make, you
+	*** need at least the dmake version from 2018/01/11 with support
+	*** for the "export" directive to compile with this makefile system.
+
+
+	WARNING: the new version of the isoinfo program makes use of the 
+		*at() series of functions that have been introduced by Sun
+		in August 2001 and added to POSIX.1-2008. For older platforms,
+		libschily now includes emulations for these functions but
+		these emulations have not yet been tested thoroughly.
+		Please report problems!
+
+	BUG WARNING: Please never report bugs only to Linux distributions as
+		they usually do not forward these bug reports upstream and as
+		the Linux distributions typically do not let skilled people
+		check the bugs. We did not hear about a FIFO problem in star
+		for a long time. Then a problem on Linux occurred once
+		every 6000-10000 tries but it did not happen on Solaris after
+		even 10 million tries, so it was not known besides Linux.
+
+	BUG WARNING: GNU make release 4.3 starts too early with parallel
+		execution (when reading Makefiles and evaluating rules for
+		"include" statements already). Since GNU make does not
+		support a concept for correct ordering of such actions,
+		you need to be prepared to see gmake-4.3 fail in parallel
+		mode. If you are interested in reliable parallel execution,
+		it is recommended to use the included "dmake" program with
+		a command line like:
+
+			dmake -j10 -f SMakefile
+
+		from the top level directory
+
+
+
+-	Schily Makefilesystem: When configured not to compile project internal
+	libraries into shared libraries, an informational message has been
+	changed from:
+
+		" ==> NO shared libs on this platform (yet)"
+
+	to:
+
+		" ==> MAKING no shared libs on this platform (LINKMODE=static)"
+
+	This is expected to be less confusing.
+
+-	libboshcmd: For unknown reasons, an update from August 2018 has not
+	been published yet.
+
+	The update contains the support to the -call feature in the loadable
+	builtin find command.
+
+-	hdump/od: The starting address specification on the commandline did 
+	not work for strings like 0xaaa but only for xaaa. This was caused 
+	by the fact of not incrementing the input string by 2 charatcers
+	since the string->int conversion accepts a 0x prefix only with
+	expected "radix" 0.
+
+-	spax: the man page now includes the text for point 1 .. 5 related
+	to the "listformat" option.
+
+-	star: A new option -one-file has been added that causes star to exit
+	after a single file has been extracted as a result from a pattern match
+	or command line argument match.
+
+-	star: The FIFO error message "Sync pipe read error..." is no longer
+	printed in case that one side of the FIFO did intentionally set
+	the exit flag before reading/consuming the complete input.
+
+	This permits to avoid this message when star exits
+	(e.g. via -one-file) without reading the whole FIFO data.
+
+	This also prevents the same confusing message when listing or
+	extracting some cpio typed archives where the reader reads less than
+	the cpio block size (5 kB) .
+
+-	star: A new option iskip=# has been introduced. The argument is the
+	number of bytes to skip before looking for the first archive header
+	in the first tape block read after star started.
+
+	The value must be less than the tape block size.
+
+	The purpose of this option is to permit to read tapes from a different
+	offset than the beginning, after e.g. a "mt fsr xxx" command has been
+	issued.
+
+-	star: A new option mtskip=# has been introduced. This option causes
+	star to issue a "mt fsr xxx" equivalent on a tape archive.
+
+	 The argument is the number of 512 byte blocks to skip from the 
+	beginning of the archive.
+
+	This option is a complement to the block number printed from
+
+		star -c -v -block-number ...
+
+	and if the argument to mtskip= is given the number from the
+	-block-number output, it fast forwards the archive to the position 
+	where the related file starts in the archive.
+
+	If the archive is a plain file, this is done via lseek().
+
+	If the archive is a tape archive, this is done by first positioning
+	the tape via mtioctl(MTFSR) and then to do an implicit iskip=# for
+	the computed remainder of bytes resulting from the mtskip= argument.
+
+	Note that star must be called with the correct tape block size if
+	the archive is on a tape. Otherwise, this option does not work
+	correctly.
+
+-	SCCS: libcomobj::bulk.c now avoids double slashes when generating
+	the path to the off-tree history files.
+
+-	SCCS: libcomobj::bulk.c now has a new mode that allows to to translate
+	the a directory path in the source tree into a directory path within
+	the SCCS history tree. This is needed in case the repository is a
+	NewMode repository with an off-tree history.
+
+-	SCCS: sccs.c the SCCS_NMODE= environment now has a new meaning for
+	future feature debugging:
+
+	-	SCCS_NMODE=TRUE	New Mode is forced to be active
+
+	-	SCCS_NMODE=FALSE New Mode is forced to be disabled
+
+	-	SCCS_NMODE=	New Mode depends on $PROJECTHOME/.sccs/
+
+	-	SCCS_NMODE=i	New Mode depends on $PROJECTHOME/.sccs/
+				with intentional intree handling
+
+	-	SCCS_NMODE=o	New Mode depends on $PROJECTHOME/.sccs/
+				with intentional offtree handling
+
+	See below for the changes in SCCS admin about the consequences of
+	using this environment.
+
+-	SCCS: sccs: the simple forwarding to SCCS base low level commands
+	now always works in NewMode.
+
+-	SCCS: "sccs print" now supports the options -a -A -n -r to give
+	better annotation using new annotation features from get(1) related
+	to the option -A.
+
+-	SCCS: "sccs delget" and "sccs deledit" now work in NewMode since
+	getNsid() now uses bulkprepare() to get the path name for the p.
+	file when in NewMode.
+
+-	SCCS: "sccs enter" and "sccs create" now work in NewMode
+
+-	SCCS: "sccs init" now rescans the tree after the .sccs directory has
+	been created in order to get correct values in the sethome structures.
+
+	This is e.g. needed in orer to be able to compute the path for the
+	SCCS changeset file.
+
+-	SCCS: "sccs unedit" now works in NewMode
+
+-	SCCS: "sccs diffs" now works in NewMode
+
+-	SCCS: "sccs tell" now works in NewMode - however not yet in -R mode
+
+-	SCCS: "sccs help" no longer prints
+
+		"Unrecognized locale... setting to English\n"
+
+	but rather
+
+		"No help for locale '%s' ... setting to English.\n"
+
+	in hope that people no longer believe that the current locale
+	is incorrect but just a translation for the current locale is not yet
+	available.
+
+-	SCCS: The help text for "ad15" has been enhanced to mention a possible
+	usage problem. Calling:
+
+		admin -i xxx.c s.xxx.c
+
+	Now prints:
+
+	ad15:
+	"more than one file"
+	You are trying to create more than one SCCS file, and you supplied
+	the 'i' keyletter. You can only create one file when you supply
+	the 'i' keyletter. A possible reason for the problem is that you
+	have a space between the 'i' keyletter and the input filename.
+
+	and helps people to understand the superfluous space between -i 
+	and xxx.c
+
+-	SCCS: "sccs help" added a new error message "cm20"
+
+		"non directory specified as argument"
+
+	It been introduced to support the enhanced "sccs tell" command.
+
+-	SCCS: various typos in the help texts have been fixed.
+
+-	SCCS: sccs: several strdup() calls with error check have been changed
+	to use a new function xstrdup() for unified handling.
+
+-	SCCS: sccs: an unclean malloc handling in "sccs unedit" has been
+	reworked.
+
+-	SCCS: sccsdiff now uses "$@" instead of $@ in order to support
+	arguments with spaces inside.
+
+-	SCCS: sccsdiff now sets IFS= on a separate line to make it work. The
+	old command:
+
+		IFS= get ....
+
+	unfortunately first expands the macros in argument list and then
+	processes the IFS= instruction. So it does not work for our purpose.
+
+-	SCCS: sccsdiff now works in sccs(1) NewMode, when the file arguments
+	are not in SCCS/s.* form.
+
+-	SCCS: get now reinitalizes the programmer hash table to avoid a core
+	dump from corrupt memory caused by e.g. calling "get" with three file 
+	arguments like:
+
+		get -p -A -m -n -r1.10 file1 file2 file3
+
+	with:
+
+	-	First file OK
+
+	-	Second file e.g. causes "invalid sid (co8)"
+
+	-	Third file OK, but causes core dump
+
+-	SCCS: admin has a new default for deciding whether new a SCCS history
+	file is created as V4 or V6 file.
+
+	If there is a correctly populated directory .sccs in the project home
+	directory and "admin" is called with the option -N, it creates new
+	SCCS history files ac SCCSv6 files.
+
+	If you do nothing, this is not enabled yet, but if you set up the
+	enviromnent SCCS_NMODE (see above), sccs(1) calls SCCS low level
+	commands with the -N option and causes admin to create V6 history
+	files if "projecthome/.sccs" exists.
+
+	To already use a SCCSv6 based history and the off-tree repository,
+	do the following:
+
+	-	call "sccs init -s" in the project home directory to
+		mark this directory as a NewMode repository with single
+		files (no project mode yet).
+
+	-	Setup your environment:
+
+		SCCS_NMODE=o
+		export SCCS_NMODE
+
+	This tells sccs to manage an off-tree repository. If you setup
+	SCCS_NMODE=i, you have a SCCSv6 based history in in-tree mode as
+	it is in use with sccs(1) since 1980.
+
+	Be careful and report problems...
+
+-	SCCS: the admin(1) man page now mentions the option -V4 and the new
+	default that may be SCCSv6, see above.
+
+-	SCCS: admin and comb in bulk mode now call sclose()/sfree()/ffreeall()
+	between files and in error case.
+
+-	SCCS: libcomobj::ffree() now is a bit more conservative about
+	managing active malloc()ed pointers.
+
+-	SCCS: The unit tests now contain a special collection for the
+	"sccs" frontend that checks various commands in three different
+	ways:
+
+	-	traditional mode
+
+	-	NewMode with in-tree SCCS history
+
+	-	NewMode with off-tree SCCS history
+
+	This helps to verify correctness for the NewMode that is needed for
+	the upcomming project mode.
+
+-	sdd: The option sectorsize= is now only needed together with -noerror.
+	This fixed a bug introduced in 2018 when sectorsize has been introduced.
+
+
+
+-	SCCS TODO:
+
+	-	Convert sccs.c to use -NSCCS in the back end programs instead
+		of converting g-file names from the command line into s.file
+		names in the frontend in order to forward s.file names to the
+		backend programs. Doing it this way allows us to have the SCCS
+		history files "off tree" in a separate directory tree starting
+		with ".sccs/" at the "project root" directory, as the related
+		code to convert path names is in libcomobj::bulkprepare().
+
+		*** This is mostly done for now ***
+
+	-	Add code to admin(1) and delta(1) to retrieve the list of
+		new or modified files in order to have all important code
+		for a "sccs commit" in a single program that does not need to
+		deal with ARG_MAX limitations.
+
+	-	Add code to admin(1), delta(1) and get(1) to maintain/understand
+		the changeset file.
+
+	-	sccs -R tell does not yet work in NewMode
+
+	-	Add code to libcomobj to understand the changeset file,
+		which is needed in order to e.g. know the file names and file
+		specific SIDs/state that correspond to a project global SID.
+
+	-	Add code to all programs to maintain a lock (for the file
+		$PROJECTHOME/.sccs/SCCS/s.changeset, that would be in the file
+		$PROJECTHOME/.sccs/SCCS/z.changeset) to maintain a project
+		global lock.
+
+	-	Find/verify a complete transactional model that allows to repair
+		complex changes to the set of files for a project that have
+		been aborted in the middle. The current idea is to create the
+		file $PROJECTHOME/.sccs/changeset with the deltas to the
+		changeset during a complex update operation.
+
+	-	Find a way to decide when to use SCCS V6 type history files.
+
+		For the project mode, this is needed in order to prevent 
+		historic SCCS implementations to believe they could modify
+		files without knowing about project global locks.
+
+		Currently, SCCS V6 needs to be usable manually for every
+		history file using "admin".
+
+
+
+
+
+-	Bourne Shell Missing features for POSIX compliance:
+
+	- Support for $'...' quoting (this is not needed for the current
+					version of POSIX but for the next POSIX
+					version that will be named SUSv8).
+					The development of SUSv8 will start in
+					late 2016.
+
+	We are now expecting the Bourne Shell to be fully POSIX compliant.
+
+-	Bourne Shell further TODO list:
+
+	-	Finish loadable builtin support.
+
+	-	POSIX does not allow us to implement ". -h", so we will
+		add a "source" builtin to be able to implement "source -h"
+
+-	The following builtins (that are available in bsh) are still missing in
+	the Bourne Shell:
+
+	err			echo with output going to stderr
+	glob			echo with '\0' instead of ' ' between args
+	env			a builtin version of /usr/bin/env
+
+	The following bsh intrinsics are still missing in the Bourne Shell:
+
+	-			the restricted bsh has restriction features that
+				are missing in the Bourne shell.
+
+	-	source -h	read file into history but do not execute
+
+	and probably more features not yet identified to be bsh unique.
+
+
+
+Author:
+
+Joerg Schilling
+D-13353 Berlin
+Germany
+
+Email: 	joerg@schily.net, joerg.schilling@fokus.fraunhofer.de
+
+Please mail bugs and suggestions to me.

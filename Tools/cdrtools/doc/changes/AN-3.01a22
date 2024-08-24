@@ -1,0 +1,175 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-3.01a22:
+
+This is the first localization step for cdrtools. All programs now (hopefully)
+call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries.
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to cdrtools should *****
+*****		call all programs from cdrtools in the "C" locale *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		  *****
+*****		unless these frontends support localized strings  *****
+*****		used by the cdrtools with NLS support.		  *****
+
+This version compiles on Win-DOS using the Microsoft compiler cl.exe but
+warning: due to missing POSIX compliance with basic features (e.g. stat()
+does not return inode numbers), there are many problems with the resulting
+code and thus it is recommended to better use a POSIX layer on top of 
+WIN-DOS.
+
+All:
+
+-	include/schily/varargs.h now includes a new type va_lists_t
+	that is a structure that covers va_list.
+
+-	include/schily/getargs.h now has comment for the arguments and
+	return code of the getargs() callback functions.
+
+-	The schily makefilesystem now includes a new symlink
+	ppc64le-linux-cc.rul for non-automake aware make implementations
+	such as gmake.
+
+-	New autoconf tests for strspn() strcspn() wcsspn() wcscspn()
+
+
+Libschily:
+
+-	libschily now implements strspn() strcspn() wcsspn() wcscspn()
+
+-	libschily/format.c (the low level printf() implementation) now
+	implements support for %n$ argument repositioning for the
+	case that "n" is 1..30, or if larger points to an int type arg.
+
+-	libschily/fprformat.c fixed a bug that would prevent to use
+	stdio macros with newer OpenSolaris versions, making printf()
+	not as fast as expected.
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+
+Libmdigest:
+
+Libsiconv:
+
+-	sic_open() no longer tries to open all characterset names as files in
+	the current directory but only if the name contains a slash.
+	Thanks to a report from Vladimir Marek <Vladimir.Marek@oracle.com>
+
+Libscg:
+
+
+Libscgcmd:
+
+Libmdigest:
+
+Rscsi:
+
+Cdrecord:
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Better error messages in mkisofs/apple.c
+
+-	mkisofs now inplements a new option -legacy that allows to get back the
+	options -H/-L/-P that have been deprecated in 2002 and disabled in 2006
+	in the definition from the 1990s.
+	If you like to use this feature, write a wrapper shell script that calls:
+
+		mkisofs -legacy "$@"
+
+	Note that -H/-L/-P have been disabled in 2006 and mkisofs will soon
+	introduce -H/-L/-P with a POSIX compatible definition as announced since
+	2002. So take care to convert your scripts to call:
+
+		-map			for the old definition of -H 
+					(valid between 2000 and 2002)
+		-allow-leading-dots	for the old definition of -L
+					(valid between 1995 and 2002)
+		-publisher		for the old definition of -P
+					(valid between 1993 and 2002)
+
+-	The mkisofs now correctly documents the new behavior from libsiconv
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

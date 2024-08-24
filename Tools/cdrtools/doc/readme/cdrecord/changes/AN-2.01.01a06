@@ -1,0 +1,141 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a06:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of dirtibutions.
+	The only reason is to add certain new CD/DVD features that are important.
+
+	So _please_ do not send any patches except when you like to fix extreme bugs.
+	I am currently mainly working on stable incremental restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+All:
+
+-	Better support for BeOS/Zeta in the makefile system
+
+-	Support for armv5teb-linux-cc was added to the makefile system
+
+-
+	If you like all users to be able to call cdrecord root-less, you need
+	Solaris 10 or newer.
+
+	Edit the file /etc/security/exec_attr and add:
+
+	All:solaris:cmd:::/opt/schily/bin/cdrecord: privs=file_dac_read,sys_devices,proc_lock_memory,proc_priocntl,net_privaddr
+	All:solaris:cmd:::/opt/schily/bin/readcd: privs=file_dac_read,sys_devices,net_privaddr
+	All:solaris:cmd:::/opt/schily/bin/cdda2wav: privs=file_dac_read,sys_devices,proc_priocntl,net_privaddr
+
+	If you like to allow only specific user to use cdrecord,
+	use something like:
+
+	CD RW:solaris:cmd:::/opt/schily/bin/cdrecord: privs=file_dac_read,sys_devices,proc_lock_memory,proc_priocntl,net_privaddr
+
+	Also edit /etc/security/prof_attr
+
+	CD RW:::CD-R/RW Recording Authorizations:auths=solaris.device.cdrw
+
+	instead and make the users members of the profile "CD RW"
+	by adding a line like:
+
+	joerg::::profiles=CD RW
+
+	into /etc/user_attr
+
+	Note that you either need to call cdrecord via "pfexec cdrecord ....."
+	or by using a profile aware shell (e.g. /usr/bin/pfksh)
+
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libscg:
+
+-	BeOS/Zeta libscg low level adoption code fixed.
+	The code now is passing a "scgcheck" test.
+
+Rscsi:
+
+Cdrecord:
+
+-	Adjust some timeouts to prevent that the drive buffer of
+	newer Pioneer DVD writers empties when writing high speed DVD
+	media.
+
+-	Support for BeOS/Zeta shared memory was added
+
+-	New tag CDR_MAXFIFOSIZE= in /etc/default/cdrecord allows to
+	limit the size of the FIFO cdrecord is using. This helps the 
+	sysadmin to prevent other people from locking up the system.
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+Readcd:
+
+-	Support for BeOS/Zeta shared memory was added
+
+-	-scanbus behavior corrected
+
+Scgcheck:
+
+-	Fixed DMA overrun test. BeOS/Zeta did pass the test but
+	scgcheck did complain before.
+
+Scgskeleton:
+
+-	-scanbus behavior corrected
+
+Btcflash:
+
+-	-scanbus behavior corrected
+
+-	man page added
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	try to work around a GCC trigraph problem
+
+-	man pages for diag commands added
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

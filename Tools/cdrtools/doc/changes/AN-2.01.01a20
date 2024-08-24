@@ -1,0 +1,142 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a20:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	dirtibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	Schily includefiles are now installed with "make install".
+
+-	Try to avoid a program execption with a call to access(".", E_OK|F_OK)
+	caused by a libc bug from the Microsoft C-compiler "cl".
+
+
+Libschily:
+
+-	mem.c moved from libfind to libschily
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+Libscg:
+
+-	Warn Linux users to prefer dev=ATA: over dev=ATAPI:
+
+-	Print correct error message (using the right errno) in case that
+	libscg tries to open more than one file on Solaris.
+
+Rscsi:
+
+Cdrecord:
+
+-	Cdrecod now default to the write mode "-sao" in case that no write mode
+	has been specified. Cdrecord -multi continues to default to -tao.
+	If your drive does not support -sao, or if cdrecord does not support -sao
+	for your drive, you should now call cdrecod -tao.#
+
+-	If no dev= option has been specified or of dev= only contains a SCSI transport
+	specifyer but no address, cdrecord now searches the SCSI address space and
+	if exactly one CD-ROM drive is found, this drive is used.
+
+	Note that this will not work on user unfriendly platforms that do not allow
+	SCSI address scanning or that do not allow to scan for SCSI drives in a single
+	address space (like Linux) this new feature does not work.
+
+The two modifications from above now allow dummies to call "cdrecord iso-image"
+in case they are on a user-friendly OS that allows "cdrecord -scanbus" without 
+any further parameters to find all CD-ROM drives.
+
+-	"cdrecord file file" now works.
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+-	If no dev= option has been specified or of dev= only contains a SCSI transport
+	specifyer but no address, cdda2wav now searches the SCSI address space and
+	if exactly one CD-ROM drive is found, this drive is used.
+
+	Note that this will not work on user unfriendly platforms that do not allow
+	SCSI address scanning or that do not allow to scan for SCSI drives in a single
+	address space (like Linux) this new feature does not work.
+
+Readcd:
+
+-	If no dev= option has been specified or of dev= only contains a SCSI transport
+	specifyer but no address, readcd now searches the SCSI address space and
+	if exactly one CD-ROM drive is found, this drive is used.
+
+	Note that this will not work on user unfriendly platforms that do not allow
+	SCSI address scanning or that do not allow to scan for SCSI drives in a single
+	address space (like Linux) this new feature does not work.
+
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	Print "correct inode" info on stderr in order to avoid problems
+	from mkisofs | cdrecord in multi session mode. Thanks to a report
+	from Oliver Valencia.
+
+-	Hide /rr_moved by default.
+
+-	Do not count /rr_moved for the link count of /
+
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

@@ -1,0 +1,259 @@
+Content-type: text/html
+
+<HTML><HEAD><TITLE>Manpage of ISODEBUG</TITLE>
+</HEAD><BODY>
+<H1>ISODEBUG</H1>
+Section: Schily\'s USER COMMANDS (1L)<BR>Updated: Version 3.02 2020/09/04<BR><A HREF="#index">Index</A>
+<A HREF="http://localhost/cgi-bin/man/man2html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+isodebug - print mkisofs debug info from ISO-9660 image
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>isodebug</B>
+
+[
+<I>options</I>
+
+]
+[
+<I>file</I>
+
+]
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>Isodebug</B>
+
+reads the debug info written by 
+<B><A HREF="http://localhost/cgi-bin/man/man2html?8+mkisofs">mkisofs</A></B>(8)
+
+from within a ISO-9660 file system image and prints them.
+
+
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT><B>-help</B>
+
+<DD>
+Prints a short summary of the 
+<B>isodebug</B>
+
+options and exists.
+<DT><B>-version</B>
+
+<DD>
+Prints the 
+<B>isodebug</B>
+
+version number string and exists.
+<DT><B>-i</B><I> filename</I>
+
+<DD>
+Filename to read ISO-9660 image from.
+<DT><B>-ignore-error</B>
+
+<DD>
+Ignore errors.
+<B>isodebug</B>
+
+by default aborts on several errors, such as read errors. With this option in effect,
+<B>isodebug</B>
+
+tries to continue.
+Use with care.
+<DT><B>dev=</B><I>target</I>
+
+<DD>
+SCSI target to use as CD/DVD-Recorder.
+See
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+cdrecord">cdrecord</A></B>(1)
+
+for more information on now to use this option.
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>EXAMPLES</H2>
+
+<A NAME="lbAG">&nbsp;</A>
+<H2>ENVIRONMENT</H2>
+
+<A NAME="lbAH">&nbsp;</A>
+<H2>FILES</H2>
+
+<A NAME="lbAI">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+cdrecord">cdrecord</A></B>(1),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?7+scg">scg</A></B>(7),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?8+mkisofs">mkisofs</A></B>(8).
+
+<A NAME="lbAJ">&nbsp;</A>
+<H2>DIAGNOSTICS</H2>
+
+<A NAME="lbAK">&nbsp;</A>
+<H2>NOTES</H2>
+
+<A NAME="lbAL">&nbsp;</A>
+<H2>BUGS</H2>
+
+<A NAME="lbAM">&nbsp;</A>
+<H2>AUTHOR</H2>
+
+<PRE>
+Joerg Schilling
+D-13353 Berlin
+Germany
+</PRE>
+
+<P>
+
+Additional information can be found on:
+<BR>
+
+<A HREF="http://cdrecord.org/private/cdrecord.html">http://cdrecord.org/private/cdrecord.html</A>
+<P>
+
+If you have support questions, send them to:
+<P>
+
+<B><A HREF="mailto:cdrtools-support@lists.sourceforge.net">cdrtools-support@lists.sourceforge.net</A></B>
+
+<P>
+<P>
+
+If you have definitely found a bug, send a mail to:
+<P>
+
+<B><A HREF="mailto:cdrtools-developers@lists.sourceforge.net">cdrtools-developers@lists.sourceforge.net</A></B>
+
+<BR>
+
+or
+<B><A HREF="mailto:joerg@schily.net">joerg@schily.net</A></B>
+
+<P>
+
+To subscribe, use:
+<P>
+
+<B><A HREF="https://lists.sourceforge.net/lists/listinfo/cdrtools-developers">https://lists.sourceforge.net/lists/listinfo/cdrtools-developers</A></B>
+
+<BR>
+
+or
+<B><A HREF="https://lists.sourceforge.net/lists/listinfo/cdrtools-support">https://lists.sourceforge.net/lists/listinfo/cdrtools-support</A></B>
+
+<BR>
+
+
+<A NAME="lbAN">&nbsp;</A>
+<H2>SOURCE DOWNLOAD</H2>
+
+A frequently updated source code for the
+<B>cdrtools</B>
+
+is included in the
+<B>schilytools</B>
+
+project and may be retrieved from the
+<B>schilytools</B>
+
+project at Sourceforge at:
+<P>
+
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://sourceforge.net/projects/schilytools/">http://sourceforge.net/projects/schilytools/</A></B>
+
+<P>
+
+The download directory is:
+<P>
+
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://sourceforge.net/projects/schilytools/files/">http://sourceforge.net/projects/schilytools/files/</A></B>
+
+<P>
+
+Check for the
+<B>schily-*.tar.bz2</B>
+
+archives.
+<P>
+
+Less frequently updated source code for the
+<B>cdrtools</B>
+
+is at:
+<P>
+
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://sourceforge.net/projects/cdrtools/files/">http://sourceforge.net/projects/cdrtools/files/</A></B>
+
+<P>
+
+and
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://sourceforge.net/projects/cdrtools/files/alpha">http://sourceforge.net/projects/cdrtools/files/alpha</A></B>
+
+<P>
+
+Separate project informations for the
+<B>cdrtools</B>
+
+project may be retrieved from:
+<P>
+
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://cdrecord.org">http://cdrecord.org</A></B>
+
+<BR>
+
+
+<A NAME="lbAO">&nbsp;</A>
+<H2>INTERFACE STABILITY</H2>
+
+The interfaces provided by 
+<B>readcd</B>
+
+are designed for long term stability.
+As
+<B>readcd</B>
+
+depends on interfaces provided by the underlying operating system,
+the stability of the interfaces offered by
+<B>readcd</B>
+
+depends on the interface stability of the OS interfaces. 
+Modified interfaces in the OS may enforce modified interfaces
+in 
+<B>readcd</B>.
+
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">EXAMPLES</A><DD>
+<DT><A HREF="#lbAG">ENVIRONMENT</A><DD>
+<DT><A HREF="#lbAH">FILES</A><DD>
+<DT><A HREF="#lbAI">SEE ALSO</A><DD>
+<DT><A HREF="#lbAJ">DIAGNOSTICS</A><DD>
+<DT><A HREF="#lbAK">NOTES</A><DD>
+<DT><A HREF="#lbAL">BUGS</A><DD>
+<DT><A HREF="#lbAM">AUTHOR</A><DD>
+<DT><A HREF="#lbAN">SOURCE DOWNLOAD</A><DD>
+<DT><A HREF="#lbAO">INTERFACE STABILITY</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 20:38:31 GMT, October 16, 2021
+</BODY>
+</HTML>

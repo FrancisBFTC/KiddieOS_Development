@@ -1,0 +1,159 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a61:
+
+*******
+NOTE: cdrtools is currently in a state just before a new major release.
+	
+
+*******
+
+
+All:
+
+-	Support for 64 bit compilation on mac OS X was added.
+	Call make CCOM=cc64 as on other platforms.
+
+-	$OLIBSDIR is no longer in the RUNPATH
+
+-	New include file include/schily/limits.h
+
+-	Make sure that all include files in include/schily/ include
+	include/schily/mconfig.h
+
+-	wide character support new
+
+-	New makefile "Mocsw" sets defaults for "opencsw" instead of Blastwave.
+	Mcsw for Blastwave of course continues to exist
+
+-	New defaults directory DEFAULTS_CSW includes special defaults that
+	compile e.g. for Sparc-V8 in order to get working binaries for older 
+	Sparc non 64 Bit hardware.
+
+-	New autoconf test HAVE_SETBUF and HAVE_SETVBUF
+
+-	Several modification in hope to better support MINGW
+
+Libschily:
+
+-	wide character support new
+
+-	sevaral str*.c functions new for orthogonality with the new wcs* code.
+
+-	Added a wide character patern matcher with: patwcompile(), patwmatch(), patwlmatch()
+	See files:
+
+	libschily/matchw.c and libschily/matchwl.c
+
+-	libschily/stdio/*.c fixed to use size_t as length parameter for
+	read*()/write*() operations.
+
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+-	Added a workaround for the type desaster in the Appls IOKit include files
+	in order to support 64 bit binaries
+
+
+Libscgcmd:
+
+Rscsi:
+
+Cdrecord:
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	The -interactive option is now mentioned in the -help output and the man page.
+
+-	Call unit_ready() before retrieving the TOC data in order to work around a Solaris 
+	scsa2usb (SCSA to USB Driver) bug.
+
+Readcd:
+
+-	"readcd" no longer dumps core if the C2Scan function is selected from the
+	interactive interface.
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Fixed a typo bug in the mkisofs man page that caused the two synopsis lines
+	to appear as one line when using GNU troff.
+
+-	isoinfo now prints "???" in case that an illegal month is in a ISO-9660
+	filesystem.
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

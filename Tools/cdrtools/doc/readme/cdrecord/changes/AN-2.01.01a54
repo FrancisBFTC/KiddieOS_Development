@@ -1,0 +1,265 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a54:
+
+*******
+NOTE: cdrtools is currently in a state just before a new major release.
+	
+
+*******
+
+
+All:
+
+-	config.sub and config.guess now support ATARI MiNT
+
+-	All needed definition files for ATARI MiNT are now in RULES/*
+
+-	configure now checks whether shmget() works (needed for ATARI MiNT)
+
+-	The GNU linker on Linux now seems to support -R to set the LD_RUN_PATH
+	Added support for -R
+
+-	Added definitions to allow dynamic linking with the Sun Studio compiler 
+	on Linux
+
+-	Added a new #define (NO_ACL) that alloed to disable ACL support via
+	command line when compiling
+
+-	include/schily/libport.h split into include/schily/libport.h and
+	include/schily/hostname.h to allow to avoid to include netdb.h for
+	applications that do not need gethostname() and getdomainname()
+
+-	include/schily/prototype.h now inlcludes the definitions for const...
+
+-	new autoconf test to check whether the Sun Studio compiler needs 
+	-xarch=generic64 or -m64 for 64 bit compilation.
+
+
+Libschily:
+
+-	New functions eaccess() and findinpath()
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Libcdrdeflt:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Libdeflt:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Libfind:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+-	libfind now correctly deals with ARG_MAX in case that
+	the bitness of the libfind executable differs from the bitness
+	of the executable called by -exec name {} +
+
+
+Libfile:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Libhfs_iso:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Libsiconv:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Libscg:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Libscgcmd:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Rscsi:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+-	Raise the SCSI bus numer limit to 1024 to allow the new Linux ATA mapping.
+
+Cdrecord:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+-	New driver "mmc_bdrom" is used for profile 0x40 and allows to
+	retrieve the ADIP data for BD-R media that is reported as BD-ROM
+	by some drives.
+
+-	Added a workaround for a firmware bug in the drive
+	'HL-DT-ST' 'DVD-RAM GH22NP20'
+	that reports DVD-R media as media with zero size.
+
+-	Added a workaround for a firmware bug in many 'HL-DT-ST' drives
+	(e.g. 'HL-DT-ST' 'DVD-RAM GSA-H55N') that return unreliable data
+	with READ BUFFER and makes it impossible to get the drive DMA
+	transfer speed.
+
+-	Added a workaround for frequent kernel/driver bugs in FreeBSD and Solaris
+	that prevent the DMA residual count to work.
+
+-	Try to call scg_close() before exiting cdrecord.
+
+-	Default Transfer Size reverted from 126 kB to 63 kB.
+	Sorry FreeBSD guys - it seems that FreeBSD is the only OS that
+	correctly deals with larger DMA sizes.
+
+	FreeBSD people may add a line with CDR_TRANSFERSIZE=126k
+	in /etc/default/cdrecord to raise the default.
+
+	The current problems are:
+
+	-	On Solaris 10 Sparc fs=126k causes a kernel panic
+
+	-	On Solaris 11 the drivers partially return incorrect
+		max DMA sizes that may cause cdrecord to fail.
+
+	-	On Linux with USB fs=126k may not work at all
+
+	-	On Linux with other interfaces, fs=126k may reduce
+		the DMA speed to a value that always causes buffer
+		underruns.
+
+	I hope to find a better solution in the next development cycle
+	after the current code has been release as stable version.
+	Expect the next stable release to appear very soon.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+-	Suppress some incorrect warnings from GCC by doing a double cast.
+
+-	Allow longer path names for *.inf files.
+
+-	SCSI *scgp is now a clean parameter to all SCSI transport functions.
+
+-	toc.c changed to support the new schily/hostname.h
+
+Readcd:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Scgcheck:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Scgskeleton:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Btcflash:
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Workaround for a GCC warning with make DEFAULTSDIR=DEFAULTS_ENG
+	warning: 'sccsid' defined but not used added
+
+-	Raising PATH_MAX to be at least 1024 for all platforms as Cygwin 
+	defines PATH_MAX to 260	which is too small for Cygwin.
+
+-	Implemented a better error message in case that the boot image
+	could not be found inside the target tree.
+
+-	A description for the -s/-sector option was added to the man page.
+	This option is used to allow to create conforming multi-session
+	images for e.g. the Kodak Photo CD or the Kodak Picture CD.
+
+-	A description forr the -XA and -xa option was added to the man page.
+
+-	Mkisofs now writes a better error message in case that it cannot
+	sort a directory because more than on directory content was merged
+	into the ISO image.
+
+-	isoinfo -d now prints the checksum for the Eltorito validation header
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

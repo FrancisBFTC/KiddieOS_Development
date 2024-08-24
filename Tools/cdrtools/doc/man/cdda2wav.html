@@ -1,0 +1,2557 @@
+Content-type: text/html
+
+<HTML><HEAD><TITLE>Manpage of CDDA2WAV</TITLE>
+</HEAD><BODY>
+<H1>CDDA2WAV</H1>
+Section: User Commands  (1)<BR>Updated: Version 3.02 2020/05/21<BR><A HREF="#index">Index</A>
+<A HREF="http://localhost/cgi-bin/man/man2html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+cdda2wav - dumps CD audio data into sound files with extra data verification
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>cdda2wav</B>
+
+[ 
+<I>options</I>
+
+][
+<B>dev=</B><I>device</I>
+
+]
+[<I>file(s)</I>
+
+or
+<I>directories</I>]
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>cdda2wav</B>
+
+can retrieve audio tracks from CDROM drives which are
+capable of reading audio data digitally via SCSI
+(<B>CDDA</B>).
+
+<P>
+
+As
+<B>cdda2wav</B>
+
+implements strategies to work around typical defects on audio CDs it reads many disks that
+cannot be read by other software.
+As 
+<B>cdda2wav</B>
+
+can use
+<B>libparanoia</B>
+
+(see
+<B>-paranoia</B>
+
+option below)
+to verify the data that has been read from the medium, it delivers superior quality even
+if the medium is dusty, scratched or if other problems occur.
+<P>
+
+As
+<B>cdda2wav</B>
+
+may be directed to write the audio data to stdout, it writes all its informational output
+to stderr by default. See
+<B>out-fd=</B><I>descriptor</I>
+
+option below.
+<P>
+
+<A NAME="lbAE">&nbsp;</A>
+<H3>Default settings</H3>
+
+<P>
+
+<B>Cdda2wav</B>
+
+defaults to read the first audio track from the medium and the default verbose level is set to
+<B>-vtoc,summary,sectors,titles</B>
+
+and
+<B>cdda2wav</B>
+
+by default writes
+<B>*.inf</B>
+
+files.
+To extract all audio tracks with quality verification, it is recommended to call:
+<P>
+
+<B>cdda2wav -vall cddb=0 speed=4 -paranoia paraopts=proof -B</B>
+
+<P>
+
+For hints on how to specify better parameters manually, see the
+<B>paraopts=</B>
+
+description below.
+<A NAME="lbAF">&nbsp;</A>
+<H3>Device naming</H3>
+
+Most users do not need to care about device naming.
+If no
+<B>dev=</B>
+
+option was specified, 
+<B>cdda2wav</B>
+
+implements 
+<B>auto target</B>
+
+support and automagically finds the drive when exactly
+one CD-ROM type drive is available in the system.
+When more than one CD-ROM type drive exists,
+a list of possible device name parameters may be retrieved with
+<B>cdda2wav -scanbus</B>
+
+or from the target example from the output of
+<B>cdda2wav dev=help</B>,
+
+then the
+<B>dev=</B>
+
+parameter may be set based on the device listing.
+<P>
+
+The
+<I>device</I>
+
+parameter to the
+<B>dev=</B>
+
+option
+explained below refers to the
+<B>SCSI&nbsp;CAM</B>
+
+standard notation for
+<I>scsibus</I>/<I>target</I>/<I>lun</I>
+
+of the CD/DVD/BluRay-Recorder.
+If a file /etc/default/cdrecord exists, the parameter to the
+<B>dev=</B>
+
+option may also be a drive name label in said file (see FILES section).
+<P>
+<A NAME="lbAG">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<A NAME="lbAH">&nbsp;</A>
+<H3>Informative options</H3>
+
+<DL COMPACT>
+<DT><B>-h</B>
+
+<DD>
+<DT><B>-help</B>
+
+<DD>
+display version information for cdda2wav on standard output.
+<DT><B>-version</B>
+
+<DD>
+display version and Copyright information.
+</DL>
+<A NAME="lbAI">&nbsp;</A>
+<H3>Audio options</H3>
+
+<DL COMPACT>
+<DT><B>-a</B><I> divider</I>
+
+<DD>
+<DT><B>-divider</B><I> divider</I>
+
+<DD>
+sets rate to 44100Hz / 
+<I>divider</I>.
+
+Possible values are listed with the
+<B>-R</B>
+
+option.
+<P>
+The default divider value is 1.
+<DT><B>-B</B>
+
+<DD>
+<DT><B>-bulk</B>
+
+<DD>
+<DT><B>-alltracks</B>
+
+<DD>
+copies each track into a separate file.
+<P>
+The default is not to extract all tracks.
+<DT><B>-b</B><I> bits</I>
+
+<DD>
+<DT><B>-bits-per-sample</B><I> bits</I>
+
+<DD>
+sets 
+<I>bits</I>
+
+per sample per channel:
+<B>8</B>,
+
+<B>12</B>
+
+or
+<B>16</B>.
+
+<P>
+The default is 16 bits per sample.
+<DT><B>-c</B><I> channels</I>
+
+<DD>
+<DT><B>-channels</B><I> channels</I>
+
+<DD>
+use:
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>1</B>
+
+<DD>
+for mono recording
+<DT><B>2</B>
+
+<DD>
+for stereo recording
+<DT><B>s</B>
+
+<DD>
+for stereo recording with both channels swapped
+</DL>
+<P>
+
+The default is stereo recording.
+</DL>
+
+<DT><B>-C</B><I> endianess</I>
+
+<DD>
+<DT><B>-cdrom-endianess</B><I> endianess</I>
+
+<DD>
+sets endianess of the input samples to 'little', 'big', 'machine' or 'guess' to override defaults.
+The value 'machine' or 'host' is evaluated as the actual byte order of
+the host CPU in the current OS.
+<P>
+The default is to detect cdrom endianess automatically.
+<DT><B>-cuefile</B>
+
+<DD>
+Create a CDRWIN compatible CUE file.
+A CUE file that completely follows the CDRWIN documentation can only be used to
+create 1:1 copies if there is a single file with audio data for the whole disk.
+The *.inf file format implements more audio CD features than the CDRWIN CUE format
+and it allows to create 1:1 copies if there is one audio data file per track.
+Use the CUE file format for meta data only if you really need this format.
+<P>
+To allow
+<B>cdda2wav</B>
+
+to create CUE files, you must also specify
+<B>-t all</B>
+
+to switch
+<B>cdda2wav</B>
+
+into a mode that creates a single audio data file for the whole CD.
+<DT><B>-T</B>
+
+<DD>
+<DT><B>-deemphasize</B>
+
+<DD>
+undo the effect of pre-emphasis in the input samples.
+<P>
+The default is to keep the audio data in the same state as on the medium and to
+mark the pre-emphasis state in the
+<B>*.inf</B>
+
+files.
+<DT><B>-L</B><I> cddb mode</I>
+
+<DD>
+<DT><B>-cddb</B><I> cddb mode</I>
+
+<DD>
+does a cddbp album- and track title lookup based on the cddb id.
+The parameter cddb mode defines how multiple entries shall be handled.
+<CENTER><TABLE BORDER><TR><TD><TABLE>
+<TR VALIGN=top><TD ALIGN=right>Parameter</TD><TD>Description<BR></TD></TR>
+<TR VALIGN=top><TD COLSPAN=2><HR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>-1</TD><TD>disable cddb queries. This is the default.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>0</TD><TD>interactive mode. The user selects the entry to use.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>1</TD><TD>first fit mode. The first entry is taken unconditionally.<BR></TD></TR>
+</TABLE></TABLE></CENTER>
+
+<DT><B>cddbp-server=</B><I>servername</I>
+
+<DD>
+sets the server to be contacted for title lookups.
+<DT><B>cddbp-port=</B><I>portnumber</I>
+
+<DD>
+sets the port number to be used for title lookups.
+<DT><B>-d</B><I> duration</I>
+
+<DD>
+<DT><B>-duration</B><I> duration</I>
+
+<DD>
+sets recording time in seconds or frames (sectors).
+Frames are indicated by a 'f' suffix (e.g. 75f for 75 sectors).
+<B>0</B>
+
+sets the time for whole track.
+<P>
+The default is to extract the whole track.
+<DT><B>-E</B><I> endianess</I>
+
+<DD>
+<DT><B>-output-endianess</B><I> endianess</I>
+
+<DD>
+sets endianess of the output samples to 'little', 'big' or 'machine' to 
+override the default which is 'network byte order' (big endian).
+The value 'machine' or 'host' is evaluated as the actual byte order of
+the host CPU in the current OS.
+<DT><B>-F</B>
+
+<DD>
+<DT><B>-find-extremes</B>
+
+<DD>
+finds extreme amplitudes in samples.
+<DT><B>-G</B>
+
+<DD>
+<DT><B>-find-mono</B>
+
+<DD>
+finds if input samples are in mono.
+<DT><B>-g</B>
+
+<DD>
+<DT><B>-gui</B>
+
+<DD>
+reformats the output for parsing by gui frontends.
+<BR>
+
+
+<DT><B>-H</B>
+
+<DD>
+<DT><B>-no-infofile</B>
+
+<DD>
+does not write info file, cddb file or cdtext file.
+<DT><B>-i</B><I> index</I>
+
+<DD>
+<DT><B>-index</B><I> index</I>
+
+<DD>
+selects the start index.
+<DT><B>-J</B>
+
+<DD>
+<DT><B>-info-only</B>
+
+<DD>
+does not write to a file, it just gives information about the disc.
+<DT><B>-M </B>
+
+<DD>
+<DT><B>-md5</B>
+
+<DD>
+enables calculation of MD-5 checksum for all audio bytes from the beginning 
+of a track. The audio header is skipped when calculating the MD-5 checksum
+to allow comparison of MD-5 sums for files with different header types.
+<BR>
+
+
+<DT><B>-m</B>
+
+<DD>
+<DT><B>-mono</B>
+
+<DD>
+sets to mono recording.
+<DT><B>-no-hidden-track</B>
+
+<DD>
+Ignore hidden tracks on the CD.
+By default,
+<B>cdda2wav</B>
+
+checks whether there might be a hidden track before track 1.
+This check may take a few seconds and thus can be disabled with
+<B>-no-hidden-track</B>.
+
+<DT><B>-N</B>
+
+<DD>
+<DT><B>-no-write</B>
+
+<DD>
+does not write to a file, it just reads (e.g. for debugging purposes).
+If this option is used together with the
+<B>-e</B>
+
+option, the CD is read and the audio content is played back to the sound device
+without creating output files with audio data.
+<DT><B>-no-textdefaults</B>
+
+<DD>
+By default,
+<B>cdda2wav</B>
+
+replaces empty CD-Text fields from tracks with the related CD-Text field (when
+defined) for the whole CD. If the option
+<B>-no-textdefaults</B>
+
+is used,
+<B>cdda2wav</B>
+
+leaves the track related CD-Text fields empty in such a case.
+<DT><B>-no-textfile</B>
+
+<DD>
+If
+<B>cdda2wav</B>
+
+encounters useful CD-Text information on the CD, it writes a .cdtext file.
+The option
+<B>-no-textfile</B>
+
+allows to suppress the creation of the .cdtext file.
+<DT><B>-o</B><I> offset</I>
+
+<DD>
+<DT><B>-offset</B><I> offset</I>
+
+<DD>
+starts
+<I>offset</I>
+
+sectors behind start track (one sector equivalents 1/75 seconds).
+<DT><B>-O</B><I> audiotype</I>
+
+<DD>
+<DT><B>-output-format</B><I> audiotype</I>
+
+<DD>
+can be 
+<I>wav</I>
+
+(for wav files) or
+<I>aiff</I>
+
+(for apple/sgi aiff files) or
+<I>aifc</I>
+
+(for apple/sgi aifc files) or
+<I>au</I>
+
+or
+<I>sun</I>
+
+(for sun .au PCM files) or
+<I>cdr</I>
+
+or
+<I>raw</I>
+
+(for headerless files to be used for cd writers).
+<P>
+The default output format is now
+<B>wav</B>
+
+for all platforms as it has become the most
+common format. Note that former versions of
+<B>cdda2wav </B>
+
+made an exception and by default created
+<B>au</B>
+
+type files on Solaris.
+<DT><B>-p</B><I> percentage</I>
+
+<DD>
+<DT><B>-playback-realtime</B><I> percentage</I>
+
+<DD>
+changes pitch of audio data copied to sound device.
+<DT><B>-P</B><I> sectors</I>
+
+<DD>
+<DT><B>-set-overlap</B><I> sectors</I>
+
+<DD>
+sets the initial number of overlap
+<I>sectors</I>
+
+for jitter correction in non-paranoia mode. Note that overlapped reads are handled
+differently in paranoia mode.
+<P>
+The default overlap in non-paranoia mode is 1.
+<DT><B>-paranoia</B>
+
+<DD>
+use the paranoia library as a filter on top of cdda2wav's routines for reading.
+In
+<B>paranoia</B>
+
+mode, the latency time 
+for the  
+<B>-interactive </B>
+
+mode and with a read ahead buffer size of 150..300 sectors,
+is increased to typically 5..10 seconds. This is due to the
+<B>paranoia</B>
+
+code reading everything at least twice and having to empty the
+cache RAM of the CD-ROM drive.
+<P>
+The size of the read ahead area must be larger than the size of the
+RAM of the drive in order to allow
+<B>libparanoia</B>
+
+to empty the cache RAM in the drive.
+As the size of the read ahead area in former times was a constant compiled
+into the
+<B>libparanoia</B>
+
+code, the extract quality with using libparanoia was no longer sufficient
+with drives built after year 2000. See
+<B>readahead=</B>
+
+parameter to the
+<B>paraopts=</B>
+
+option below.
+<P>
+
+If the
+<B>paranoia</B>
+
+mode is used,
+<B>cdda2wav</B>
+
+displays some quality statistics for each extracted track.
+The following items appear in the list:
+<CENTER><TABLE BORDER><TR><TD><TABLE>
+<TR VALIGN=top><TD ALIGN=right>Value</TD><TD>Description<BR></TD></TR>
+<TR VALIGN=top><TD COLSPAN=2><HR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>rderr</TD><TD>Number of hard read errors<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>skip</TD><TD>Number of sectors skipped due to exhausted retries<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>atom</TD><TD>Number of intra sector jitters (frame jitters) detected<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>edge</TD><TD>Number of jitters between sectors detected<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>drop</TD><TD>Number of dropped bytes fixed<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>dup</TD><TD>Number of duplicate bytes fixed<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>drift</TD><TD>Number of drifts detected<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>c2</TD><TD>Number of sectors with C2 errors<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>reads</TD><TD>Number of readahead blocks read and percentage to track size<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>overlap</TD><TD>Number of dynamic overlap size raises<BR></TD></TR>
+</TABLE></TABLE></CENTER>
+
+<DL COMPACT><DT><DD>
+<P>
+
+The quality indicators in detail:
+<DL COMPACT>
+<DT><B>rderr</B>
+
+<DD>
+The number of failed low level read requests.
+Each read appears for
+<B>sectors-per-request</B>
+
+sectors.
+The
+<B>sectors-per-request</B>
+
+size is typically less than the read ahead size.
+<DT><B>skip</B>
+
+<DD>
+The number of sectors that have been skipped because the read error retry
+count was exhausted and no successful read was possible.
+<DT><B>atom</B>
+
+<DD>
+The number of jitters that have been detected inside sectors.
+This should never happen, but whenever a non-correctable C2 error occurs,
+the drive could lose streaming.
+Increasing the read ahead buffer size may reduce the results from atom
+errors.
+<DT><B>edge</B>
+
+<DD>
+The number of jitters that have been detected at the edges of sectors.
+This could be caused by sector positioning errors.
+Increasing the read ahead buffer size may reduce the results from edge
+errors.
+<DT><B>drop</B>
+
+<DD>
+The number of dropped samples.
+This could be caused by sector positioning errors.
+Increasing the read ahead buffer size may reduce the results from edge
+errors.
+<DT><B>dup</B>
+
+<DD>
+Duplicated samples could be caused by sector positioning errors like dripped samples.
+Increasing the read ahead buffer size may reduce the results from edge
+errors.
+<DT><B>drift</B>
+
+<DD>
+This is the amount of drifts detected when checking the overlap area.
+<DT><B>c2</B>
+
+<DD>
+The number of sectors with C2 errors seen when reading the last track.
+As the paranoia code tends to read bad parts of the disk many times, this
+number usually is above the number that would appear when the disk is just
+read once in a linear way.
+Use
+<B>paraopts=disable,c2check</B>
+
+to see a number that represents the state of the medium.
+<DT><B>reads</B>
+
+<DD>
+The number of read ahead blocks read for the last track by the upper layer
+and the percentage of the amount of data read compared to the size of the track.
+This percentage is typically 200% because the paranoia code reads all data
+at least twice. If there is a lot of overlap and a lof of read problems, this
+percentage raises.
+<DT><B>overlap</B>
+
+<DD>
+The number the overlap size has been raised. This happens when the overlap
+size is below the maximum overlap size and errors in the overlap area are detected.
+</DL>
+</DL>
+
+<BR>
+
+
+<DT><B>-paraopts=</B><I>list</I>
+
+<DD>
+<I>List</I>
+
+is a comma separated list of suboptions passed to the paranoia library.
+<CENTER><TABLE BORDER><TR><TD><TABLE>
+<TR VALIGN=top><TD ALIGN=right>Option</TD><TD>Description<BR></TD></TR>
+<TR VALIGN=top><TD COLSPAN=2><HR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>help</TD><TD>lists all paranoia options.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>disable</TD><TD>disables paranoia mode. Libparanoia is still being used<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>no-verify</TD><TD>switches verify off, and static overlap on<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>retries=amount</TD><TD>set the number of maximum retries per sector<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>readahead=amount</TD><TD>set the number of sectors to use for the read ahead buffer<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>overlap=amount</TD><TD>set the number of sectors used for static overlap<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>minoverlap=amt</TD><TD>set the min. number of sectors for dynamic overlap<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>maxoverlap=amt</TD><TD>set the max. number of sectors for dynamic overlap<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>c2check</TD><TD>check C2 pointers from drive to rate quality<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>proof</TD><TD>set minoverlap=20,retries=200,readahead=600,c2check<BR></TD></TR>
+</TABLE></TABLE></CENTER>
+
+<DL COMPACT><DT><DD>
+<P>
+
+The
+<B>paraopts=</B>
+
+parameters in detail:
+<DL COMPACT>
+<DT><B>disable</B>
+
+<DD>
+The paranoia corrections are disabled, but the data is still directed
+through the code from
+<B>libparanoia</B>.
+
+This allows to switch on C2 error detection and to check the C2 error
+statistics for a CD.
+<DT><B>no-verify</B>
+
+<DD>
+This switches off the verification of the data integrity in the overlap
+area and turns off dynamic overlap control in favor of a static overlap
+value.
+<DT><B>retries=</B><I>amount</I>
+
+<DD>
+Set the maximum number of read retries per sector in case of hard read
+errors. The default value for this parameter is
+<B>20</B>.
+
+This is the same value as used by the old
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+cdparanoia">cdparanoia</A></B>(1)
+
+command.
+<DT><B>readahead=</B><I>amount</I>
+
+<DD>
+Set the number of sectors to use for the read ahead buffer. 
+Except when at the end of the medium,
+<B>libparanoia</B>
+
+never requests less than this amount of data from the low level
+I/O code.
+The size of the read ahead buffer is usually bigger than the 
+maximum size for a single DMA in the system. For this reason,
+<B>libparanoia</B>
+
+calls several read operations in order to fill the read ahead buffer.
+The default value used by
+<B>cdda2wav</B>
+
+is 400, which is more than the 150 sectors that
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+cdparanoia">cdparanoia</A></B>(1)
+
+uses but still a compromise for not requiring too much memory.
+<P>
+It is recommended to use a read ahead buffer size that is not less than
+the RAM size in the CD-ROM drive. If the drive has more than 1MB of RAM,
+use 425 sectors per MB of RAM in the drive.
+<P>
+Note that as long as the
+<B>readahead=</B>
+
+value is too small, the extract quality varies a lot with the value in use.
+The value used by 
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+cdparanoia">cdparanoia</A></B>(1)
+
+may cause an extract quality below what
+<B>cdda2wav</B>
+
+delivers without
+<B>libparanoia</B>.
+
+<DT><B>overlap=</B><I>amount</I>
+
+<DD>
+Set the number of sectors used for static overlap. This switches dynamic
+overlap off.
+It is recommended not to use static overlapping. To get a larger
+overlapping, better use a higher
+<B>minoverlap=</B>
+
+value.
+<DT><B>minoverlap=</B><I>amount</I>
+
+<DD>
+Set the minimum number of sectors for dynamic overlap.
+The default value used by
+<B>cdda2wav</B>
+
+is
+<B>0.5</B>,
+
+this is more than the default used by
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+cdparanoia">cdparanoia</A></B>(1)
+
+which is 0.1.
+<P>
+For old drives that do not support accurate streaming, it is not
+recommended to specify a
+<B>minoverlap=</B>
+
+value greater or equal to the maximal DMA size.
+<P>
+For best results on other drives, it is recommended to use a
+<B>minoverlap=</B>
+
+value that is not less than half of the readahead size.
+<P>
+The extract quality varies a lot with the
+<B>minoverlap=</B>
+
+value, but increasing the value also increases the extract
+time.
+<DT><B>maxoverlap=</B><I>amount</I>
+
+<DD>
+Set the maximum number of sectors for dynamic overlap.
+If
+<B>maxoverlap=</B>
+
+was not specified and a large
+<B>minoverlap=</B>
+
+value was specified, this results in a quasi static overlapping.
+The default value used by
+<B>cda2wav</B>
+
+is
+<B>32</B>.
+
+<DT><B>c2check</B>
+
+<DD>
+Turn on C2 error checking.
+For now, this just results in printing C2 error statistics.
+<P>
+Warning: some drives have been reported to fail reading hidden tracks when
+the
+<B>c2check</B>
+
+mode is in effect.
+If you encounter a drive where
+<B>cdda2wav</B>
+
+is not able to auto-detect whether
+<B>c2check</B>
+
+is usable, please report.
+<P>
+When you plan to use
+<B>c2check</B>
+
+while extracting hidden tracks, first verify that your drive will report
+hidden tracks the same with and without the
+<B>c2check</B>
+
+option.
+<BR>
+
+
+<DT><B>proof</B>
+
+<DD>
+This option is a macro for better extract parameters than used by default.
+The macro
+<B>proof</B>
+
+expands to:
+<P>
+<B>    paraopts=minoverlap=</B><I>sectors-per-request</I>-1,\
+
+<BR>
+
+<B>        retries=200,readahead=600</B>
+
+<P>
+If
+<I>sectors-per-request-</I>1
+
+is more than 20, 20 is used as minimal overlap value.
+<P>
+The parameters used by
+<B>proof</B>
+
+are still not the best and there is no best parameter set for all cases.
+A larger value for the read ahead buffer size may e.g be too large for
+the available RAM in the system and the best value for the minimal overlap
+depends on whether the drive supports exact streaming.
+It is recommended to run experiments with larger values for the parameters
+<B>minoverlap=</B>
+
+and
+<B>readahead=</B>
+
+to get the best results for a specific platform.
+<P>
+Note that previous versions did include
+<B>c2check</B>
+
+with the
+<B>proof</B>
+
+macro, but this has been reported to fail on some drives and thus
+<B>c2check</B>
+
+was disabled by default.
+Current versions of
+<B>cdda2wav</B>
+
+auto-detect whether the actual drive supports the
+<B>c2check</B>
+
+feature and use it if possible.
+<P>
+</DL>
+</DL>
+
+<BR>
+
+<DT><B>-q</B>
+
+<DD>
+<DT><B>-quiet</B>
+
+<DD>
+quiet operation, no screen output.
+<DT><B>-r</B><I> rate</I>
+
+<DD>
+<DT><B>-rate</B><I> rate</I>
+
+<DD>
+sets 
+<I>rate</I>
+
+in samples per second.  Possible values are listed with the
+<B>-R</B>
+
+option.
+<DT><B>-R</B>
+
+<DD>
+<DT><B>-dump-rates</B>
+
+<DD>
+shows a list of all sample rates and their dividers.
+<DT><B>-S</B><I> speed</I>
+
+<DD>
+<DT><B>-speed</B><I> speed</I>
+
+<DD>
+sets the cdrom device to one of the selectable speeds for reading.
+For maximum extraction quality, it is recommended to use speed values of 8 or below.
+<P>
+The default is to extract at maximum speed.
+<DT><B>-s</B>
+
+<DD>
+<DT><B>-stereo</B>
+
+<DD>
+sets to stereo recording.
+<DT><B>-start-sector</B><I> sector</I>
+
+<DD>
+set an absolute start sector. This option is mutually exclusive to
+<B>-track</B>
+
+and
+<B>-offset</B>.
+
+<BR>
+
+
+<BR>
+
+<DT><B>-t</B><I> track[+endtrack]</I>
+
+<DD>
+<DT><B>-track</B><I> track[+endtrack]</I>
+
+<DD>
+<DT><B>-track</B><I> track</I><B>+max</B>
+
+<DD>
+<DT><B>-track&nbsp;all</B>
+
+<DD>
+selects the start track and optionally the end track.
+If
+<B>-t&nbsp;all</B>
+
+is used, all audio tracks are selected.
+If
+<B>-t&nbsp;2+max</B>
+
+is used, all audio tracks starting with track 2 are selected.
+<BR>
+
+
+<DT><B>-v</B><I> itemlist</I>
+
+<DD>
+<DT><B>-verbose-level</B><I> itemlist</I>
+
+<DD>
+Retrieves and prints verbose information about the CD.
+<B>Level</B>
+
+is a list of comma separated suboptions. Each suboption controls the type of information to be reported.
+<P>
+<CENTER><TABLE BORDER><TR><TD><TABLE>
+<TR VALIGN=top><TD ALIGN=right>Suboption</TD><TD>Description<BR></TD></TR>
+<TR VALIGN=top><TD COLSPAN=2><HR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>!</TD><TD>invert the meaning of the following string<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>not</TD><TD>invert the meaning of the following string<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>disable</TD><TD>no information is given, warnings appear however<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>all</TD><TD>all information is given<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>toc</TD><TD>show table of contents<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>summary</TD><TD>show a summary of the recording parameters<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>indices</TD><TD>determine and display index offsets<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>catalog</TD><TD>retrieve and display the media catalog number MCN<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>mcn</TD><TD>retrieve and display the media catalog number MCN<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>trackid</TD><TD>retrieve and display all Intern. Standard Recording Codes ISRC<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>isrc</TD><TD>retrieve and display all Intern. Standard Recording Codes ISRC<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>sectors</TD><TD>show the table of contents in start sector notation<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>titles</TD><TD>show the table of contents with track titles (when available)<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>audio-tracks</TD><TD>list the audio tracks and their start sectors<BR></TD></TR>
+</TABLE></TABLE></CENTER>
+
+<P>
+The default verbose-level is
+<B>toc,summary,sectors,titles</B> .
+
+<DT><B>-w</B>
+
+<DD>
+<DT><B>-wait</B>
+
+<DD>
+waits for signal, then start recording.
+<DT><B>-x</B>
+
+<DD>
+<DT><B>-max</B>
+
+<DD>
+sets maximum (CD) quality.
+</DL>
+<A NAME="lbAJ">&nbsp;</A>
+<H3>SCSI options</H3>
+
+<DL COMPACT>
+<DT><B>dev=</B><I>device</I>
+
+<DD>
+<DT><B>-D</B><I> device</I>
+
+<DD>
+<DT><B>-device</B><I> device</I>
+
+<DD>
+uses
+<I>device</I>
+
+as the source for CDDA reading.
+For example /dev/cdrom for the
+<B>cooked_ioctl</B>
+
+interface and Bus,ID,Lun for the 
+<B>generic_scsi</B>
+
+interface. The
+<I>device</I>
+
+has to correspond with the interface setting if given (see 
+<B>-I</B> and <B>-interface</B>
+
+option below).
+<P>
+If no 
+<B>-I</B> or <B>-interface</B>
+
+option has been specified, the interface setting is derived from
+the device name syntax. A device name that is in the form
+Bus,ID,Lun or contains a colon (':') defaults to the
+<B>generic_scsi</B>
+
+interface.
+<P>
+Using the
+<B>cooked_ioctl</B>
+
+is not recommended as this makes
+<B>cdda2wav</B>
+
+mainly depend on the audio extraction quality of the operating system
+which is usually extremely bad. For this reason, avoid using parameters like
+<B>dev=</B>/dev/cdrom
+
+for the device. 
+<P>
+The setting of the environment variable
+<B>CDDA_DEVICE</B>
+
+is overridden by this option.
+<P>
+If no 
+<B>dev=</B>
+
+option is present, or if the
+<B>dev=</B>
+
+option only contains a transport specifier but no address,
+<B>cdda2wav </B>
+
+tries to scan the SCSI address space for CD-ROM drives.
+If exactly one is found, this is used by default.
+<P>
+For more information, see the description of the
+<B>dev=</B>
+
+option from
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+cdrecord">cdrecord</A></B>(1).
+
+<DT><B>debug=</B><I>#</I>
+
+<DD>
+<DT><B>debug-scsi=</B><I>#</I>
+
+<DD>
+Set the debug level for the
+<B>libscg</B>
+
+SCSI OS abstraction layer.
+<DT><B>kdebug=</B><I>#</I>
+
+<DD>
+<DT><B>kdebug-scsi=</B><I>#</I>
+
+<DD>
+<DT><B>kd=</B><I>#</I>
+
+<DD>
+Set the kernel debug level for the kernel driver called by the
+<B>libscg</B>
+
+SCSI OS abstraction layer. This option is not supported on all platforms.
+<DT><B>-scanbus</B>
+
+<DD>
+Scan all SCSI devices on all SCSI buses and print the inquiry
+strings. This option may be used to find SCSI address of the 
+CD/DVD-Recorder on a system.
+The numbers printed out as labels are computed by: 
+<B>bus * 100 + target</B>
+
+<DT><B>scgopts=</B><I>list</I>
+
+<DD>
+A comma separated list of SCSI options that are handled by libscg.
+The implemented options may be uptated indepentendly from applications.
+Currently, one option:
+<B>ignore-resid</B>
+
+is supported to work around a Linux kernel bug.
+<DT><B>ts=</B><I>#</I>
+
+<DD>
+Set the maximum transfer size for a single SCSI command to #.
+The syntax for the 
+<B>ts=</B>
+
+option is the same as for cdrecord fs=# or sdd bs=#.
+<P>
+If no 
+<B>ts=</B>
+
+option has been specified,
+<B>cdda2wav</B>
+
+defaults to a transfer size of 3&nbsp;MB. If libscg gets lower values from the
+operating system, the value is reduced to the maximum value that is possible
+with the current operating system.
+Sometimes, it may help to further reduce the transfer size or to enhance it,
+but note that it may take a long time to find a better value by experimenting
+with the
+<B>ts=</B>
+
+option.
+<P>
+Some operating systems return wrong values for the maximum transfer size.
+If the transfer totally hangs or resets occur, it may be appropriate to reduce
+the transfer size to less than 64 kB or even less than 32 kB.
+<DT><B>-V</B>
+
+<DD>
+<DT><B>-verbose-scsi</B>
+
+<DD>
+enable SCSI command logging to the console. This is mainly used for debugging.
+<DT><B>-Q</B>
+
+<DD>
+<DT><B>-silent-scsi</B>
+
+<DD>
+suppress SCSI command error reports to the console. This is mainly used for guis.
+<P>
+</DL>
+<A NAME="lbAK">&nbsp;</A>
+<H3>OS Interface options</H3>
+
+<DL COMPACT>
+<DT><B>-A</B><I> auxdevice</I>
+
+<DD>
+<DT><B>-auxdevice</B><I> auxdevice</I>
+
+<DD>
+uses
+<I>auxdevice</I>
+
+as CDROM drive to allow to send the CDROMMULTISESSION ioctl on Linux
+although the
+<B>generic_scsi</B>
+
+interface is in use.
+<DT><B>-I</B><I> interface</I>
+
+<DD>
+<DT><B>-interface</B><I> interface</I>
+
+<DD>
+specifies the
+<I>interface</I>
+
+to use for accessing the CDROM:
+<P>
+<DL COMPACT><DT><DD>
+<DL COMPACT>
+<DT><B>generic_scsi</B>
+
+<DD>
+for sending SCSI commands directly to the drive.
+<DT><B>cooked_ioctl</B>
+
+<DD>
+for using the programming interface supplied by the OS kernel.
+</DL>
+</DL>
+
+<P>
+<DL COMPACT><DT><DD>
+The latter is not recommended as it gives lower quality and only 
+works on a limited number of platforms.
+</DL>
+
+<BR>
+
+
+<DT><B>-interactive</B>
+
+<DD>
+Go into interactive mode that reads commands from
+<B>stdin </B>
+
+and writes the textual replies to
+<B>stderr</B>,
+
+or the file descriptor specified by the
+<B>out-fd</B>
+
+option.
+This mode has been introduced mainly to allow cdrecord to be called by gstreamer plugins.
+<P>
+
+If 
+<B>cdda2wav</B>
+
+was called with the option
+<B>-interactive</B>,
+
+it reads the TOC from the medium and then waits for command input as if it
+has been issued a
+<B>stop</B>
+
+command. If the next command is a 
+<B>cont</B>
+
+command, then
+<B>cdda2wav</B>
+
+extracts the whole audio part of the medium.
+If the next command is a 
+<B>read </B>
+
+command, then
+<B>cdda2wav</B>
+
+starts extracting from the position that was indicated by the 
+<B>read</B>
+
+command parameter.
+<CENTER><TABLE BORDER><TR><TD><TABLE>
+<TR VALIGN=top><TD ALIGN=center>Command</TD><TD>Parameters</TD><TD>Description<BR></TD></TR>
+<TR VALIGN=top><TD COLSPAN=3><HR></TD></TR>
+<TR VALIGN=top><TD ALIGN=center>cont</TD><TD></TD><TD>continue processing at current position<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=center>exit</TD><TD></TD><TD>exit processing<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=center>help</TD><TD></TD><TD>print command help and wait for input<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=center>quit</TD><TD></TD><TD>exit processing<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=center>read</TD><TD>sectors <I>sector number</I></TD><TD>read sectors starting from <I>sector number</I><BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=center>read</TD><TD>tracks <I>track number</I></TD><TD>read sectors starting from <I>track number</I><BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=center>stop</TD><TD></TD><TD>stop processing and wait for new input<BR></TD></TR>
+</TABLE></TABLE></CENTER>
+
+<DT><B>out-fd=</B><I>descriptor</I>
+
+<DD>
+Redirect informational output to the file descriptor named by
+<B>descriptor</B>.
+
+The parameter
+<B>descriptor</B>
+
+specifies a UNIX file descriptor number.
+By default,
+<B>cdda2wav</B>
+
+sends informational output to
+<B>stderr</B>.
+
+Redirecting the informational output to a different file descriptor
+helps guis and other programs that call
+<B>cdda2wav</B>
+
+via pipes.
+<DT><B>audio-fd=</B><I>descriptor</I>
+
+<DD>
+In case that the file name for the audio data file is &quot;-&quot;,
+redirect audio output to the file descriptor named by
+<B>descriptor</B>.
+
+The parameter
+<B>descriptor</B>
+
+specifies a UNIX file descriptor number.
+By default,
+<B>cdda2wav</B>
+
+sends audio data to
+<B>stdout</B>
+
+if the output is not directed into a file.
+Redirecting the audio output to a different file descriptor
+helps guis and other programs that call
+<B>cdda2wav</B>
+
+via pipes.
+<BR>
+
+
+<DT><B>-no-fork</B>
+
+<DD>
+Do not fork for extended buffering. If
+<B>-no-fork</B>
+
+is used and 
+<B>cdda2wav</B>
+
+is used to play back audio CDs in
+<B>paranoia</B>
+
+mode, the playback may be interrupted due to lack of buffering.
+On the other hand, allowing
+<B>cdda2wav</B>
+
+to fork will increase the latency time for the 
+<B>-interactive</B>
+
+mode.
+<DT><B>-e</B>
+
+<DD>
+<DT><B>-echo</B>
+
+<DD>
+copies audio data to the operating system's sound device e.g.
+<B>/dev/dsp</B>.
+
+<DT><B>sound-device=</B><I>sounddevice</I>
+
+<DD>
+set an alternate sound device to use for 
+<B>-e</B>.
+
+
+<DT><B>-n</B><I> sectors</I>
+
+<DD>
+<DT><B>-sectors-per-request</B><I> sectors</I>
+
+<DD>
+reads 
+<I>sectors</I>
+
+per request.
+<DT><B>-l</B><I> buffers</I>
+
+<DD>
+<DT><B>-buffers-in-ring</B><I> buffers</I>
+
+<DD>
+uses a ring buffer with 
+<I>buffers</I>
+
+total.
+<P>
+</DL>
+<A NAME="lbAL">&nbsp;</A>
+<H2>ENVIRONMENT VARIABLES</H2>
+
+<P>
+
+Some defaults for
+<B>cdda2wav</B>
+
+are compiled in and depend on the
+<B>Makefile</B>
+
+others on the
+<B>environment variable</B>
+
+settings.
+<BR>
+
+
+<DL COMPACT>
+<DT><B>CDDA_DEVICE</B>
+
+<DD>
+is used to set the device name. The device naming is compatible with
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+cdrecord">cdrecord</A></B>(1).
+
+<DT><B>CDDBP_SERVER</B>
+
+<DD>
+is used for cddbp title lookups when supplied.
+<DT><B>CDDBP_PORT</B>
+
+<DD>
+is used for cddbp title lookups when supplied.
+<DT><B>RSH</B>
+
+<DD>
+If the 
+<B>RSH</B>
+
+environment variable is present, the remote connection will not be created via
+<B><A HREF="http://localhost/cgi-bin/man/man2html?3+rcmd">rcmd</A></B>(3)
+
+but by calling the program pointed to by
+<B>RSH</B>.
+
+Use e.g. 
+<B>RSH=</B>/usr/bin/ssh
+
+to create a secure shell connection.
+<P>
+Note that this forces 
+<B>cdda2wav</B>
+
+to create a pipe to the 
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+rsh">rsh</A>(1)</B>
+
+program and disallows
+<B>cdda2wav</B>
+
+to directly access the network socket to the remote server.
+This makes it impossible to set up performance parameters and slows down
+the connection compared to a 
+<B>root</B>
+
+initiated
+<B><A HREF="http://localhost/cgi-bin/man/man2html?3+rcmd">rcmd</A>(3)</B>
+
+connection.
+<DT><B>RSCSI</B>
+
+<DD>
+If the 
+<B>RSCSI</B>
+
+environment variable is present, the remote SCSI server will not be the program
+<B>/opt/schily/sbin/rscsi</B>
+
+but the program pointed to by
+<B>RSCSI</B>.
+
+Note that the remote SCSI server program name will be ignored if you log in
+using an account that has been created with a remote SCSI server program as
+login shell.
+</DL>
+<A NAME="lbAM">&nbsp;</A>
+<H2>EXIT STATUS</H2>
+
+<B>cdda2wav</B>
+
+uses the following exit codes to indicate various degrees of success:
+<CENTER><TABLE BORDER><TR><TD><TABLE>
+<TR VALIGN=top><TD ALIGN=right>Exitcode</TD><TD>Description<BR></TD></TR>
+<TR VALIGN=top><TD COLSPAN=2><HR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>0</TD><TD>no errors encountered, successful operation.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>1</TD><TD>usage or syntax error. cdda2wav got inconsistent arguments.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>2</TD><TD>permission (un)set errors. permission changes failed.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>3</TD><TD>read errors on the cdrom/burner device encountered.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>4</TD><TD>write errors while writing one of the output files encountered.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>5</TD><TD>errors with soundcard handling (initialization/write).<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>6</TD><TD>errors with stat() system call on the read device (cooked ioctl).<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>7</TD><TD>pipe communication errors encountered (in forked mode).<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>8</TD><TD>signal handler installation errors encountered.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>9</TD><TD>allocation of shared memory failed (in forked mode).<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>10</TD><TD>dynamic heap memory allocation failed.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>11</TD><TD>errors on the audio cd medium encountered.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>12</TD><TD>device open error in ioctl handling detected.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>13</TD><TD>race condition in ioctl interface handling detected.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>14</TD><TD>error in ioctl() operation encountered.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>15</TD><TD>internal error encountered. Please report back!!!<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>16</TD><TD>error in semaphore operation encountered (install / request).<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>17</TD><TD>could not get the scsi transfer buffer.<BR></TD></TR>
+<TR VALIGN=top><TD ALIGN=right>18</TD><TD>could not create pipes for process communication (in forked mode).<BR></TD></TR>
+</TABLE></TABLE></CENTER>
+
+<A NAME="lbAN">&nbsp;</A>
+<H2>DISCUSSION</H2>
+
+<B>cdda2wav</B>
+
+is able to read parts of an
+<B>audio</B>
+
+CD or
+<B>multimedia</B>
+
+CDROM (containing audio parts) directly digitally. These parts can be
+written to a file, a pipe, or to a sound device.
+<P>
+
+<B>cdda2wav</B>
+
+stands for
+<B>CDDA</B>
+
+to
+<B>WAV</B>
+
+(where
+<B>CDDA</B>
+
+stands for compact disc digital audio and
+<B>WAV</B>
+
+is a sound sample format introduced by MS Windows).  It
+allows copying
+<B>CDDA</B>
+
+audio data from the CDROM drive into a file in 
+<B>WAV</B>
+
+or other formats.
+<P>
+
+Some versions of
+<B>cdda2wav</B>
+
+may try to get higher real-time scheduling priorities to ensure
+smooth (uninterrupted) operation. These priorities are available for super users
+and are higher than those of 'normal' processes. Thus delays are minimized.
+<P>
+
+If you only have one CDROM
+and it is loaded with an audio CD, you may simply invoke
+<B>cdda2wav</B>
+
+and it will create the sound file
+<B>audio.wav</B>
+
+recording the whole track beginning with track 1 in stereo at 16 bit at 44100
+Hz sample rate, if your file system has enough space free.  Otherwise
+recording time will be limited. For details see files
+<B>README</B>
+
+and
+<B>README.INSTALL</B>.
+
+<P>
+
+If you have more then one CD-ROM type drive in the system, you need
+to specify the 
+<B>dev=</B>
+
+option.
+<A NAME="lbAO">&nbsp;</A>
+<H2>HINTS ON OPTIONS</H2>
+
+<P>
+
+Most of the options are used to control the format of the WAV file. In
+the following text most of them are discussed in a more verbose way.
+<A NAME="lbAP">&nbsp;</A>
+<H3>Select Device</H3>
+
+<B>dev=</B><I>device</I>
+
+selects the CDROM drive device to be used.
+The specifier given should correspond to the selected interface (see below).
+For the 
+<B>cooked_ioctl</B>
+
+interface this is the cdrom device descriptor.
+<B>The SCSI devices used with the generic SCSI interface however are</B>
+
+<B>addressed with their SCSI-Bus, SCSI-Id, and SCSI-Lun instead of the generic</B>
+
+<B>SCSI device descriptor.</B>
+
+One example for a SCSI CDROM drive on bus 0 with SCSI ID 3 and lun 0 is 
+<B>dev=0,3,0</B>.
+
+<A NAME="lbAQ">&nbsp;</A>
+<H3>Select Auxiliary device</H3>
+
+<B>-A</B><I> auxdevice</I>
+
+may be needed in some rare cases for CD-Extra handling.
+<B>Cdda2wav</B>
+
+usually has no problem to get the multi-session information for
+CD-Extra using raw SCSI commands.
+For Non-SCSI-CDROM drives this is the
+same device as given by 
+<B>dev=</B>
+
+(see above). For SCSI-CDROM drives it is the
+CDROM drive (SCSI) device (i.e.  
+<B>/dev/sr0</B>
+
+) corresponding to the SCSI device (i.e.
+<B>0,3,0</B>
+
+). It has to match the device used for sampling.
+<A NAME="lbAR">&nbsp;</A>
+<H3>Select Interface</H3>
+
+<B>-I</B><I> interface</I>
+
+selects the CDROM drive communication method. 
+This interface method is typically automatically selected from the device name.
+For SCSI drives
+<B>generic_scsi</B>
+
+is used (cooked_ioctl may not be available for all devices).
+Valid names are
+<B>generic_scsi</B>
+
+and
+<B>cooked_ioctl</B>.
+
+The first uses the generic SCSI interface, the latter uses the ioctl of
+the CDROM driver. The latter variant works only when the kernel driver supports
+<B>CDDA</B>
+
+reading. This entry has to match the selected CDROM device (see above).
+<A NAME="lbAS">&nbsp;</A>
+<H3>Enable echo to soundcard</H3>
+
+<B>-e</B>
+
+copies audio data to the sound card while recording, so you hear it nearly
+simultaneously. The soundcard gets the same data that is recorded. This
+is time critical, so it works best with the
+<B>-q</B>
+
+option.  To use
+<B>cdda2wav</B>
+
+as a pseudo CD player without recording in a file you could use
+<P>
+
+<B>cdda2wav -q -e -t2 -d0 -N</B>
+
+<P>
+
+to play the whole second track or
+<P>
+
+<B>cdda2wav -q -e -B -N</B>
+
+<P>
+
+to play the whole disk.
+This feature reduces the recording speed
+to at most onefold speed.
+<A NAME="lbAT">&nbsp;</A>
+<H3>Change pitch of echoed audio</H3>
+
+<B>-p percentage</B>
+
+changes the pitch of all audio echoed to a sound card. Only the copy
+to the soundcard is affected, the recorded audio samples in a file
+remain the same.
+Normal pitch, which is the default, is given by 100.
+Lower percentages correspond to lower pitches, i.e.
+-p 50 transposes the audio output one octave lower.
+See also the script
+<B>pitchplay</B>
+
+as an example. This option was contributed by Raul Sobon.
+<A NAME="lbAU">&nbsp;</A>
+<H3>Select mono or stereo recording</H3>
+
+<B>-m</B>
+
+or
+<B>-c 1</B>
+
+selects mono recording (both stereo channels are mixed),
+<B>-s</B>
+
+or
+<B>-c 2</B>
+
+or
+<B>-c s</B>
+
+selects stereo recording. Parameter s
+will swap both sound channels.
+<A NAME="lbAV">&nbsp;</A>
+<H3>Select maximum quality</H3>
+
+<B>-x</B>
+
+will set stereo, 16 bits per sample at 44.1 kHz (full CD quality).  Note
+that other format options given later can change this setting.
+<A NAME="lbAW">&nbsp;</A>
+<H3>Select sample quality</H3>
+
+<B>-b 8</B>
+
+specifies 8 bit (1 Byte) for each sample in each channel;
+<B>-b 12</B>
+
+specifies 12 bit (2 Byte) for each sample in each channel;
+<B>-b 16</B>
+
+specifies 16 bit (2 Byte) for each sample in each channel (Ensure that
+your sample player or sound card is capable of playing 12-bit or 16-bit
+samples). Selecting 12 or 16 bits doubles file size.  12-bit samples are
+aligned to 16-bit samples, so they waste some disk space.
+<A NAME="lbAX">&nbsp;</A>
+<H3>Select sample rate</H3>
+
+<B>-r</B><I> samplerate</I>
+
+selects a sample rate.
+<I>samplerate</I>
+
+can be in a range between 900 and 44100. Option
+<B>-R</B>
+
+lists all available rates.
+<A NAME="lbAY">&nbsp;</A>
+<H3>Select sample rate divider</H3>
+
+<B>-a</B><I> divider</I>
+
+selects a sample rate divider.
+<I>divider</I>
+
+can be from 1 to 50.5 in steps of 0.5.  Option
+<B>-R</B>
+
+lists all available rates.
+<P>
+To make the sound smoother at lower sampling rates,
+<B>cdda2wav</B>
+
+sums over
+<I>n</I>
+
+samples (where
+<I>n</I>
+
+is the specific dividend). So for 22050 Hertz output we have to sum over
+2 samples, for 900 Hertz we have to sum over 49 samples.  This cancels
+higher frequencies. Standard sector size of an audio CD (ignoring
+additional information) is 2352 Bytes. In order to finish summing
+for an output sample at sector boundaries the rates above have to be
+chosen.  Arbitrary sampling rates in high quality would require some
+interpolation scheme, which needs much more sophisticated programming.
+<A NAME="lbAZ">&nbsp;</A>
+<H3>List a table of all sampling rates</H3>
+
+<B>-R</B>
+
+shows a list of all sample rates and their dividers. Dividers can range
+from 1 to 50.5 in steps of 0.5.
+<A NAME="lbBA">&nbsp;</A>
+<H3>Select start track and optionally end track</H3>
+
+<B>-t</B><I> n+m</I>
+
+selects
+<B>n</B>
+
+as the start track and optionally
+<B>m</B>
+
+as the last track of a range to be recorded.
+These tracks must be from the table of contents.  This sets
+the track where recording begins. Recording can advance through the
+following tracks as well (limited by the optional end track or otherwise
+depending on recording time). Whether one file or different files are
+then created depends on the
+<B>-B</B>
+
+option (see below).
+<A NAME="lbBB">&nbsp;</A>
+<H3>Select start index</H3>
+
+<B>-i</B><I> n</I>
+
+selects the index to start recording with.  Indices other than 1 will
+invoke the index scanner, which will take some time to find the correct
+start position. An offset may be given additionally (see below).
+<A NAME="lbBC">&nbsp;</A>
+<H3>Set recording duration</H3>
+
+<B>-d  n</B>
+
+sets recording time to
+<I>n</I>
+
+seconds or set recording time for whole track if
+<I>n</I>
+
+is zero. In order to specify the duration in frames (sectors) also, the
+argument can have an appended 'f'. Then the numerical argument is to be
+taken as frames (sectors) rather than seconds.
+Please note that if track ranges are being used they define the recording
+time as well thus overriding any
+<B>-d</B> option
+
+specified times.
+<P>
+Recording time is defined as the time the generated sample will play (at
+the defined sample rate). Since it's related to the amount of generated
+samples, it's not the time of the sampling process itself (which can be
+less or more).  It's neither strictly coupled with the time information on
+the audio CD (shown by your hifi CD player).
+Differences can occur by the usage of the
+<B>-o</B>
+
+option (see below). Notice that recording time will be shortened, unless
+enough disk space exists. Recording can be aborted at anytime by
+pressing the break character (signal SIGQUIT).
+<A NAME="lbBD">&nbsp;</A>
+<H3>Record all tracks of a complete audio CD in separate files</H3>
+
+<B>-B</B>
+
+copies each track into a separate file. A base name can be given. File names
+have an appended track number and an extension corresponding to the audio
+format. To record all audio tracks of a CD, use a sufficient high duration
+(i.e. -d99999).
+<A NAME="lbBE">&nbsp;</A>
+<H3>Set start sector offset</H3>
+
+<B>-o</B><I> sectors</I>
+
+increments start sector of the track by
+<I>sectors</I>.
+
+By this option you are able to skip a certain amount at the beginning of
+a track so you can pick exactly the part you want. Each sector runs for 1/75
+seconds, so you have very fine control. If your offset is so high that
+it would not fit into the current track, a warning message is issued
+and the offset is ignored.  Recording time is not reduced.  (To skip
+introductory quiet passages automagically, use the
+<B>-w</B>
+
+option see below.)
+<A NAME="lbBF">&nbsp;</A>
+<H3>Wait for signal option</H3>
+
+<B>-w</B>
+
+Turning on this option will suppress all silent output at startup,
+reducing possibly file size.
+<B>cdda2wav</B>
+
+will watch for any signal in the output signal and switches on writing
+to file.
+<A NAME="lbBG">&nbsp;</A>
+<H3>Find extreme samples</H3>
+
+<B>-F</B>
+
+Turning on this option will display the most negative and the most positive
+sample value found during recording for both channels. This can be useful
+for readjusting the volume. The values shown are not reset at track
+boundaries, they cover the complete sampling process. They are taken from
+the original samples and have the same format (i.e. they are independent
+of the selected output format).
+<A NAME="lbBH">&nbsp;</A>
+<H3>Find if input samples are in mono</H3>
+
+<B>-G</B>
+
+If this option is given, input samples for both channels will be compared. At
+the end of the program the result is printed. Differences in the channels
+indicate stereo, otherwise when both channels are equal it will indicate mono.
+<A NAME="lbBI">&nbsp;</A>
+<H3>Undo the pre-emphasis in the input samples</H3>
+
+<B>-T</B>
+
+Some older audio CDs are recorded with a modified frequency response called
+pre-emphasis. This is found mostly in classical recordings. The correction
+can be seen in the flags of the Table Of Contents often. But there are
+recordings, that show this setting only in the subchannels. If this option
+is given, the index scanner will be started, which reads the q-subchannel
+of each track. If pre-emphasis is indicated in the q-subchannel of a track,
+but not in the TOC, pre-emphasis will be assumed to be present, and
+subsequently a reverse filtering is done for this track before the samples
+are written into the audio file.
+<A NAME="lbBJ">&nbsp;</A>
+<H3>Set audio format</H3>
+
+<B>-O  audiotype</B>
+
+can be 
+<I>wav</I>
+
+(for wav files) or
+<I>au</I>
+
+or
+<I>sun</I>
+
+(for sun PCM files) or
+<I>cdr</I>
+
+or
+<I>raw</I>
+
+(for headerless files to be used for cd writers).
+All file samples are coded in linear pulse code modulation (as done
+in the audio compact disc format). This holds for all audio formats.
+Wav files are compatible to Wind*ws sound files, they have lsb,msb byte order
+which is the opposite byte order to the one used on the audio cd. 
+The default filename extension is '.wav'.
+Sun type files are not like the older common logarithmically coded .au files,
+but instead as mentioned above linear PCM is used. The byte order is msb,lsb
+to be compatible. The default filename extension is '.au'.
+The AIFF and the newer variant AIFC from the Apple/SGI world store their samples
+in bigendian format (msb,lsb). In AIFC no compression is used.
+Finally the easiest 'format',
+the cdr aka raw format. It is done per default in msb,lsb byte order to satisfy
+the order wanted by most cd writers. Since there is no header information in this
+format, the sample parameters can only be identified by playing the samples
+on a soundcard or similar. The default filename extension is '.cdr' or '.raw'.
+<A NAME="lbBK">&nbsp;</A>
+<H3>Select cdrom drive reading speed</H3>
+
+<B>-S  speed</B>
+
+allows to switch the cdrom drive to a certain speed in order to
+reduce read errors. The argument is transferred verbatim to the drive.
+Details depend very much on the cdrom drives.
+An argument of 0 for example is often the default speed of the drive,
+a value of 1 often selects single speed.
+<A NAME="lbBL">&nbsp;</A>
+<H3>Enable MD5 checksums</H3>
+
+<B>-M  count</B>
+
+enables calculation of MD-5 checksum for 'count' bytes from the beginning of a
+track. This was introduced for quick comparisons of tracks.
+<A NAME="lbBM">&nbsp;</A>
+<H3>Use Monty's libparanoia for reading of sectors</H3>
+
+<B>-paranoia</B>
+
+selects an alternate way of extracting audio sectors. Monty's library is used
+with the following default options:
+<P>
+PARANOIA_MODE_FULL, but without PARANOIA_MODE_NEVERSKIP
+<P>
+for details see Monty's libparanoia documentation.
+In this case the option
+<B>-P</B>
+
+has no effect.
+<A NAME="lbBN">&nbsp;</A>
+<H3>Do linear or overlapping reading of sectors</H3>
+
+(This applies unless option
+<B>-paranoia</B>
+
+is used.)
+<B>-P  sectors</B>
+
+sets the given number of sectors for initial overlap sampling for jitter
+correction. Two cases are to be distinguished. For nonzero values,
+some sectors are read twice to enable cdda2wav's jitter correction.
+If an argument of zero is given, no overlap sampling will be used.
+For nonzero overlap sectors cdda2wav dynamically adjusts the setting during
+sampling (like cdparanoia does).
+If no match can be found, cdda2wav retries the read with an increased overlap.
+If the amount of jitter is lower than the current overlapped samples, cdda2wav
+reduces the overlap setting, resulting in a higher reading speed.
+The argument given has to be lower than the total number of sectors per request
+(see option
+<I>-n</I>
+
+below).
+Cdda2wav will check this setting and issues a error message otherwise.
+The case of zero sectors is nice on low load situations or errorfree (perfect)
+cdrom drives and perfect (unscratched) audio cds.
+<A NAME="lbBO">&nbsp;</A>
+<H3>Set the transfer size</H3>
+
+<B>-n  sectors</B>
+
+will set the transfer size to the specified sectors per request.
+<A NAME="lbBP">&nbsp;</A>
+<H3>Set number of ring buffer elements</H3>
+
+<B>-l  buffers</B>
+
+will allocate the specified number of ring buffer elements.
+<A NAME="lbBQ">&nbsp;</A>
+<H3>Set endianess of input samples</H3>
+
+<B>-C  endianess</B>
+
+will override the default settings of the input format.
+Endianess can be set explicitly to &quot;little&quot;, &quot;big&quot; or &quot;machine&quot; or to the automatic
+endianess detection based on voting with &quot;guess&quot;.
+<A NAME="lbBR">&nbsp;</A>
+<H3>Set endianess of output samples</H3>
+
+<B>-E  endianess</B>
+
+(endianess can be &quot;little&quot;, &quot;big&quot; or &quot;machine&quot;) will override the
+default settings of the output format.
+<A NAME="lbBS">&nbsp;</A>
+<H3>Verbose option</H3>
+
+<B>-v  itemlist</B>
+
+prints more information. A list allows selection of different
+information items.
+<P>
+<DL COMPACT>
+<DT><B>help</B>
+
+<DD>
+Print a summary of possible members of the diffopts list.
+<DT><B>!</B>
+
+<DD>
+Invert the meaning of the following string. No comma is needed after the 
+exclamation mark.
+<DT><B>not</B>
+
+<DD>
+Invert the meaning of all members in the diffopts list i.e. exclude 
+all present options from an initially complete set compare list.
+When using 
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+csh">csh</A></B>(1)
+
+you might have problems with
+<B>!</B>
+
+due to its strange parser.
+This is why the 
+<B>not</B>
+
+alias exists.
+<DT><B>disable</B>
+
+<DD>
+disables verbosity
+<DT><B>all</B>
+
+<DD>
+all information is given 
+<DT><B>toc</B>
+
+<DD>
+displays the table of contents
+<DT><B>summary</B>
+
+<DD>
+displays a summary of recording parameters
+<DT><B>indices</B>
+
+<DD>
+invokes the index scanner and displays start positions of indices
+<DT><B>catalog</B>
+
+<DD>
+retrieves and displays a media catalog number
+<DT><B>trackid</B>
+
+<DD>
+retrieves and displays international standard recording codes
+<DT><B>sectors</B>
+
+<DD>
+displays track start positions in absolute sector notation
+</DL>
+<P>
+
+To combine several requests just list the suboptions separated with commas.
+<A NAME="lbBT">&nbsp;</A>
+<H3>The table of contents</H3>
+
+The display will show the table of contents with number of tracks and
+total time (displayed in
+<I>mm</I>:<I>ss</I>.<I>hh</I>
+
+format,
+<I>mm</I>=minutes,
+
+<I>ss</I>=seconds,
+
+<I>hh</I>=rounded 1/100 seconds).
+
+The following list displays track number and track time for each entry.
+The summary gives a line per track describing the type of the track.
+<P>
+<CENTER>
+<B>track preemphasis copypermitted tracktype chans</B>
+
+<BR>
+</CENTER>
+
+<P>
+The
+<B>track</B>
+
+column holds the track number.
+<B>preemphasis</B>
+
+shows if that track has been given a non linear frequency response.
+NOTE: You can undo this effect with the
+<B>-T</B>
+
+option.
+<B>copy-permitted</B>
+
+indicates if this track is allowed to copy.
+<B>tracktype</B>
+
+can be data or audio. On multimedia CDs (except hidden track CDs) 
+both of them should be present.
+<B>channels</B>
+
+is defined for audio tracks only. There can be two or four channels.
+<A NAME="lbBU">&nbsp;</A>
+<H3>No file output</H3>
+
+<B>-N</B>
+
+this debugging option switches off writing to a file.
+<A NAME="lbBV">&nbsp;</A>
+<H3>No infofile generation</H3>
+
+<B>-H</B>
+
+this option switches off creation of an info file and a cddb file.
+<A NAME="lbBW">&nbsp;</A>
+<H3>Generation of simple output for gui frontends</H3>
+
+<B>-g</B>
+
+this option switches on simple line formatting, which is needed to support
+gui frontends (like xcd-roast).
+<A NAME="lbBX">&nbsp;</A>
+<H3>Verbose SCSI logging</H3>
+
+<B>-V</B>
+
+this option switches on logging of SCSI commands. This will produce
+a lot of output (when SCSI devices are being used).
+This is needed for debugging purposes. The format
+is the same as being used with the cdrecord program, see
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+cdrecord">cdrecord</A></B>(1)
+
+for more information.
+<A NAME="lbBY">&nbsp;</A>
+<H3>Quiet option</H3>
+
+<B>-q</B>
+
+suppresses all screen output except error messages.
+That reduces cpu time resources.
+<A NAME="lbBZ">&nbsp;</A>
+<H3>Just show information option</H3>
+
+<B>-J</B>
+
+does not write a file, it only prints information about the disc (depending
+on the
+<B>-v</B>
+
+option). This is just for information purposes.
+<A NAME="lbCA">&nbsp;</A>
+<H2>CDDBP support</H2>
+
+<A NAME="lbCB">&nbsp;</A>
+<H3>Lookup album and track titles option</H3>
+
+<B>-L  cddbp mode</B>
+
+Cdda2wav tries to retrieve performer, album-, and track titles from a cddbp
+server. The default server right now is 'freedb.freedb.org'.
+It is planned to have more control over the server handling later.
+The parameter defines how multiple entries are handled:
+<DL COMPACT>
+<DT><B>0</B><DD>
+interactive mode, the user chooses one of the entries.
+<DT><B>1</B><DD>
+take the first entry without asking.
+</DL>
+<A NAME="lbCC">&nbsp;</A>
+<H3>Set server for title lookups</H3>
+
+<B>cddbp-server  servername</B>
+
+When using -L or -cddb, the server being contacted can be set with
+this option.
+<A NAME="lbCD">&nbsp;</A>
+<H3>Set portnumber for title lookups</H3>
+
+<B>cddbp-port  portnumber</B>
+
+When using -L or -cddb, the server port being contacted can be set with
+this option.
+<A NAME="lbCE">&nbsp;</A>
+<H2>HINTS ON USAGE</H2>
+
+Don't create samples you cannot read. First check your sample player
+software and sound card hardware. I experienced problems with very low
+sample rates (stereo &lt;= 1575 Hz, mono &lt;= 3675 Hz) when trying to play
+them with standard WAV players for sound blaster (maybe they are not
+legal in
+<B>WAV</B>
+
+format). Most CD-Writers insist on audio samples in a bigendian format.
+Now cdda2wav supports the 
+<B>-E  endianess</B>
+
+option to control the endianess of the written samples.
+<P>
+
+If your hardware is fast enough to run cdda2wav
+uninterrupted and your CD drive is one of the 'perfect' ones, you will
+gain speed when switching all overlap sampling off with the
+<B>-P  0</B>
+
+option. Further fine tuning can be done with the
+<B>-n  sectors</B>
+
+option. You can specify how much sectors should be requested in one go.
+<P>
+
+Cdda2wav supports
+<B>pipes</B>.
+
+Use a filename of
+<B>-</B>
+
+to let cdda2wav output its samples to standard output.
+<P>
+
+Conversion to other sound formats is possible using the
+<B>sox</B>
+
+program package (it should no longer be necessary to use
+<B>sox -x</B>
+
+to change the byte order of samples; see option
+<B>-E</B>
+
+to change the output byteorder).
+<P>
+
+If you want to sample more than one track into
+different files in one run, this is currently possible with the
+<B>-B</B>
+
+option. When recording time exceeds the track limit a new file will
+be opened for the next track.
+<A NAME="lbCF">&nbsp;</A>
+<H2>FILES</H2>
+
+Cdda2wav can generate a lot of files for various purposes.
+<A NAME="lbCG">&nbsp;</A>
+<H3>Audio files:</H3>
+
+<P>
+
+There are audio files containing samples with default extensions
+.wav, .au, .aifc, .aiff, and .cdr according to the selected sound format.
+These files are not generated when option
+(<B>-N</B>)
+
+is given. Multiple files may
+be written when the bulk copy option
+(<B>-B</B>)
+
+is used. Individual file names
+can be given as arguments. If the number of file names given is sufficient
+to cover all included audio tracks, the file names will be used verbatim.
+Otherwise, if there are less file names than files needed to write the
+included tracks, the part of the file name before the extension is extended
+with '_dd' where dd represents the current track number.
+<A NAME="lbCH">&nbsp;</A>
+<H3>Cddb and Cdindex files:</H3>
+
+<P>
+
+If cdda2wav detects cd-extra or cd-text (album/track) title information,
+then .cddb, .cdindex and .cdtext files are generated unless suppressed by the
+option
+<B>-H</B>.
+
+They contain suitable formatted entries for submission to
+audio cd track title databases in the Internet. The CDINDEX and CDDB(tm)
+systems are currently supported. For more information please visit
+<A HREF="http://www.musicbrainz.org">www.musicbrainz.org</A> and <A HREF="http://www.freedb.com">www.freedb.com</A>.
+<A NAME="lbCI">&nbsp;</A>
+<H3>Inf files:</H3>
+
+<P>
+
+The inf files describe the sample files and the part of the audio cd
+it was taken from. They are a means to transfer information to a cd burning
+program like cdrecord. For example, if the original audio cd had pre-emphasis
+enabled, and cdda2wav
+<B>-T</B>
+
+did remove the pre-emphasis, then the inf file has
+pre-emphasis not set (since the audio file does not have it anymore), while
+the .cddb and the .cdindex have pre-emphasis set as the original does.
+<A NAME="lbCJ">&nbsp;</A>
+<H2>WARNING</H2>
+
+<B>IMPORTANT:</B>
+
+it is prohibited to sell copies of copyrighted material by noncopyright
+holders. This program may not be used to circumvent copyrights.
+The user acknowledges this constraint when using the software.
+<A NAME="lbCK">&nbsp;</A>
+<H2>BUGS</H2>
+
+The index scanner may give timeouts.
+<P>
+The resampling (rate conversion code) uses polynomial interpolation, which
+is not optimal.
+<P>
+Cdda2wav should use threads.
+<A NAME="lbCL">&nbsp;</A>
+<H2>ACKNOWLEDGEMENTS</H2>
+
+Thanks go to Project MODE (<A HREF="http://www.mode.net/)">http://www.mode.net/)</A> and Fraunhofer Institut fuer
+integrierte Schaltungen (FhG-IIS) (<A HREF="http://www.iis.fhg.de/)">http://www.iis.fhg.de/)</A> for financial
+support.
+Plextor Europe and Ricoh Japan provided cdrom disk drives and cd burners
+which helped a lot to develop this software.
+Rammi has helped a lot with the debugging and showed a lot of stamina when
+hearing 100 times the first 16 seconds of the first track of the Krupps CD.
+Libparanoia contributed by Monty (Christopher Montgomery) <A HREF="mailto:xiphmont@mit.edu">xiphmont@mit.edu</A>.
+<A NAME="lbCM">&nbsp;</A>
+<H2>AUTHOR</H2>
+
+Heiko Eissfeldt <A HREF="mailto:heiko@colossus.escape.de">heiko@colossus.escape.de</A> (1993-2004,2015)
+<P>
+
+2004-today:
+<P>
+<PRE>
+Joerg Schilling
+D-13353 Berlin
+Germany
+</PRE>
+
+<A NAME="lbCN">&nbsp;</A>
+<H2>DATE</H2>
+
+2020/05/21
+<BR>
+
+
+<A NAME="lbCO">&nbsp;</A>
+<H2>SOURCE DOWNLOAD</H2>
+
+A frequently updated source code for the
+<B>cdrtools</B>
+
+is included in the
+<B>schilytools</B>
+
+project and may be retrieved from the
+<B>schilytools</B>
+
+project at Sourceforge at:
+<P>
+
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://sourceforge.net/projects/schilytools/">http://sourceforge.net/projects/schilytools/</A></B>
+
+<P>
+
+The download directory is:
+<P>
+
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://sourceforge.net/projects/schilytools/files/">http://sourceforge.net/projects/schilytools/files/</A></B>
+
+<P>
+
+Check for the
+<B>schily-*.tar.bz2</B>
+
+archives.
+<P>
+
+Less frequently updated source code for the
+<B>cdrtools</B>
+
+is at:
+<P>
+
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://sourceforge.net/projects/cdrtools/files/">http://sourceforge.net/projects/cdrtools/files/</A></B>
+
+<P>
+
+and
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://sourceforge.net/projects/cdrtools/files/alpha">http://sourceforge.net/projects/cdrtools/files/alpha</A></B>
+
+<P>
+
+Separate project informations for the
+<B>cdrtools</B>
+
+project may be retrieved from:
+<P>
+
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://cdrecord.org">http://cdrecord.org</A></B>
+
+<BR>
+
+
+<A NAME="lbCP">&nbsp;</A>
+<H2>INTERFACE STABILITY</H2>
+
+The interfaces provided by 
+<B>cdda2wav</B>
+
+are designed for long term stability.
+As
+<B>cdda2wav</B>
+
+depends on interfaces provided by the underlying operating system,
+the stability of the interfaces offered by
+<B>cdda2wav</B>
+
+depends on the interface stability of the OS interfaces. 
+Modified interfaces in the OS may enforce modified interfaces
+in 
+<B>cdda2wav</B>.
+
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DL>
+<DT><A HREF="#lbAE">Default settings</A><DD>
+<DT><A HREF="#lbAF">Device naming</A><DD>
+</DL>
+<DT><A HREF="#lbAG">OPTIONS</A><DD>
+<DL>
+<DT><A HREF="#lbAH">Informative options</A><DD>
+<DT><A HREF="#lbAI">Audio options</A><DD>
+<DT><A HREF="#lbAJ">SCSI options</A><DD>
+<DT><A HREF="#lbAK">OS Interface options</A><DD>
+</DL>
+<DT><A HREF="#lbAL">ENVIRONMENT VARIABLES</A><DD>
+<DT><A HREF="#lbAM">EXIT STATUS</A><DD>
+<DT><A HREF="#lbAN">DISCUSSION</A><DD>
+<DT><A HREF="#lbAO">HINTS ON OPTIONS</A><DD>
+<DL>
+<DT><A HREF="#lbAP">Select Device</A><DD>
+<DT><A HREF="#lbAQ">Select Auxiliary device</A><DD>
+<DT><A HREF="#lbAR">Select Interface</A><DD>
+<DT><A HREF="#lbAS">Enable echo to soundcard</A><DD>
+<DT><A HREF="#lbAT">Change pitch of echoed audio</A><DD>
+<DT><A HREF="#lbAU">Select mono or stereo recording</A><DD>
+<DT><A HREF="#lbAV">Select maximum quality</A><DD>
+<DT><A HREF="#lbAW">Select sample quality</A><DD>
+<DT><A HREF="#lbAX">Select sample rate</A><DD>
+<DT><A HREF="#lbAY">Select sample rate divider</A><DD>
+<DT><A HREF="#lbAZ">List a table of all sampling rates</A><DD>
+<DT><A HREF="#lbBA">Select start track and optionally end track</A><DD>
+<DT><A HREF="#lbBB">Select start index</A><DD>
+<DT><A HREF="#lbBC">Set recording duration</A><DD>
+<DT><A HREF="#lbBD">Record all tracks of a complete audio CD in separate files</A><DD>
+<DT><A HREF="#lbBE">Set start sector offset</A><DD>
+<DT><A HREF="#lbBF">Wait for signal option</A><DD>
+<DT><A HREF="#lbBG">Find extreme samples</A><DD>
+<DT><A HREF="#lbBH">Find if input samples are in mono</A><DD>
+<DT><A HREF="#lbBI">Undo the pre-emphasis in the input samples</A><DD>
+<DT><A HREF="#lbBJ">Set audio format</A><DD>
+<DT><A HREF="#lbBK">Select cdrom drive reading speed</A><DD>
+<DT><A HREF="#lbBL">Enable MD5 checksums</A><DD>
+<DT><A HREF="#lbBM">Use Monty's libparanoia for reading of sectors</A><DD>
+<DT><A HREF="#lbBN">Do linear or overlapping reading of sectors</A><DD>
+<DT><A HREF="#lbBO">Set the transfer size</A><DD>
+<DT><A HREF="#lbBP">Set number of ring buffer elements</A><DD>
+<DT><A HREF="#lbBQ">Set endianess of input samples</A><DD>
+<DT><A HREF="#lbBR">Set endianess of output samples</A><DD>
+<DT><A HREF="#lbBS">Verbose option</A><DD>
+<DT><A HREF="#lbBT">The table of contents</A><DD>
+<DT><A HREF="#lbBU">No file output</A><DD>
+<DT><A HREF="#lbBV">No infofile generation</A><DD>
+<DT><A HREF="#lbBW">Generation of simple output for gui frontends</A><DD>
+<DT><A HREF="#lbBX">Verbose SCSI logging</A><DD>
+<DT><A HREF="#lbBY">Quiet option</A><DD>
+<DT><A HREF="#lbBZ">Just show information option</A><DD>
+</DL>
+<DT><A HREF="#lbCA">CDDBP support</A><DD>
+<DL>
+<DT><A HREF="#lbCB">Lookup album and track titles option</A><DD>
+<DT><A HREF="#lbCC">Set server for title lookups</A><DD>
+<DT><A HREF="#lbCD">Set portnumber for title lookups</A><DD>
+</DL>
+<DT><A HREF="#lbCE">HINTS ON USAGE</A><DD>
+<DT><A HREF="#lbCF">FILES</A><DD>
+<DL>
+<DT><A HREF="#lbCG">Audio files:</A><DD>
+<DT><A HREF="#lbCH">Cddb and Cdindex files:</A><DD>
+<DT><A HREF="#lbCI">Inf files:</A><DD>
+</DL>
+<DT><A HREF="#lbCJ">WARNING</A><DD>
+<DT><A HREF="#lbCK">BUGS</A><DD>
+<DT><A HREF="#lbCL">ACKNOWLEDGEMENTS</A><DD>
+<DT><A HREF="#lbCM">AUTHOR</A><DD>
+<DT><A HREF="#lbCN">DATE</A><DD>
+<DT><A HREF="#lbCO">SOURCE DOWNLOAD</A><DD>
+<DT><A HREF="#lbCP">INTERFACE STABILITY</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 20:38:31 GMT, October 16, 2021
+</BODY>
+</HTML>

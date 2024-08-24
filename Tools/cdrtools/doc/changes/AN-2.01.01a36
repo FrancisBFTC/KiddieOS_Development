@@ -1,0 +1,176 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a36:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	distibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	Autoconfiguration documentation changed to make clear that $(LIB_ACL_TEST)
+	is sufficient for "test only" acl applications.
+
+-	New rules ip35-irix-cc.rul/ip35-irix-gcc.rul
+
+-	New rules i586-linux-suncc64.rul x86_64-linux-suncc.rul x86_64-linux-suncc64.rul
+
+
+Libschily:
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+-	Allow to disable all speed limitations by setting the environment variable
+	CDR_FORCESPEED to "any". This is needed to allow full write speed on drives
+	with defective firmware (like e.g. the Plextor PXW-716) that do not enable
+	DMA with the "read buffer" command.
+
+-	Changed the drive buffer size recognition so that cdrecord now shows
+	correct size values even for the LG GSA-H55N
+
+-	Take more care with calling SCSI read buffer while trying to find the
+	DMA speed of the drive
+
+-	Allow to blank DVD-RW/DL. There are no known drives yet, but it seems that
+	the media is already sold.
+
+-	Add a format-type value column to the formatted capacity table to allow
+	for better identification of the various entries.
+
+-	New wording for some comment to make clear that the name "cdrecord" cannot be 
+	used after specific parts of the code have been changed.
+	
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	New option out-fd=descriptor allows to set redirect informational output
+	to a different file descriptor than stderr.
+
+-	New option audio-fd=descriptor allows to set redirect audio ("-") output
+	to a different file descriptor than stdout.
+
+	This option has been added as a further step to allow to write a
+	wrapper for cdda2wav to create a "GStreamer plugin". This helps
+	to:
+
+	-	avoid license problems in libcdio
+
+	-	allows to call a privileged programs like cdda2wav from a GUI
+		to grant full audio extraction quality that needs generic SCSI
+		commands.
+
+-	Explain that libparanoia is not a different Media access method but a filter
+	between the lower and the upper layers of cdda2wav.
+
+-	Fixed a typo in the man page acording to OpenSolaris bug ID 6489402
+
+Readcd:
+
+Scgcheck:
+
+-	Fixed a typo in the -version output
+
+-	Make clear that "scgcheck" has been written to verify the interface
+	for libscg. The name "scgcheck" cannot be used if the code has been
+	changed.
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Makefile changes from $(LIB_ACL) to $(LIB_ACL_TEST) as mkisofs only tests
+	for ACLs on files.
+
+-	Make apple_driver.c compile again. Thanks to a hint from Dieter Jurzitza.
+
+-	Avoid a core dump in the joliet code caused by the new Apple UDF extensions.
+
+-	Avoid a core dump in the Apple code caused by the new Apple UDF extensions.
+
+-	Write the warning:
+
+	Warning: cannot support large files with -hfs
+
+	only if -iso-level 3 or higher has been selected.
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

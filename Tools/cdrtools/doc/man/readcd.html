@@ -1,0 +1,1248 @@
+Content-type: text/html
+
+<HTML><HEAD><TITLE>Manpage of READCD</TITLE>
+</HEAD><BODY>
+<H1>READCD</H1>
+Section: Schily\'s USER COMMANDS (1)<BR>Updated: Version 3.02 2020/09/04<BR><A HREF="#index">Index</A>
+<A HREF="http://localhost/cgi-bin/man/man2html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+readcd - read or write data Compact Discs or related madia
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>readcd</B>
+
+[
+<B>dev=</B><I>device</I>
+
+][
+<I>options</I>
+
+]
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>Readcd</B>
+
+is used to read or write Compact Discs.
+<P>
+
+<A NAME="lbAE">&nbsp;</A>
+<H3>Device naming</H3>
+
+Most users do not need to care about device naming at all.
+If no
+<B>dev=</B>
+
+option was specified, 
+<B>readcd</B>
+
+implements 
+<B>auto target</B>
+
+support and automagically finds the drive in case that exactly
+one CD-ROM type drive is available in the system.
+In case that more than one CD-ROM type drive exists on the system,
+a list of possible device name parameters may be retrieved with
+<B>readcd -scanbus</B>
+
+or from the target example from the output of
+<B>readcd dev=help</B>,
+
+then the
+<B>dev=</B>
+
+parameter may be set based on the device listing.
+<P>
+
+The
+<I>device</I>
+
+parameter to the
+<B>dev=</B>
+
+option
+explained below refers to the
+<B>SCSI&nbsp;CAM</B>
+
+standard notation for
+<I>scsibus</I>/<I>target</I>/<I>lun</I>
+
+of the CD/DVD/BluRay-Recorder.
+If a file /etc/default/cdrecord exists, the parameter to the
+<B>dev=</B>
+
+option may also be a drive name label in said file (see FILES section).
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<P>
+
+If no options except the 
+<I>dev=</I>
+
+option have been specified, 
+<B>readcd</B>
+
+goes into interactive mode.
+Select a primary function and then follow the instructions.
+<P>
+
+<A NAME="lbAG">&nbsp;</A>
+<H3>Informative options</H3>
+
+<DL COMPACT>
+<DT><B>-help</B>
+
+<DD>
+display version information for
+<B>readcd</B>
+
+on standard output.
+<DT><B>-version</B>
+
+<DD>
+Print version information and exit.
+<DT><B>-v</B>
+
+<DD>
+Increment the level of general verbosity by one.
+This is used e.g. to display the progress of the process.
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H3>Readcd functional options</H3>
+
+<DL COMPACT>
+<DT><B>-clone</B>
+
+<DD>
+Do a clone read. Read the CD with all sub-channel data and a full TOC.
+The full TOC data will be put into a file with similar name as with the
+<B>f=</B>
+
+option but the suffix 
+<B>.toc</B>
+
+added.
+<P>
+Note that reading in
+<B>clone</B>
+
+mode results in having no error correction at sub-channel level. Even in the main data channel,
+there is less error correction than with other read modes. This results in a slightly quality
+degradation. Avoid copying audio CDs in 
+<B>clone</B>
+
+mode for this reason.
+<DT><B>-c2scan</B>
+
+<DD>
+Scans the whole CD or the range specified by the 
+<B>sectors=</B><I>range</I>
+
+for C2 errors. C2 errors are errors that are uncorrectable after the second
+stage of the 24/28 + 28/32 Reed Solomon correction system at audio level
+(2352 bytes sector size). If an audio CD has C2 errors, interpolation is needed
+to hide the errors. If a data CD has C2 errors, these errors are in most
+cases corrected by the ECC/EDC code that makes 2352 bytes out of 2048 data
+bytes. The ECC/EDC code should be able to correct about 100 C2 error bytes
+per sector.
+<P>
+If you find C2 errors you may want to reduce the speed using the
+<B>speed=</B>
+
+option as C2 errors may be a result of dynamic unbalance on the medium.
+<DT><B>-cxscan</B>
+
+<DD>
+Scans the whole CD or the range specified by the 
+<B>sectors=</B><I>range</I>
+
+for C1/C2/CU errors.
+In non-verbose mode, only a summary is printed.
+With
+<B>-v</B>,
+
+a line for each non error free second is printed.
+with
+<B>-vv</B>,
+
+a line for each second is printed.
+This scan method only works for a few drives.
+<DT><B>-edc-corr</B>
+
+<DD>
+In this mode,
+<B>readcd</B>
+
+reads CD data sectors in uncorrected audio mode 
+and then tries to correct the data using the ECC/EDC decoder library
+
+from Heiko Eissfeldt. As this library implements looping over two layers
+of error correction, 
+<B>readcd</B>
+
+may be able to correct more data than the firmware of the CD-ROM drive.
+<P>
+This option is currently experimental and only applicable with 
+CD media and currently only supports
+plain 2048 Byte CD-ROM sectors.
+<DT><B>f=</B><I>file</I>
+
+<DD>
+Specify the filename where the output should be written or the input should
+be taken from. Using '-' as filename will cause
+<B>readcd</B>
+
+to use 
+<B>stdout</B> resp. <B>stdin</B>.
+
+<DT><B>-factor</B>
+
+<DD>
+Output the speed values for
+<B>meshpoints=</B>#
+
+as factor based on 
+<I>single speed</I>
+
+of the current medium.
+This only works if
+<B>readcd</B>
+
+is able to determine the current medium type.
+<DT><B>-fulltoc</B>
+
+<DD>
+Retrieve a full TOC from the current disk and print it in hex.
+<DT><B>meshpoints=</B>#
+
+<DD>
+Print read-speed at # locations.
+The purpose of this option is to create a list of read speed values suitable
+for e.g.
+<B>gnuplot</B>.
+
+The speed values are calculated assuming that 1000 bytes are one kilobyte
+as documented in the SCSI standard.
+The output data created for this purpose is written to 
+<I>stdout</I>.
+
+<DT><B>-nocorr</B>
+
+<DD>
+Switch the drive into a mode where it ignores read errors in data sectors that
+are a result of uncorrectable ECC/EDC errors before reading.
+If
+<B>readcd</B>
+
+completes, the error recovery mode of the drive is switched back to the remembered 
+old mode.
+<DT><B>-noerror</B>
+
+<DD>
+Do not abort if the high level error checking in
+<B>readcd</B>
+
+found an uncorrectable error in the data stream.
+<DT><B>-notrunc</B>
+
+<DD>
+Do not truncate the output file when opening it.
+<DT><B>-overhead</B>
+
+<DD>
+Meter the SCSI command overhead time.
+This is done by executing several commands 1000 times and printing the
+total time used. If you divide the displayed times by 1000, you get 
+the average overhead time for a single command.
+<DT><B>-pi8scan</B>
+
+<DD>
+Scans the whole DVD or the range specified by the 
+<B>sectors=</B><I>range</I>
+
+for 
+<B>pisum8</B>
+
+errors.
+In non-verbose mode, only a summary is printed.
+With
+<B>-v</B>,
+
+a line for each non error free block of 8 * 32 kB is printed.
+with
+<B>-vv</B>,
+
+a line for each block of 8 * 32 kB is printed.
+This scan method only works for a few drives.
+<DT><B>-pifscan</B>
+
+<DD>
+Scans the whole DVD or the range specified by the 
+<B>sectors=</B><I>range</I>
+
+for 
+<B>pif</B>
+
+errors.
+In non-verbose mode, only a summary is printed.
+With
+<B>-v</B>,
+
+a line for each non error free block of 32 kB is printed.
+with
+<B>-vv</B>,
+
+a line for each block of 32 kB is printed.
+This scan method only works for a few drives.
+<DT><B>-plot</B>
+
+<DD>
+This option modified the behavior for
+<B>-cxscan</B>,
+
+<B>-pi8scan</B>
+
+and
+<B>-pifscan</B>.
+
+The output is better suited for gnuplot.
+<DT><B>retries=</B><I>#</I>
+
+<DD>
+Set the retry count for high level retries in
+<B>readcd</B>
+
+to 
+<I>#</I>.
+
+The default is to do 128 retries which may be too much if you like to read a CD
+with many unreadable sectors.
+<DT><B>sectors=</B><I>range</I>
+
+<DD>
+Specify a sector range that should be read.
+The range is specified by the starting sector number, a minus sign and the
+ending sector number.
+The end sector is not included in the list, so 
+<B>sectors=</B>0-0
+
+will not read anything and may be used to check for a CD in the drive.
+<DT><B>speed=</B>#
+
+<DD>
+Set the speed factor of the read or write process to #.
+# is an integer, representing a multiple of the audio speed.
+This is about 150 KB/s for CD-ROM and about 172 KB/s for CD-Audio.
+If no 
+<I>speed</I>
+
+option is present, 
+<B>readcd</B>
+
+will use maximum speed.
+Only MMC compliant drives will benefit from this option.
+The speed of non MMC drives is not changed.
+<P>
+Using a lower speed may increase the readability of a CD or DVD.
+<DT><B>-w</B>
+
+<DD>
+Switch to write mode.
+Writing is only possible to DVD-RAM media. For other media, use
+<B>cdrecord</B>
+
+instead.
+Note that 
+<B>cdrecord</B>
+
+also supports to write DVD-RAM media.
+<P>
+If this option is not present,
+<B>readcd</B>
+
+reads from the specified device.
+</DL>
+<A NAME="lbAI">&nbsp;</A>
+<H3>SCSI options</H3>
+
+<DL COMPACT>
+<DT><B>dev=</B><I>target</I>
+
+<DD>
+Set the SCSI target for the CD/DVD/BluRay-Recorder, see notes above.
+A typical target device specification is
+<B>dev=</B><I>1,6,0</I>
+
+.
+If a filename must be provided together with the numerical target 
+specification, the filename is implementation specific.
+The correct filename in this case can be found in the system specific
+manuals of the target operating system.
+On a 
+<I>FreeBSD</I>
+
+system without 
+<I>CAM</I>
+
+support, you need to use the control device (e.g.
+<I>/dev/rcd0.ctl</I>).
+
+A correct device specification in this case may be
+<B>dev=</B><I>/dev/rcd0.ctl:@</I>
+
+.
+<P>
+<B>General SCSI addressing</B>
+
+<BR>
+
+The
+<I>target device</I>
+
+to the 
+<B>dev=</B>
+
+option
+refers to the
+<B>SCSI&nbsp;CAM</B>
+
+standard notation for
+<I>scsibus</I>/<I>target</I>/<I>lun</I>
+
+of the CD/DVD/BluRay-Recorder. Communication on 
+<I>SunOS</I>
+
+is done with the SCSI general driver
+<B>scg.</B>
+
+Other operating systems are using a library simulation of this driver.
+Possible syntax is:
+<B>dev=</B>
+
+<I>scsibus</I>,<I>target</I>,<I>lun</I>
+
+or
+<B>dev=</B>
+
+<I>target</I>,<I>lun</I>.
+
+In the latter case, the CD/DVD/BluRay-Recorder has to be connected to the default 
+SCSI bus of the machine.
+<I>Scsibus</I>,
+
+<I>target </I>
+
+and 
+<I>lun</I>
+
+are integer numbers. 
+Some operating systems or SCSI transport implementations may require to
+specify a filename in addition.
+In this case the correct syntax for the device is:
+<B>dev=</B>
+
+<I>devicename</I>:<I>scsibus</I>,<I>target</I>,<I>lun</I>
+
+or
+<B>dev=</B>
+
+<I>devicename</I>:<I>target</I>,<I>lun</I>.
+
+If the name of the device node that has been specified on such a system
+refers to exactly one SCSI device, a shorthand in the form
+<B>dev=</B>
+
+<I>devicename</I>:<I>@</I>
+
+or
+<B>dev=</B>
+
+<I>devicename</I>:<I>@</I>,<I>lun</I>
+
+may be used instead of
+<B>dev=</B>
+
+<I>devicename</I>:<I>scsibus</I>,<I>target</I>,<I>lun</I>.
+
+<P>
+<B>Remote SCSI addressing</B>
+
+<BR>
+
+To access remote SCSI devices, you need to prepend the SCSI device name by
+a remote device indicator. The remote device indicator is either
+<B>REMOTE:</B><I><A HREF="mailto:user@host">user@host</A>:</I>
+
+or
+<B>REMOTE:</B><I>host:</I>
+
+A valid remote SCSI device name may be:
+<B>REMOTE:</B><I><A HREF="mailto:user@host">user@host</A>:</I>
+
+to allow remote SCSI bus scanning or
+<B>REMOTE:</B><I><A HREF="mailto:user@host">user@host</A>:1,0,0</I>
+
+to access the SCSI device at 
+<I>host</I>
+
+connected to SCSI bus # 1,target 0, lun 0.
+In order to allow remote access to a specific
+<I>host</I>,
+
+the
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+rscsi">rscsi</A></B>(1)
+
+program needs to be present and configured on the
+<I>host</I>.
+
+<P>
+<B>Alternate SCSI transports</B>
+
+<BR>
+
+<B>Cdrecord</B>
+
+is completely based on 
+<B>SCSI</B>
+
+commands but this is no problem as all CD/DVD/BluRay writers
+ever made use
+<B>SCSI</B>
+
+commands for the communication. Even
+<B>ATAPI</B>
+
+drives are just
+<B>SCSI</B>
+
+drives that inherently use the 
+<I>ATA packet interface</I>
+
+as
+<B>SCSI</B>
+
+command transport layer build into the IDE (ATA) transport.
+You may need to specify an alternate transport layer on the command  line
+if your OS does not implement a fully integrated kernel driver subsystem that
+allows to access any drive using
+<B>SCSI</B>
+
+commands via a single unique user interface.
+<P>
+To access SCSI devices via alternate transport layers,
+you need to prepend the SCSI device name by a transport layer indicator.
+The transport layer indicator may be something like
+<B>USCSI: </B>
+
+or
+<B>ATAPI:</B>.
+
+To get a list of supported transport layers for your platform, use 
+<B>dev=</B>
+
+<I>HELP</I>:
+
+<P>
+<B>Portability Background</B>
+
+<BR>
+
+To make 
+<B>readcd</B>
+
+portable to all <FONT SIZE="-2">UNIX</FONT> platforms, the syntax
+<B>dev=</B>
+
+<I>devicename</I>:<I>scsibus</I>,<I>target</I>,<I>lun</I>
+
+is preferred as it hides OS specific knowledge about device names from the user.
+A specific OS may not necessarily support a way to specify a real device file name nor a
+way to specify 
+<I>scsibus</I>,<I>target</I>,<I>lun</I>.
+
+<P>
+<I>Scsibus </I>
+
+0 is the default SCSI bus on the machine. Watch the boot messages for more 
+information or look into 
+<B>/var/adm/messages </B>
+
+for more information about the SCSI configuration of your machine.
+If you have problems to figure out what values for 
+<I>scsibus</I>,<I>target</I>,<I>lun</I>
+
+should be used, try the 
+<B>-scanbus</B>
+
+option of 
+<B>readcd</B>
+
+described below.
+<P>
+<B>Using logical names for devices</B>
+
+<BR>
+
+If no 
+<I>dev</I>
+
+option is present, 
+<B>readcd</B>
+
+will try to get the device from the 
+<B>CDR_DEVICE</B>
+
+environment.
+<P>
+If a file /etc/default/cdrecord exists, and
+if the argument to the
+<B>dev=</B>
+
+option
+or the
+<B>CDR_DEVICE</B>
+
+environment
+does not contain the characters ',', '/', '@' or ':',
+it is interpreted as a device label name that was defined in the file
+/etc/default/cdrecord (see FILES section).
+<P>
+<B>Autotarget Mode</B>
+
+<BR>
+
+If no 
+<B>dev=</B>
+
+option 
+and no
+<B>CDR_DEVICE</B>
+
+environment
+is present, or if it
+only contains a transport specifyer but no address notation,
+<B>readcd</B>
+
+tries to scan the SCSI address space for CD-ROM drives.
+If exactly one is found, this is used by default.
+<DT><B>debug=</B><I>#, </I><B>-d</B>
+
+<DD>
+Set the misc debug value to # (with debug=#) or increment
+the misc debug level by one (with -d). If you specify
+<I>-dd,</I>
+
+this equals to 
+<B>debug=</B><I>2.</I>
+
+This may help to find problems while opening a driver for libscg.
+as well as with sector sizes and sector types.
+Using
+<B>-debug</B>
+
+slows down the process and may be the reason for a buffer underrun.
+<DT><B>kdebug=</B>#, <B>kd=</B>#
+
+<DD>
+Tell the 
+<B>scg</B>-driver
+
+to modify the kernel debug value while SCSI commands are running.
+<DT><B>-scanbus</B>
+
+<DD>
+Scan all SCSI devices on all SCSI busses and print the inquiry
+strings. This option may be used to find SCSI address of the 
+devices on a system.
+The numbers printed out as labels are computed by: 
+<B>bus * 100 + target</B>
+
+<DT><B>scgopts=</B><I>list</I>
+
+<DD>
+A comma separated list of SCSI options that are handled by libscg.
+The implemented options may be uptated indepentendly from applications.
+Currently, one option:
+<B>ignore-resid</B>
+
+is supported to work around a Linux kernel bug.
+<DT><B>-silent</B>, <B>-s</B>
+
+<DD>
+Do not print out a status report for failed SCSI commands.
+<DT><B>spt=</B><I>#</I>
+
+<DD>
+Set the maximum number of sectors per transfer.
+<DT><B>timeout=</B><I>#</I>
+
+<DD>
+Set the default SCSI command timeout value to 
+<I>#</I> seconds.
+
+The default SCSI command timeout is the minimum timeout used for sending
+SCSI commands.
+If a SCSI command fails due to a timeout, you may try to raise the
+default SCSI command timeout above the timeout value of the failed command.
+If the command runs correctly with a raised command timeout,
+please report the better timeout value and the corresponding command to 
+the author of the program.
+If no 
+<I>timeout </I>
+
+option is present, a default timeout of 40 seconds is used.
+<DT><B>ts=</B>#
+
+<DD>
+Set the maximum transfer size for a single SCSI command to #.
+The syntax for the 
+<B>ts=</B>
+
+option is the same as for cdrecord fs=# or sdd bs=#.
+<P>
+If no 
+<B>ts=</B>
+
+option has been specified,
+<B>readcd</B>
+
+defaults to a transfer size of 256 kB. If libscg gets lower values from the
+operating system, the value is reduced to the maximum value that is possible
+with the current operating system.
+Sometimes, it may help to further reduce the transfer size or to enhance it,
+but note that it may take a long time to find a better value by experimenting
+with the
+<B>ts=</B>
+
+option.
+<DT><B>-V</B>
+
+<DD>
+Increment the verbose level with respect of SCSI command transport by one.
+This helps to debug problems
+during the process, that occur in the CD-Recorder. 
+If you get incomprehensible error messages you should use this flag
+to get more detailed output.
+<B>-VV</B>
+
+will show data buffer content in addition.
+Using
+<B>-V</B>
+
+or
+<B>-VV</B>
+
+slows down the process.
+</DL>
+<A NAME="lbAJ">&nbsp;</A>
+<H2>EXAMPLES</H2>
+
+<P>
+
+For all examples below, it will be assumed that the drive is
+connected to the primary SCSI bus of the machine. The SCSI target id is
+set to 2.
+<P>
+
+To read the complete media from a CD-ROM writing the data to the file
+<I>cdimage.raw</I>:
+
+<P>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;readcd&nbsp;dev=2,0&nbsp;f=cdimage.raw
+<P>
+
+To read sectors from range 150 ... 10000 from a CD-ROM writing the data to the file
+<I>cdimage.raw</I>:
+
+<P>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;readcd&nbsp;dev=2,0&nbsp;sectors=150-10000&nbsp;f=cdimage.raw
+<P>
+
+To write the data from the file
+<I>cdimage.raw</I>
+
+(e.g. a filesystem image from 
+<B>mkisofs</B>)
+
+to a DVD-RAM, call:
+<P>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;readcd&nbsp;dev=2,0&nbsp;-w&nbsp;f=cdimage.raw
+<P>
+<A NAME="lbAK">&nbsp;</A>
+<H2>ENVIRONMENT</H2>
+
+<DL COMPACT>
+<DT><B>RSH</B>
+
+<DD>
+If the 
+<B>RSH</B>
+
+environment is present, the remote connection will not be created via
+<B><A HREF="http://localhost/cgi-bin/man/man2html?3+rcmd">rcmd</A></B>(3)
+
+but by calling the program pointed to by
+<B>RSH</B>.
+
+Use e.g. 
+<B>RSH=</B>/usr/bin/ssh
+
+to create a secure shell connection.
+<P>
+Note that this forces 
+<B>cdrecord</B>
+
+to create a pipe to the 
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+rsh">rsh</A>(1)</B>
+
+program and disallows
+<B>cdrecord</B>
+
+to directly access the network socket to the remote server.
+This makes it impossible to set up performance parameters and slows down
+the connection compared to a 
+<B>root</B>
+
+initiated
+<B><A HREF="http://localhost/cgi-bin/man/man2html?3+rcmd">rcmd</A>(3)</B>
+
+connection.
+<DT><B>RSCSI</B>
+
+<DD>
+If the 
+<B>RSCSI</B>
+
+environment is present, the remote SCSI server will not be the program
+<B>/opt/schily/sbin/rscsi</B>
+
+but the program pointed to by
+<B>RSCSI</B>.
+
+Note that the remote SCSI server program name will be ignored if you log in
+using an account that has been created with a remote SCSI server program as
+login shell.
+</DL>
+<A NAME="lbAL">&nbsp;</A>
+<H2>EXIT STATUS</H2>
+
+The following exit codes are used:
+<DL COMPACT>
+<DT><B>0</B>
+
+<DD>
+No error appeared.
+<DT><B>-1</B>
+
+<DD>
+A specific error appeared. This may be a usage error caused by an illegal command line
+or another error with a problem specific error message from
+<B>readcd</B>.
+
+<DT><B>-2</B>
+
+<DD>
+An unspecified error appeared during the process of talking to the drive.
+See SCSI error message for more informations. The section
+<B>DIAGNOSTICS</B>
+
+below contains an explanation on how to read SCSI error messages.
+</DL>
+<P>
+
+Note that older operating systems and older shells may not support the full 32 bit
+range of the exit code
+and mask the value with 0xFF. This results in shortened exit codes in the range
+<B>0</B>..<B>255</B>
+
+where
+<B>-1</B>
+
+is mapped to
+<B>255</B>.
+
+<P>
+<A NAME="lbAM">&nbsp;</A>
+<H2>FILES</H2>
+
+<A NAME="lbAN">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+cdrecord">cdrecord</A></B>(1),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?8+mkisofs">mkisofs</A></B>(8),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?7+scg">scg</A></B>(7),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?7+fbk">fbk</A></B>(7),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?3+rcmd">rcmd</A></B>(3),
+
+<B><A HREF="http://localhost/cgi-bin/man/man2html?1+ssh">ssh</A></B>(1).
+
+<P>
+<A NAME="lbAO">&nbsp;</A>
+<H2>NOTES</H2>
+
+<P>
+
+If you don't want to allow users to become root on your system,
+<B>readcd</B>
+
+may safely be installed suid root. This allows all users or a group of
+users with no root privileges to use 
+<B>readcd.</B>
+
+<B>Readcd</B>
+
+in this case will only allow access to CD-ROM type drives-
+To give all user access to use 
+<B>readcd, </B>
+
+enter:
+<P>
+
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>chown root /usr/local/bin/readcd<BR>
+<BR>
+
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>chmod 4711 /usr/local/bin/readcd<BR>
+<P>
+
+To give a restricted group of users access to 
+<B>readcd</B>
+
+enter:
+<P>
+
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>chown root /usr/local/bin/readcd<BR>
+<BR>
+
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>chgrp cdburners /usr/local/bin/readcd<BR>
+<BR>
+
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>chmod 4710 /usr/local/bin/readcd<BR>
+<P>
+
+and add a group 
+<I>cdburners</I>
+
+on your system.
+<P>
+
+Never give write permissions for non root users to the 
+<I>/dev/scg?</I>
+
+devices unless you would allow anybody to read/write/format
+all your disks.
+<P>
+
+You should not connect old drives that do not support
+disconnect/reconnect to either the SCSI bus that is connected to the
+CD-Recorder or the source disk.
+<P>
+
+When using 
+<B>readcd</B>
+
+with the 
+<B>Linux SCSI generic driver.</B>
+
+You should note that 
+<B>readcd</B>
+
+uses a layer, that tries to emulate the functionality of the scg driver
+on top of the drives of the local operating system.
+Unfortunately, the sg driver on 
+<B>Linux</B>
+
+has several flaws:
+<DL COMPACT>
+<DT>*<DD>
+It cannot see if a SCSI command could not be sent at all.
+<DT>*<DD>
+It cannot get the SCSI status byte. 
+<B>Readcd</B>
+
+for that reason cannot report failing SCSI commands in some
+situations.
+<DT>*<DD>
+It cannot get real DMA count of transfer. 
+<B>Readcd</B>
+
+cannot tell you if there is an DMA residual count.
+<DT>*<DD>
+It cannot get number of bytes valid in auto sense data.
+<B>Readcd</B>
+
+cannot tell you if device transfers no sense data at all.
+<DT>*<DD>
+It fetches to few data in auto request sense (CCS/SCSI-2/SCSI-3 needs &gt;= 18).
+<P>
+</DL>
+<A NAME="lbAP">&nbsp;</A>
+<H2>DIAGNOSTICS</H2>
+
+<P>
+
+<P>
+
+A typical error message for a SCSI command looks like:
+<P>
+<DL COMPACT><DT><DD>
+<PRE>
+readcd: I/O error. test unit ready: scsi sendcmd: no error
+CDB:  00 20 00 00 00 00
+status: 0x2 (CHECK CONDITION)
+Sense Bytes: 70 00 05 00 00 00 00 0A 00 00 00 00 25 00 00 00 00 00
+Sense Key: 0x5 Illegal Request, Segment 0
+Sense Code: 0x25 Qual 0x00 (logical unit not supported) Fru 0x0
+Sense flags: Blk 0 (not valid)
+cmd finished after 0.002s timeout 40s
+</PRE>
+
+<P>
+</DL>
+
+The first line gives information about the transport of the command.
+The text after the first colon gives the error text for the system call
+from the view of the kernel. It usually is:
+<B>I/O error</B>
+
+unless other problems happen. The next words contain a short description for
+the SCSI command that fails. The rest of the line tells you if there were
+any problems for the transport of the command over the SCSI bus.
+<B>fatal error</B>
+
+means that it was not possible to transport the command (i.e. no device present
+at the requested SCSI address).
+<P>
+
+The second line prints the SCSI command descriptor block for the failed command.
+<P>
+
+The third line gives information on the SCSI status code returned by the 
+command, if the transport of the command succeeds. 
+This is error information from the SCSI device.
+<P>
+
+The fourth line is a hex dump of the auto request sense information for the 
+command.
+<P>
+
+The fifth line is the error text for the sense key if available, followed
+by the segment number that is only valid if the command was a
+<I>copy</I>
+
+command. If the error message is not directly related to the current command,
+the text
+<I>deferred error</I>
+
+is appended.
+<P>
+
+The sixth line is the error text for the sense code and the sense qualifier if available.
+If the type of the device is known, the sense data is decoded from tables
+in
+<I>scsierrs.c</I> .
+
+The text is followed by the error value for a field replaceable unit.
+<P>
+
+The seventh line prints the block number that is related to the failed command
+and text for several error flags. The block number may not be valid.
+<P>
+
+The eight line reports the timeout set up for this command and the time
+that the command really needed to complete.
+<P>
+<A NAME="lbAQ">&nbsp;</A>
+<H2>BUGS</H2>
+
+<P>
+<A NAME="lbAR">&nbsp;</A>
+<H2>CREDITS</H2>
+
+<P>
+<A NAME="lbAS">&nbsp;</A>
+<H2>MAILING LISTS</H2>
+
+If you want to actively take part on the development of cdrecord,
+you may join the developer mailing list via this URL:
+<P>
+<B><A HREF="https://lists.sourceforge.net/lists/listinfo/cdrtools-developers">https://lists.sourceforge.net/lists/listinfo/cdrtools-developers</A></B>
+
+<P>
+<A NAME="lbAT">&nbsp;</A>
+<H2>AUTHOR</H2>
+
+<PRE>
+Joerg Schilling
+D-13353 Berlin
+Germany
+</PRE>
+
+<P>
+
+Additional information can be found on:
+<BR>
+
+<A HREF="http://cdrecord.org/private/cdrecord.html">http://cdrecord.org/private/cdrecord.html</A>
+<P>
+
+If you have support questions, send them to:
+<P>
+
+<B><A HREF="mailto:cdrtools-support@lists.sourceforge.net">cdrtools-support@lists.sourceforge.net</A></B>
+
+<P>
+
+If you have definitely found a bug, send a mail to:
+<P>
+
+<B><A HREF="mailto:cdrtools-developers@lists.sourceforge.net">cdrtools-developers@lists.sourceforge.net</A></B>
+
+<BR>
+
+or
+<B><A HREF="mailto:joerg@schily.net">joerg@schily.net</A></B>
+
+<P>
+
+To subscribe, use:
+<P>
+
+<B><A HREF="https://lists.sourceforge.net/lists/listinfo/cdrtools-developers">https://lists.sourceforge.net/lists/listinfo/cdrtools-developers</A></B>
+
+<BR>
+
+or
+<B><A HREF="https://lists.sourceforge.net/lists/listinfo/cdrtools-support">https://lists.sourceforge.net/lists/listinfo/cdrtools-support</A></B>
+
+<BR>
+
+
+<A NAME="lbAU">&nbsp;</A>
+<H2>SOURCE DOWNLOAD</H2>
+
+A frequently updated source code for the
+<B>cdrtools</B>
+
+is included in the
+<B>schilytools</B>
+
+project and may be retrieved from the
+<B>schilytools</B>
+
+project at Sourceforge at:
+<P>
+
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://sourceforge.net/projects/schilytools/">http://sourceforge.net/projects/schilytools/</A></B>
+
+<P>
+
+The download directory is:
+<P>
+
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://sourceforge.net/projects/schilytools/files/">http://sourceforge.net/projects/schilytools/files/</A></B>
+
+<P>
+
+Check for the
+<B>schily-*.tar.bz2</B>
+
+archives.
+<P>
+
+Less frequently updated source code for the
+<B>cdrtools</B>
+
+is at:
+<P>
+
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://sourceforge.net/projects/cdrtools/files/">http://sourceforge.net/projects/cdrtools/files/</A></B>
+
+<P>
+
+and
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://sourceforge.net/projects/cdrtools/files/alpha">http://sourceforge.net/projects/cdrtools/files/alpha</A></B>
+
+<P>
+
+Separate project informations for the
+<B>cdrtools</B>
+
+project may be retrieved from:
+<P>
+
+<B><BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://cdrecord.org">http://cdrecord.org</A></B>
+
+<BR>
+
+
+<A NAME="lbAV">&nbsp;</A>
+<H2>INTERFACE STABILITY</H2>
+
+The interfaces provided by 
+<B>readcd</B>
+
+are designed for long term stability.
+As
+<B>readcd</B>
+
+depends on interfaces provided by the underlying operating system,
+the stability of the interfaces offered by
+<B>readcd</B>
+
+depends on the interface stability of the OS interfaces. 
+Modified interfaces in the OS may enforce modified interfaces
+in 
+<B>readcd</B>.
+
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DL>
+<DT><A HREF="#lbAE">Device naming</A><DD>
+</DL>
+<DT><A HREF="#lbAF">OPTIONS</A><DD>
+<DL>
+<DT><A HREF="#lbAG">Informative options</A><DD>
+<DT><A HREF="#lbAH">Readcd functional options</A><DD>
+<DT><A HREF="#lbAI">SCSI options</A><DD>
+</DL>
+<DT><A HREF="#lbAJ">EXAMPLES</A><DD>
+<DT><A HREF="#lbAK">ENVIRONMENT</A><DD>
+<DT><A HREF="#lbAL">EXIT STATUS</A><DD>
+<DT><A HREF="#lbAM">FILES</A><DD>
+<DT><A HREF="#lbAN">SEE ALSO</A><DD>
+<DT><A HREF="#lbAO">NOTES</A><DD>
+<DT><A HREF="#lbAP">DIAGNOSTICS</A><DD>
+<DT><A HREF="#lbAQ">BUGS</A><DD>
+<DT><A HREF="#lbAR">CREDITS</A><DD>
+<DT><A HREF="#lbAS">MAILING LISTS</A><DD>
+<DT><A HREF="#lbAT">AUTHOR</A><DD>
+<DT><A HREF="#lbAU">SOURCE DOWNLOAD</A><DD>
+<DT><A HREF="#lbAV">INTERFACE STABILITY</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 20:38:31 GMT, October 16, 2021
+</BODY>
+</HTML>

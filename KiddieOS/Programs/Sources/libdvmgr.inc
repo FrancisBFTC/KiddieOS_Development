@@ -16,6 +16,7 @@ Buffer1     db 0,0,0,0,0,0,0,0,0,0
 Connect1    db "|___",0
 Connect2    db 0x0D,"|___",0
 Space       db 0x0D,"|   ",0 
+EnterBreak 	db 0x0D,0
 PCI         db "PCI:",0
 StrScan     db 0x0D,"Scanning Devices...",0x0D,0
 StrFound    db " Devices Was Found!",0x0D,0
@@ -160,6 +161,7 @@ ret
 
 __show_amount_devices:
 	Get_Dec32([countstore], Buffer1)
+	sub 	esp, 8
 	pop		eax
 	pop 	esi
 	Printz(0x02, esi)
@@ -172,7 +174,7 @@ __show_hierarchical_visual:
 	mov 	ecx, [countstore]
 	mov 	esi, [stack]
 	call 	RadixSort
-	mov 	ecx, 4
+	;mov 	ecx, 4
 Loop_Tree:
 	push 	ecx
 	push 	esi
@@ -206,9 +208,10 @@ Loop_Tree:
 	Get_Class_Number(ax, bx, dx)
 	Get_Hexa16(ax, Buffer)
 	Printz(0x06, Colc1)
-	pop  ax
-	pop  esi
-	Printz(0x05, esi)
+	;sub  esp, 6
+	;pop  ax
+	;pop  esi
+	Printz(0x05, Buffer)
 	Printz(0x06, Colc2)
 	Restore_Args(ax, bx, dx)
 	jmp 	Return_Loop_Tree
@@ -231,9 +234,10 @@ Print_Class_Name:
 	Get_Class_Number(ax, bx, dx)
 	Get_Hexa16(ax, Buffer)
 	Printz(0x06, Colc1)
-	pop  ax
-	pop  esi
-	Printz(0x05, esi)
+	;sub	 esp, 6
+	;pop  ax
+	;pop  esi
+	Printz(0x05, Buffer)
 	Printz(0x06, Colc2)
 	Restore_Args(ax, bx, dx)
 	
@@ -246,6 +250,7 @@ Return_Loop_Tree:
 	jnz  	Loop_Tree
 	
 	Printz(0x0F, Connect2)
+	Printz(0x0F, EnterBreak)
 ret
 
 %ENDIF 

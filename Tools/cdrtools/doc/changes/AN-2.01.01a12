@@ -1,0 +1,145 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a12:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of dirtibutions.
+	The only reason is to add certain new CD/DVD features that are important.
+
+	So _please_ do not send any patches except when you like to fix extreme bugs.
+	I am currently mainly working on stable incremental restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	New function strlcpy() for better portability.
+
+-	New function strncpy() for better portability.
+
+-	Enhanced Makefile system for better MSVC support
+
+-	Enhanced Makefile system for C++ support
+
+-	Fixed some typos in dirdefs.h
+
+-	New functions getvallargs()/getvargs()/getvfiles()
+	allow to have a vector based interface to the 
+	advanced argument parsing library functions.
+	Currently used by mkisofs.
+
+-	getargs.c is now at up to date again and libschily
+	from cdrtools is 100% complete and may be used
+	as a shared library to be used by e.g. star too.
+
+-	Added a workaround for a core dump problem with 
+	running avoffset.c on FreeBSD/sparc64 (gcc)
+
+
+Libparanoia (Ported by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+-	Replace nice(-20) by nice(-NZERO)
+
+Cdda2wav (By Heiko Eißfeldt heiko@hexco.de):
+
+-	Replace nice(-20) by nice(-NZERO)
+
+-	Renamed Inquiry() by ScsiInquiry() for better VMS support
+
+-	Fixed an unsigned comparison with zero in resample.c
+
+-	Fixed a printf format string with short argument.
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	Replaced GNU getopt_long() by getargs(). This has been done for 
+	several reasons:
+
+	-	Get rid of the annoying oddities/bugs of GNU getopt_long()
+
+	-	Use a unique option parser for all programs from cdrtools.
+
+	-	Find a way to better deal with historic badly planned
+		options. These problems are caused by the fact that
+		several options that take arguments start the same way.
+		With GNU getopt_long, there is no clean way to deal with
+		the resulting problems. getargs() allows to specify 
+		whether an option needs to have a space between the option
+		name and the argument or not.
+
+	-	Make the code easier to understand and to maintain.
+
+	-	Segregation of option parsing and option conflict checking.
+
+	-	Code size reduction.
+
+	Note that the intention is that all options still behave as documented
+	in the man page. If you have problems with scripts, first check whether
+	your usage is aligned with the the documentation or whether you did 
+	depend from a side effect from GNU getopt_long before sending a bug
+	report.
+
+-	Fixed an Eltorito Boot bug that happenes together with
+	ISO-9660:1999
+
+-	Added some patches for better VMS portability from Steven M. Schweda
+	sms@antinode.org
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volouteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

@@ -1,0 +1,244 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-3.01a01:
+
+All:
+
+-	The macros XARCH_GEN & XARCH_OPT are now in RULES/cc-sunpro*.rul
+
+-	The include file include/schily/ccomdefs.h now allows to disable
+	the printf() format checks for GCC with -DNO_PRINTFLIKE
+	This is needed in order to allow star to compile in the Solaris ON
+	cosolidation as GCC id too dumb for the printf() extensions.
+
+-	All include files (even those created by autoconf) are now protected
+	against multiple includion.
+
+-	New autoconf test for pathconf() and fpathconf()
+
+-	New autoconf test for /dev/stdin, /dev/stdout, /dev/stderr,
+	/dev/fd/0, /dev/fd/1, /dev/fd2
+
+-	New autoconf tests for: qecvt() qfcvt() qgcvt()
+	_ldecvt() _ldfcvt() _ldgcvt() _ldecvt_r() _ldfcvt_r() _ldgcvt_r()
+	qeconvert() qfconvert() qgconvert()
+	needed for long double support.
+
+-	New autoconf test for _qecvt() _qfcvt() _qgcvt()
+	and _qecvt_r() _qfcvt_r() _qgcvt_r() on AIX
+
+-	All linker map files have been modified to allow platform
+	dependent #ifdef's
+
+-	include/schily/wchar.h now includes a workyround for platforms
+	that do not have wcwidth().
+
+-	Make NLS the default (i.e. gettext() is called in case that schily/nlsdefs.h
+	was included)
+
+
+Libschily:
+
+-	libschily/?eterrno.c no longer overwrite the _TS_ERRNO definition
+	in order to pass the compile constrints in the Solaris ON consoliation.
+
+-	Several new global symbols in the mapfile for libschily/libschily-mapvers
+
+-	libschily/wcsndup.c had frgotten code and still did internaly implement
+	strndup()
+
+-	libschily now by default renames getline(), fgetline() and
+	fexec*() into js_getline(), js_fgetline() and js_fexec*().
+	This was needed because the POSIX standard commitee ignored
+	POSIX basic rules not to define functions that are in conflict
+	with existing published functions. The functions from linschily
+	have been in the public since more than 25 years and the 
+	functions defined by POSIX.1-2008 even violate POSIX naming rules.
+	The POSIX fexec*() functions would e.g. have to be correctly called
+	fdexec*().
+
+	Existing programs can keep the official names getline(), fgetline()
+	and fexec*() as they are by default #defined to the new js_*() names.
+	To disable this convenience, add:
+
+	#define NO_SCHILY_GETLINE	To disable schily getline(), fgetline()
+	#define	NO_SCHILY_FEXEC		To disable schily fexec*()
+	#define	NO_SCHILY_FSPAWN	To disable schily fspawn*()
+
+-	Libschily now has new "long double" support functions:
+	qftoes() and qftofs()
+
+-	Libschily now supports a locale dependend decimal point for printing
+	floating point numbers.
+
+-	Libschily now supports to print long double numbers using the
+	format() based portable printf() implementation. If this does not
+	work for your platform or if this does not work correctly for
+	your platform, please report. This was needed for out new "od" 
+	implementation.
+
+-	The option parsing implementation getargs()/getfiles() from
+	libschily now supports to combine single character boolean
+	flags even in case the option string mentions to call a callback
+	function if a valid option was found. This was needed for out new 
+	"od" implementation.
+
+-	filereopen() from libschily no longer calls open() internally
+	as long as there is no need to create or truncate the file.
+
+-	libschily's findinpath() now includes a new path parameter
+	to allow to use the function from bsh.
+
+-	fnmatch is now always available as js_fnmatch()
+
+-	New autoconf test for _qecvt() _qfcvt() _qgcvt()
+	and _qecvt_r() _qfcvt_r() _qgcvt_r() on AIX
+
+
+-	smake's searchfileinpath() moved into libschily to allow it
+	to be generally used for searching for program resources.
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+-	New functions: find_hasprint() and find_hasexec()
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+-	libscg/scg/aspi-dos.h now uses void instead of VOID to allow a compilation
+	with gcc.
+
+-	libscg/scsi-wnt.c (MS-WIN) now supports 64 SCSI busses
+
+Libscgcmd:
+
+Libmdigest:
+
+Rscsi:
+
+Cdrecord:
+
+-	A typo in cdrecord.c was corrected.
+
+-	cdrecord/cue.c now uses a correct byte order for RAW audio data in
+	Intel byte-order
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Fixed a typo in cdda2wav/cdda2ogg.1 (man page)
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Added a hint that the option -b needs a boot image argument that is
+	located inside the ISO image tree.
+
+-	Added an additional hint on changed files in case that mkisofs encounteres
+	a file that did grow or shrink .
+
+-	Removed a superfluious second #include <schily/stat.h> from isoinfo.c
+
+-	Typo corrections in mkisofs/mkisofs.8 man page
+
+-	A bug was fixed with -sort and files > 4 GB. Mkisofs now correctly sorts the
+	disk addresses of the file content is such a case.
+
+-	New options -long-rr-time -no-long-rr-time -short-rr-time allow to control
+	the time format used for files with Rock Ridge extensions.
+
+	-	The short time format supports year 1900..2155 with a one second
+		granularity
+
+	-	The long time format supports year 0..9999 with a 10ms granularity.
+
+	Note that the Linux kernel only implements partial Rock Ridge support and 
+	unfortunately does not support the long time format. It is planned to 
+	make the long time stamp format the default in the future, so I encourage
+	the Linux kernel folks to add support for this time format.
+
+-	isoinfo now supports the new option -find and (via libfind) allows to use
+	find expressions on ISO-9660 images. If the find expression neither contains
+	-print nor -ls and isoinfo is called:
+
+		isoinfo -i xxx.iso -l -find .....
+
+	the ISO-9660 listing function from isoinfo is called whenever the find expression
+	returns TRUE. If there is a print or list primary in the find expression, then
+	the ISO-9660 listing is never called.
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

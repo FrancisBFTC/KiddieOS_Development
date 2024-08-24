@@ -1,0 +1,154 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a62:
+
+*******
+NOTE: cdrtools is currently in a state just before a new major release.
+	
+
+*******
+
+
+All:
+
+-	New include files include/schily/ctype.h, include/schily/pwd.h
+	and include/schily/grp.h 
+
+-	All programs are now using schily/stdio.h 
+	for orthogonality.
+
+-	Haiku default install dir is now /boot/opt/schily
+
+-	New rules RULES/os-cygwin_nt-6.0-wow64.id and 
+	RULES/os-cygwin_nt-6.1-wow64.id support Cygwin on 64bit
+	installations of Win Vista and "Win 7".
+
+-	New rules for compiling 64 Bit binaries on cygwin_nt-wow64
+	NOTE: You need to have a 64 bit aware gcc on Cygwin to use this!
+
+-	TEMPLATES/temp-gcc.rul and TEMPLATES/temp-xcc.rul
+	now correctly include cc-gcc.rul and cc-dumb.rul and thus
+	make the automake feature working again for completely
+	unknown platforms.
+
+-	Fixed RULES/rules.inc to make sure we install xx.h instead of
+	xx.h.exe
+
+-	Workaround an infinite hang in an autoconf test on 64 Bit Vista
+	with Cygwin
+
+-	Include limits.h in schily/hostname.h for Linux
+
+-	Several "%s" formats have been introduced in order to make gcc-4
+	happy even though the original strings have been pointer to constant
+	and well known strings
+
+-	Change the option order in the autoconf test for calling the linker
+	in order to avoid problems with the microsoft linker.
+
+
+
+Libschily:
+
+-	libschily now is thread aware and uses the thread specific errno
+	value on Solaris, Linux and FreeBSD.
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libcdrdeflt:
+
+Libdeflt:
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+-	Raised the SCSI Bus-number limit from 256 to 500 for Linux as a workaround
+	for a resource leak bug in the linux kernel. The workaround lets the problem
+	happen much later but cannot completely avoid it. If you are hit by the Linux
+	kernel resource leak bug, you need to reboot.
+
+Libscgcmd:
+
+Rscsi:
+
+Cdrecord:
+
+-	Correctly abort the FIFO in cdrecord on BeOS and Haiku
+	in case that the clone ara cannot be made shared.
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Fixed a potential malloc problem in mkisofs
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

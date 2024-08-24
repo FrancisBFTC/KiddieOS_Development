@@ -1,0 +1,210 @@
+New features with AN-2020-03-11:
+
+This is the first localization step for the schily source consolidation. Many
+programs now (hopefully) call gettext() for all strings that need localization.
+
+-	The next step will include dgettext() calls for the libraries and the
+	missing programs
+
+-	The following step will include the extracted strings
+
+-	The last step will include German translations and install support
+	for the resulting binary message object files.
+
+----------> Please test and report compilation problems! <---------
+
+***** NOTE: As mentioned since 2004, frontends to the tools should *****
+*****		call all programs in the "C" locale		   *****
+*****		by e.g. calling: LC_ALL=C cdrecord ....		   *****
+*****		unless these frontends support localized strings   *****
+*****		used by the cdrtools with NLS support.		   *****
+
+		*** WARNING        ***
+		*** Need new smake ***
+
+	*** Due to the fact that schily-tools 2014-04-03 introduced to use new macro
+	*** expansions and a related bug fix in smake, you need a newer smake
+	*** to compile this source. If your smake is too old and aborts, ensure to
+	*** use the recent smake by calling:
+
+	cd ./psmake
+	./MAKE-all
+	cd ..
+	psmake/smake
+	psmake/smake install
+
+	The new smake version mentioned above is smake-1.2.4
+	The recent smake version is smake-1.3
+
+	*** Due to the fact that schily-tools 2018-01-26 introduced
+	*** optimizations for the Schily version of SunPro Make, you
+	*** need at least the dmake version from 2018/01/11 with support
+	*** for the "export" directive to compile with this makefile system.
+
+
+	WARNING: the new version of the isoinfo program makes use of the 
+		*at() series of functions that have been introduced by Sun
+		in August 2001 and added to POSIX.1-2008. For older platforms,
+		libschily now includes emulations for these functions but
+		these emulations have not yet been tested thoroughly.
+		Please report problems!
+
+	BUG WARNING: Please never report bugs only to Linux distributions as
+		they usually do not forward these bug reports upstream and as
+		the Linux distributions typically do not let skilled people
+		check the bugs. We did not hear about a FIFO problem in star
+		for a long time. Then a problem on Linux occurred once
+		every 6000-10000 tries but it did not happen on Solaris after
+		even 10 million tries, so it was not known besides Linux.
+
+-	configure: The autoconfiguration now has an enhanced test for waitid()
+	that was needed since Mac OS is still not POSIX compliant and returns 0
+	instead of the signal number for a process that has been killed by a
+	signal. MacOS did pass the POSIX certification as a result of a missing
+	test for that problem.
+
+	Since every vertified OS needs to run an annual refresh the
+	certification with recent versions of the test, I guess that 
+	Mac OS (Catalina updates) may become more compliant witin a year.
+
+-	psmake: The portable bootstrap compile environment for smake missed
+	a symlink for unsetenv.c to libschily since the related code has been
+	moved to libschily in 2018. This prevented compilation on IRIX.
+
+	Thanks to Kazuo Kuroi for reporting
+
+-	librmt: the code has been modified to allow librmt to be finally
+	compiled without a need to link against libschily. This makes it
+	easier to link ufsdump/ufsrestore from OpenSolaris against librmt.
+
+	A call to errmsg() was replaced by a call to errmsgno() that has
+	a private implementation in librmt already.
+
+-	librmt: the man pages have been modified to make sure that man2html
+	is able to correctly create links to referenced other man pages.
+
+-	libstreamar: streamarchive.4 now mentions that the POSIX.1-2001
+	tar extensions are based on a Sun Microsystems proposal from 1997.
+
+-	libshedit: mystdio.h now calls #undef sprintf and #undef snprintf
+	before redefining the names. This avoids clang warnings on MacOS.
+
+-	Bourne Shell: set -m now works in scripts as well. Before, bosh did
+	never call startjobs() when the shell startup was done with a shell
+	script.
+
+-	Bourne Shell: The shell now supports the alternate ;& switch
+	command limiter in addition to ;; where ;& implements a fallthrough
+	to the next command list regardless on thether there is a match or not.
+
+-	Bourne Shell: The file xec.c has been reindented for the "case" support
+	code in the interpreter. The indentation is now one tab less so code
+	becomes more readable.
+
+-	patch: the declaration for the variable p_repl_lines has been moved
+	from common.h to pch.h to avoid double common declarations.
+
+	Thanks to Jan Engelhardt for reporting
+
+-	cdda2wav: changed some macros in toc.c to avoid clang warnings.
+
+-	cdrtools: the version date has been updated to 2020
+
+-	star: the man page now mentions that it is preferred to use the
+	source from the schilytools instead of a star specific release.
+
+-	ved/bsh/bosh: map.c now includes better command for the routines that
+	implement fallback to some basic mapping when no user defined mapping
+	has been set up.
+
+
+-	SCCS TODO:
+
+	-	Convert sccs.c to use -NSCCS in the back end programs instead
+		of converting g-file names from the command line into s.file
+		names in the frontend in order to forward s.file names to the
+		backend programs. Doing it this way allows us to have the SCCS
+		history files "off tree" in a separate directory tree starting
+		with ".sccs/" at the "project root" directory, as the related
+		code to convert path names is in libcomobj::bulkprepare().
+
+	-	Add code to admin(1) and delta(1) to retrieve the list of
+		new or modified files in order to have all important code
+		for a "sccs commit" in a single program that does not need to
+		deal with ARG_MAX limitations.
+
+	-	Add code to admin(1), delta(1) and get(1) to maintain/understand
+		the changeset file.
+
+	-	Add code to libcomobj to understand the changeset file,
+		which is needed in order to e.g. know the file names and file
+		specific SIDs/state that correspond to a project global SID.
+
+	-	Add code to all programs to maintain a lock (for the file
+		$PROJECTHOME/.sccs/SCCS/s.changeset, that would be in the file
+		$PROJECTHOME/.sccs/SCCS/z.changeset) to maintain a project
+		global lock.
+
+	-	Find/verify a complete transactional model that allows to repair
+		complex changes to the set of files for a project that have
+		been aborted in the middle. The current idea is to create the
+		file $PROJECTHOME/.sccs/changeset with the deltas to the
+		changeset during a complex update operation.
+
+	-	Find a way to decide when to use SCCS v6 type history files.
+
+		For the project mode, this is needed in order to prevent 
+		historic SCCS implementations to believe they could modify
+		files without knowing about project global locks.
+
+		Currently, SCCS V67 needs to be anebale manually for every
+		history file using "admin".
+
+
+
+
+
+-	Bourne Shell Missing features for POSIX compliance:
+
+	- Support for $'...' quoting (this is not needed for the current
+					version of POSIX but for the next POSIX
+					version that will be named SUSv8).
+					The development of SUSv8 will start in
+					late 2016.
+
+	We are now expecting the Bourne Shell to be fully POSIX compliant.
+
+-	Bourne Shell further TODO list:
+
+	-	Finish loadable builtin support.
+
+	-	POSIX does not allow us to implement ". -h", so we will
+		add a "source" builtin to be able to implement "source -h"
+
+-	The following builtins (that are available in bsh) are still missing in
+	the Bourne Shell:
+
+	err			echo with output going to stderr
+	glob			echo with '\0' instead of ' ' between args
+	env			a builtin version of /usr/bin/env
+
+	The following bsh intrinsics are still missing in the Bourne Shell:
+
+	-			the restricted bsh has restriction features that
+				are missing in the Bourne shell.
+
+	-	source -h	read file into history but do not execute
+
+	and probably more features not yet identified to be bsh unique.
+
+
+
+Author:
+
+Joerg Schilling
+D-13353 Berlin
+Germany
+
+Email: 	joerg@schily.net, joerg.schilling@fokus.fraunhofer.de
+
+Please mail bugs and suggestions to me.

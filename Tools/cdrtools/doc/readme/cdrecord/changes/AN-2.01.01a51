@@ -1,0 +1,154 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a51:
+
+*******
+NOTE: cdrtools is currently in a state just before a new major release.
+	
+
+*******
+
+
+All:
+
+-	Extended the file COPYING to mention that the GPL used by the "mkisofs project"
+	requires to publish the full source for all parts of mkisofs in case that you
+	publish mkisofs binaries.
+
+-	Added a new Changelog file for the changes since cdrtools-2.01
+
+-	RUlES/rules.prg no longer includes a line with SHELL=/bin/sh.
+	This is needed to allow to implement a workaround for various bash
+	bugs that afffect makefiles in case that /bin/sh is linked to bash.
+
+	If your platform installs bash in /bin/sh (Linux, ....) or in case
+	thaat your platform offers a broken variant of the Korn Shell in /bin/sh
+	(like HP-UX), fetch the "Schily source consolidation" from 
+	ftp://ftp.berlios.de/pub/schily/, compile everything and install the
+	original Bourne Shell, that comes with this packet, into /bin/bosh.
+	If you then call ./.clean and re-compilee everything, you get a "smake"
+	that calls /bin/bosh instead of the broken system shell.
+
+-	Added an autoconf test for POSIX violations found in POSIX.1-2008.
+
+	The official POSIX rule is not to define "new" interfaces that
+	are in conflict with older interfaces of the same name.
+	Our interfaces fexec*() have been defined and published in 1982.
+	The new POSIX interfaces define a different interface and the
+	new POSIX interfaces even use names that are not compatible with
+	POSIX rules. The new POSIX interfaces in question should be called
+	fdexec*() to follow the rules of other similar POSIX functions.
+	Simiar problems exist with getline()/fgetline().
+
+	We try to automatically rename our functions in case that the functions
+	could be found in the local libc.
+
+
+Libschily:
+
+-	Added sleep.c and gettimeofday.c that emulate sleep() and gettimeofday()
+	when using MSVC
+
+-	Try to rename ecvt()/fcgt()/gcvt() in case that one of these functions
+	does not work and the libc implementation does not allow to overwrite the
+	function.
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+-	Included a patch for the CAM interface from the FreeBSD people.
+	The patch sets up the CAM data structrures in a way that allows
+	SCSI bus and target scanning.
+
+Rscsi:
+
+Cdrecord:
+
+-	Make dure that the DVD and BluRay drivers do not lower the default timeout.
+	cdrecord timeout=# now always allows to raise the default timeout to a larger
+	value.
+
+-	Added a workaround to prevent the Lite-ON BD B LH-2B1S/AL09
+	from hanging up when trying to write a BluRay Medium.
+
+-	Cdrecord now by default tries to set up a DMA Size of 126 kB.
+	If non-MMC drives are found, we fall back to the old value of 63 kB
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

@@ -1,0 +1,154 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a37:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	distibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	New autoconf test HAVE_SYS_SIGLIST_DEF checks for sys_siglist[]
+	definition in signal.h Thanks to Tatjana Heuser for reporting
+
+-	Possibly double #defines HAVE_ICONV HAVE_ICONV_OPEN HAVE_ICONV_CLOSE
+	in include/schily/iconv.h fixed. Thanks to Tatjana Heuser for reporting
+
+
+Libschily:
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+-	-size now understands things like -size +10m
+
+-	the function getperm() has been moved to libschily
+
+-	find_main() now supports to propagate a different environment
+	(e.g. with a different PATH) to fexec())
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+-	Changed sic_nls.c to allow compilation on SCO OpenServer-5.x and
+	other compilers that set __STDC__ to 0 and are not at least
+	fully C89 compliant.
+
+Libscg:
+
+-	scg/scgcmd.h upgraded to be sharable with the "scg" Solaris kernel driver
+
+-	scg/scgio.h upgraded to be sharable with the "scg" Solaris kernel driver
+
+Rscsi:
+
+Cdrecord:
+
+-	Cdrecord now correctly recognizes unformatted BD-RE media.
+	NOTE: The BD support code is not yet completely ready but
+	I expect this to happen in a few days.
+
+
+-	cdrecord man page now mentiones the "lofi" driver for Solaris
+
+-	Cdrecord now re-checks the media after a "blank" or "format"
+	operation has been issued. This prevents problems with incorrect
+	media size assumptions.
+
+-	cdrecord now implements a simulated "blank" feature for media that
+	itself does not support blanking: currently DVD-RAM + DVD+RW
+
+
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Readcd:
+
+-	Man page now mentions -edc-corr
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	isoinfo now allows to check the contents of the Joliet Volume descriptor
+	by calling:
+		isoinfo -dJ
+
+-	mkisofs bug fix for multi extent files, make UDF part from multi extent
+	files working again. Thanks to a hint from
+	Pav Lucistnik <pav@oook.cz> <pav@FreeBSD.org>
+
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

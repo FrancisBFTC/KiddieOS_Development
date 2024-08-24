@@ -1,0 +1,141 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a26:
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	distibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+-	Now using cdrecord/version.h for the global version number
+
+-	New autoconf test for struct timeval in sys/time.h
+
+-	New autoconf test for struct timezone in sys/time.h
+
+-	Changed include/schily/time.h to depend on the 
+	new autoconf #defines HAVE_STRUCT_TIMEVAL and
+	HAVE_STRUCT_TIMEZONE
+
+-	The Schily makefile system is now also passing OS
+	specific #defines to "configure".
+
+-	New Schily makefile system Target shell allows to
+	call "make shell" in order to get a shell with exactly
+	the same environment as the compilers will see from
+	the makefile system. This helps testing.
+
+-	New autoconf test checks whether we need to call
+	"xx.exe" on a plaform. This is needed in order to
+	be able to call the Microsoft compiler from the
+	SFU (Services for UNIX) environment.
+
+-	It is now possible to call the Microsoft compiler
+	from SFU. In order to do this, call "smake CCOM=cl"
+
+	If this does not work, you may need to change the
+	file DEFAULTS/vc7-interix-setup
+
+Libschily:
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+-	Fixed a typo in paranoia_init() that gas been introduced with 2.01.01a24
+	This bug did cause a core dump.
+	Thanks to Robert Grimm <rob@news.robgri.de> for reporting.
+
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+-	Fixed a bug in names.c that caused nameinit() to go into an endless
+	recursion and dump core if there is no "nobody" in /etc/passwd.
+	This bug has been introduced recently.
+
+
+Libfile:
+
+Libhfs_iso:
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+-	Trying to work around a Pioneer firmware bug that causes cdrecord to write
+	DVDs at lowest speed.
+
+-	Reset SCSI silent mode after cdrecord did use the auto-mode (no dev= parameter)
+	to find the drive. This again gives visible error messages.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Readcd:
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (By Jörg Schilling and James Pearson j.pearson@ge.ucl.ac.uk):
+
+-	added a better error message from Helios in volume.c
+
+-	The timezone bug (first fixed in 2.01.01a24 has now been fixed 
+	correctly and works even if the timezone is located east to GMT.
+
+
+TODO:
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

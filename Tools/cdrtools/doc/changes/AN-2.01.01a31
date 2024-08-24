@@ -1,0 +1,144 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a31:
+
+--------->
+******** WARNING! This is a release that introduces _massive_ changes
+******** in mkisofs. These changes are not yet and cannot yet be complete
+******** and are definitely not tested sufficiently already.
+******** If you like to test the recent massive mkisofs enhencements, you
+******** are welcome! If you lik a "stable" version, use mkisofs from
+******** Cdrtools-2.01.01a27
+<--------
+
+*******
+NOTE: this is _not_ a release that starts a new aplha/beta series of
+	distibutions. The only reason is to add certain new CD/DVD features
+	that are important.
+
+	So _please_ do not send any patches except when you like to fix
+	extreme bugs. I am currently mainly working on stable incremental
+	restore featurs for star-1.5-final.
+	Once star-1.5-final is out, cdrtools will start a new developent cycle.
+*******
+
+
+All:
+
+Libschily:
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+Rscsi:
+
+Cdrecord:
+
+-	New code to better print speed performance values
+	with cdrecord -prcap
+	Note: The 'MATSHITA' 'BD-MLT SW-5582  ' seems for unknown
+	reason not to support to retrieve the current read/write speed
+	values via get_performance.
+
+-	cdrecord -minfo now prints "Mounted media class" and 
+	"Mounted media type" name.
+
+-	Fixed a bug in auto-target mode introduced with 2.01.01a30
+	Cdrecord now again is able to work wihtout a dev= parameter.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Fixed a bug in auto-target mode introduced with 2.01.01a30
+	Cdda2wav now again is able to work wihtout a dev= parameter.
+
+Readcd:
+
+-	Fixed a bug in auto-target mode introduced with 2.01.01a30
+	Readcd now again is able to work wihtout a dev= parameter.
+
+Scgcheck:
+
+Scgskeleton:
+
+Btcflash:
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated my Eric Youngdale):
+
+-	New option -no-limit-pathtables allows to create filesystems with
+	more than 65535 parent directories. Note that this makes the filesystem
+	violating ISO9660 and the filesystem will not be usable on DOS.
+
+-	New option errctl=name or errctl=control-spec similar as in star.
+
+	This option allows e.g. to tell mkisofs not to abort if a file
+	did grow or shrink while mkisofs was reading it.
+
+	Currently only OPEN, READ, GROW, SHRINK are implemented more to come
+	later...
+
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg

@@ -1,0 +1,202 @@
+Please have a look at the German open Source Center BerliOS at www.berlios.de
+BerliOS will continue to support free hosting of cryptography projects even
+when US laws change and don't allow to host cryptography projects in the USA.
+Also look at sourcewell.berlios.de, the first Open Source announcement service
+that itself is implemented as Open Source project.
+
+***************** Important news ****************************
+
+For the 'Slottable Source Plugin Module' SSPM Features read README.SSPM
+
+***************** Please Test *********************************
+
+NEW features of cdrtools-2.01.01a56:
+
+*******
+NOTE: cdrtools is currently in a state just before a new major release.
+	
+
+*******
+
+
+All:
+
+-	New autoconf test to distinguish between the free of charge 
+	"Bundled" cc on HP-UX and the commercial cc. Only the commercial cc 
+	supports ANSI C and the Bundled cc complains when the ANSI Options
+	are used:
+
+	(Bundled) cc: warning 480: The -A option is available only with the C/ANSI C product; ignored.
+	(Bundled) cc: warning 480: The -O option is available only with the C/ANSI C product; ignored.
+
+	These warnings are no longer present.
+
+-	schily/schily.h now auto-includes stdio.h in case that the platform 
+	supports the new POSIX.1-2008 getline()/fgetline() functions that 
+	violate against general POSIX rules and thus overlay our implementation
+	that exists since 1982.
+
+-	schily/stkframe.h now uses Intptr_t for the fr_savp member to make it
+	work correctly on 64bit systems without OS supplied stkframe.h.
+
+-	New autoconf test on whether unistd.h defines extern char ** environ.
+
+-	New file schily/stdio.h to simplify layering.
+
+Libschily:
+
+-	Fixed a bug in fexecl() introduced in October 2008 that caused the
+	called program to be called with a too small argc (one too few).
+
+-	format() now supports %z for size_t and %t for ptrdiff_t
+
+
+Libparanoia (Ported/enhanced by Jörg Schilling, originated by Monty xiphmont@mit.edu):
+
+Libedc (Optimized by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	Avoid some GCC warnings
+
+Libcdrdeflt:
+
+Libdeflt:
+
+-	lbdeflt needs to be compiled before libcdrdeflt when creating
+	dynamic libs
+
+Libfind:
+
+Libfile:
+
+Libhfs_iso:
+
+Libsiconv:
+
+Libscg:
+
+-	Avoid some GCC warnings
+
+Libscgcmd:
+
+Rscsi:
+
+Cdrecord:
+
+-	Avoid some GCC warnings
+
+-	Some small typos in error messages have been fixed.
+
+-	Workaround for 'TSSTcorp' 'CDDVDW SE-S224Q ' 'TS01' firmware bug.
+	The drives does not return SES_UNDEF for unformatted DVD+RW media.
+
+-	Support again cdrecord -v -sao -multi *.wav
+	This stopped working with 2.01.01a29 when introducing DVD multi-border
+	support.
+
+
+Cdda2wav (Maintained/enhanced by Jörg Schilling, originated by Heiko Eißfeldt heiko@hexco.de):
+
+-	struct tocdesc has been restructured to prevent struct tail padding on MC-680x0 systems.
+	Thanks to Yvan Doyeux for reporting this for the ATARI port.
+
+-	The drive 'HP ' 'CD-Writer+ 9600 ' '1.0a' does not like to read SCSI FULL TOC
+	with a too long transfer lenght. First retrieve the available data count.
+
+-	New options -debug -debug-scsi -kdebug -kdebug-scsi -kd to set SCSI low level
+	debugging in libscg
+
+-	The option -v not also supports "!" and "not" to invert the list
+	of "verbose" options (e.g. -v!indices for everything but indices).
+
+-	Avoid some GCC warnings specific to HP-UX
+
+-	Added a workaround for gmake < version 3.81.
+	Older gmake versions evaluate dependencies in the wrong order.
+
+Readcd:
+
+-	Try to exit(excode) instead of exit(0)  in case that siginificant
+	problems occured.
+
+-	Prevent readcd from dumping core via raisecond("file_write_err")->abort()
+	in case that the target filesystem fills up.
+
+-	Added a workaround for gmake < version 3.81.
+	Older gmake versions evaluate dependencies in the wrong order.
+
+Scgcheck:
+
+-	Avoid some GCC warnings
+
+-	Added a workaround for gmake < version 3.81.
+	Older gmake versions evaluate dependencies in the wrong order.
+
+Scgskeleton:
+
+-	Added a workaround for gmake < version 3.81.
+	Older gmake versions evaluate dependencies in the wrong order.
+
+Btcflash:
+
+-	Added a workaround for gmake < version 3.81.
+	Older gmake versions evaluate dependencies in the wrong order.
+
+Mkisofs (Maintained/enhanced by Jörg Schilling since 1997, originated by Eric Youngdale):
+
+-	Some casts have been added to increase the 64 bit compilation support
+
+-	mkisofs and the tools isodump, isovfy and isoinfo now completely
+	support the SUSP termination signature "ST".
+
+-	Do no longer flag the absence of a "RR" signature as an error in
+	isodump, isovfy and isoinfo as newer Rock Ridge standard versions removed RR.
+
+-	Fixed a minor problem with a debug print output and 64 bit compile mode.
+
+-	Avoid some GCC warnings
+
+-	Minor typo fix in the mkisofs man page
+
+	HELIOS TODO:
+
+	-	Add the HELIOS UNICODE mapping code. This needs to be done 
+		at UCS-2 level for Joliet and UDF (instead of UTF-8) and only
+		for Rock Ridge (in case of a UTF-8 based target locale) using
+		UTF-8 based translations.
+
+	-	Make the Apple extensions work again with "mkisofs -find"
+
+TODO:
+	-	Support correct inode numbers for UDF hardlinks
+
+	-	Support sockets, pipes, char/blk-dev specials with UDF
+
+	-	read Joliet filenames with multi-session if no TRANS.TBL
+		or RR is present. I am looking for a volunteer for this task!
+
+		Note that this can never be 100% correct as there is no relation
+		between the names on the master (UNIX) filesystem, the ISO-9660
+		names and the Joliet names. Only the Rock Ridge names are
+		untranslated with respect to the original files on the
+		master (UNIX) filesystem.
+
+	-	add libecc/edc for CDI and similar.
+
+
+CYGWIN NT-4.0 NOTES:
+
+To compile on Cygwin32, get Cygwin and install it.
+For more information read README.win32
+
+The files are located on:
+
+ftp://ftp.berlios.de/pub/cdrecord/alpha ...
+
+NOTE:	These tar archives are 100% POSIX compatible. GNU tar may get some
+	minor trouble. If you like a 100% POSIX compliant tar, get star from
+	ftp://ftp.berlios.de/pub/star/
+
+WARNING: Do not use 'winzip' to extract the tar file!
+	Winzip cannot extract symbolic links correctly.
+
+Joerg
