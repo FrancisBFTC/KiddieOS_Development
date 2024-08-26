@@ -125,4 +125,8 @@ Na sessão de Issues, veremos perguntas gerais e específicas sobre o sistema qu
 - [Adição de Licença no Projeto (por @storebreakup)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/22)
 - [Hash na ISO para Verificação de Validade (por @storebreakup)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/23)
 
+- [Tela preta no driver VESA | Correção de Bugs (por @arthur-cas)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/12)
+- [Bug na interface de comandos: travamento após o ENTER | Correção de Bugs (por @arthur-cas)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/13)
+- [Comando WRITE reinicia o sistema | Correção de Bugs (por @arthur-cas)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/14)
+
 Agradeço por quem leu e compreendeu! Boas colaborações para vocês! :D 
