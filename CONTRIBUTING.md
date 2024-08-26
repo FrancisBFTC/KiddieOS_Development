@@ -122,5 +122,7 @@ Na sessão de Issues, veremos perguntas gerais e específicas sobre o sistema qu
 - [Conhecendo o Sistema KiddieOS (Dúvidas/Questões por @storebreakup)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/18)
 - [Dúvidas sobre o KiddieOS | Nome/Marca (Dúvidas/Questões por @storebreakup)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/19)
 - [Lançamento de KiddieOS via Torrent (Dúvidas/Questões por @storebreakup)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/21)
+- [Adição de Licença no Projeto (por @storebreakup)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/22)
+- [Hash na ISO para Verificação de Validade (por @storebreakup)](https://github.com/FrancisBFTC/KiddieOS_Development/issues/23)
 
 Agradeço por quem leu e compreendeu! Boas colaborações para vocês! :D 
