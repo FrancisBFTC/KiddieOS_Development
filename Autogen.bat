@@ -254,6 +254,7 @@ GOTO:EOF
 	call :Assembler
 	call :AssemblingPrograms
 	call :CopyBinaries
+	call :CopySourcesApps
 	
 	cecho {\n}
 	cecho {0A}%i% Binary Files remounted successfully{\n\n}
@@ -312,7 +313,10 @@ GOTO:EOF
 	copy Bin\API\*.* KiddieOS\Library\
 	del KiddieOS\System16\BootMGR\bootfat.osf
 GOTO:EOF
-	
+
+:CopySourcesApps
+	copy Apps\Basic\*.bas KiddieOS\Users\BFTC\Apps\
+GOTO:EOF
 ::32769K
 :VHDCreate	
 	cecho {0A}Mounting VHD file...{\n}

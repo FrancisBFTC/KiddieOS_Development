@@ -12,6 +12,6 @@ cecho {\n}
 	set /p Choose=
 	if %Choose% EQU 1 VBoxManage.exe startvm  --putenv VBOX_GUI_DBG_ENABLED=true KiddieOS_USB
 	if %Choose% EQU 2 VBoxManage.exe startvm  --putenv VBOX_GUI_DBG_ENABLED=true KiddieOS_VHD
-	if %Choose% EQU 3 qemu-system-i386 -drive format=raw,file=C:\Users\USER\Desktop\D.S.O.S\KiddieOS\DiskImage\KiddieOS.vhd -m 1000 -boot order=dc -cpu core2duo -vga std -accel tcg,thread=single -smp 1 -audiodev id=sdl,driver=sdl -machine pcspk-audiodev=sdl
+	if %Choose% EQU 3 qemu-system-i386 -drive format=raw,file=C:\Users\USER\Desktop\D.S.O.S\KiddieOS\ISO\KiddieOS.vhd -m 1000 -boot order=dc -cpu core2duo -vga std -accel tcg,thread=single -smp 1 -audiodev id=sdl,driver=sdl -machine pcspk-audiodev=sdl
 	
 	cecho {\n}
