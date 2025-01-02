@@ -258,6 +258,10 @@ write_font:
 		popa
 ret
 text_font db "KIDDIEOS MOUSE",0
+open_menu_str db "ABRIR",0
+update_menu_str db "ATUALIZAR",0
+paste_menu_str db "COLAR",0
+create_menu_str db "CRIAR",0
 
 ; DX = Linha Inicial
 ; CX = Coluna Inicial
@@ -438,8 +442,22 @@ paint_window_mouse:
   	paint_win_cols:
 		push 	cx
     	cld
+		push 	ax
+		cmp 	al, 0
+		jz 		is_not_divisible
+		xor  	dx, dx
+		push 	ax
+		mov 	ax, cx
+		mov 	bx, 22
+		div 	bx
+		pop 	ax
+		cmp 	dx, 0
+		jnz 	is_not_divisible
+		mov 	al, 16h
+	is_not_divisible:
     	mov  	cx, [sizewx]
 		rep  	stosb
+		pop 	ax
     paint_win_line:
 		sub 	di, [sizewx]
       	add  	di, SCREEN_WIDTH
@@ -645,11 +663,6 @@ mouse_start:
 	mov 	si, mouse_bitmap		; SI = Bitmap
 	call 	draw_mouse				; Desenha o mouse
 
-	mov 	si, text_font
-	mov 	dx, 5
-	mov 	cx, 5
-	call 	write_font
-
 wait_packet:
     call wait_to_read
     in al, 0x60
@@ -730,10 +743,27 @@ ButtonRight:
 	mov 	cx, [screen_x]	; CX = Coluna Inicial
 	mov 	[savewy], dx
 	mov 	[savewx], cx
-	mov 	al, 19h 			; AL = Cor do Pixel = vermelho
+	mov 	al, 13h 			; AL = Cor do Pixel = vermelho
 	mov 	word[sizewx], 80
 	mov 	word[sizewy], 100
 	call 	paint_window_mouse
+
+	add 	dx, 2
+	add 	cx, 2
+	mov 	si, open_menu_str
+	call 	write_font
+
+	add 	dx, 9 + 3
+	mov 	si, update_menu_str
+	call 	write_font
+
+	add 	dx, 9 + 3
+	mov 	si, paste_menu_str
+	call 	write_font
+
+	add 	dx, 9 + 3
+	mov 	si, create_menu_str
+	call 	write_font
 
 	mov 	dx, [screen_y]			; DX = Linha Inicial
 	mov 	cx, [screen_x]			; CX = Coluna Inicial
