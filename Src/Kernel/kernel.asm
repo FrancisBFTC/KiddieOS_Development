@@ -257,28 +257,28 @@ write_font:
 	ret_printfont:
 		popa
 ret
-text_font db "HELLO WORLD",0
+text_font db "KIDDIEOS MOUSE",0
 
 ; DX = Linha Inicial
 ; CX = Coluna Inicial
 ; AL = Cor do Pixel
-paint_pixel:
-  	pusha
-  	push 	es
-  	push 	ax
-  	mov   	ax, 0xA000
-  	mov   	es, ax
-  	mov   	ax, 320
-  	mov   	bx, dx
-  	xor		dx, dx
-  	mul   	bx
-  	mov   	di, ax
-  	add   	di, cx
-	pop 	ax
-	stosb
-	pop	es
-	popa
-ret
+;paint_pixel:
+;  	pusha
+;  	push 	es
+;  	push 	ax
+;  	mov   	ax, 0xA000
+;  	mov   	es, ax
+;  	mov   	ax, 320
+;  	mov   	bx, dx
+;  	xor		dx, dx
+;  	mul   	bx
+;  	mov   	di, ax
+;  	add   	di, cx
+;	pop 	ax
+;	stosb
+;	pop	es
+;	popa
+;ret
 
 mouse_selection:
 	pusha
@@ -293,37 +293,258 @@ mouse_selection:
 	mov   	di, ax
 	add   	di, cx
 	pop 	ax
-	line_horiz_up:
-		cld
-		mov  	cx, [sizex]
+	mov 	word[direction_screen], SCREEN_WIDTH
+	mov 	dx, [sizex]
+	mov 	bx, [sizey]
+	mov 	[sizex_tmp], dx
+	mov 	[sizey_tmp], bx
+	mov 	cx, dx
+	or 		cx, bx
+	jz 		ret_mouse_selection
+	cmp 	bx, 0
+	jz 		paint_line_horiz
+	call 	conv_direction_y
+	mov 	cx, [sizey_tmp]
+	cmp 	dx, 0
+	jz 		paint_line_vertc_begin
+	jmp 	line_horiz_up
+	paint_line_vertc_begin:
+		push 	cx
+		call 	conv_direction
+		pop 	cx
+	paint_line_vertc:
+		mov 	[es:di], al
+		add   	di, [direction_screen]
+		loop  	paint_line_vertc
+		jmp 	ret_mouse_selection
+	paint_line_horiz:
+		call 	conv_direction_x_up
+		mov  	cx, [sizex_tmp]
 		rep  	stosb
-		mov  	cx, [sizey]
+		jmp 	ret_mouse_selection
+	line_horiz_up:
+		call 	conv_direction_x_up
+		mov  	cx, [sizex_tmp]
+		rep  	stosb
+		call 	conv_direction_y
+		mov  	cx, [sizey_tmp]
 	line_vertc_right:
 		mov 	[es:di], al
-		add   	di, 320
+		add   	di, [direction_screen]
 		loop  	line_vertc_right
 	line_horiz_down:
-		std
-		mov   	cx, [sizex]
+		call 	conv_direction_x_down
+		mov   	cx, [sizex_tmp]
 		rep   	stosb
-		mov   	cx, [sizey]
-		cld
+		call 	conv_direction_y
+		mov   	cx, [sizey_tmp]
 	line_vertc_left:
 		mov 	[es:di], al
-		sub  	di, 320
+		add  	di, [direction_screen]
 		loop  	line_vertc_left
 		cld
+ret_mouse_selection:
 	pop 	es
 	popa
 ret
-sizex dw 1
-sizey dw 1
+conv_direction_x_up:
+	cld
+	call 	conv_direction
+check_dir_x:
+	mov 	cx, dx
+	and 	cx, 8000h
+	jz 		ret_conv_x_up
+	mov 	cx, dx
+	not 	cx
+	inc 	cx
+	mov 	[sizex_tmp], cx
+	std
+ret_conv_x_up:
+	ret
+conv_direction_x_down:
+	std
+	not 	word[direction_screen]
+	inc 	word[direction_screen]
+	mov 	cx, dx
+	and 	cx, 8000h
+	jz 		ret_conv_x_down
+	mov 	cx, dx
+	not 	cx
+	inc 	cx
+	mov 	[sizex_tmp], cx
+	cld
+ret_conv_x_down:
+	ret
+conv_direction_y:
+	mov 	cx, bx
+	and 	cx, 8000h
+	jz 		ret_conv_y
+	mov 	cx, bx
+	not 	cx
+	inc 	cx
+	mov 	[sizey_tmp], cx
+ret_conv_y:
+	ret
+conv_direction:
+	mov 	cx, bx
+	and 	cx, 8000h
+	jz 		ret_conv_dir
+	not 	word[direction_screen]
+	inc 	word[direction_screen]
+ret_conv_dir:
+	ret
 
-open_popup:
+erase_selection:
+	mov 	dx, [savey]
+	mov 	cx, [savex]
+	mov 	al, 0x00
+	call 	mouse_selection
+	mov 	word[savex], 0
+	mov 	word[savey], 0
+	mov 	word[sizex], 0
+	mov 	word[sizey], 0
+ret
+
+save_coord_selection:
+	mov 	dx, [screen_y]
+	sub 	dx, 5
+	mov 	cx, [screen_x]
+	sub 	cx, 4
+	mov 	ax, [savex]
+	mov 	bx, [savey]
+	and 	ax, bx
+	jnz 	no_update_save
+	mov 	[savey], dx
+	mov 	[savex], cx
+	mov 	word[sizex], 1
+	mov 	word[sizey], 1
+no_update_save:
+	ret
+
+paint_window_mouse:
 	pusha
+	push 	es
+	push	ax
+  	mov   	ax, 0xA000
+  	mov   	es, ax
+  	mov   	ax, SCREEN_WIDTH
+  	mov   	bx, dx
+  	xor   	dx, dx
+  	mul   	bx
+  	mov   	di, ax
+  	add   	di, cx
+  	pop 	ax
+	mov  	cx, [sizewy]
+  	paint_win_cols:
+		push 	cx
+    	cld
+    	mov  	cx, [sizewx]
+		rep  	stosb
+    paint_win_line:
+		sub 	di, [sizewx]
+      	add  	di, SCREEN_WIDTH
+		pop 	cx
+      	loop  	paint_win_cols
+  pop 	es
+  popa
+ret
+sizewx dw 0
+sizewy dw 0
 
+paint_mouse_back:
+	pusha
+	push 	es
+  	mov   	ax, 0xA000
+  	mov   	es, ax
+  	mov   	ax, SCREEN_WIDTH
+  	mov   	bx, dx
+  	xor   	dx, dx
+  	mul   	bx
+  	mov   	di, ax
+  	add   	di, cx
+	mov 	si, background
+	mov  	cx, [sizewy]
+  	paint_mou_cols_back:
+		push 	cx
+    	cld
+    	mov  	cx, [sizewx]
+		rep  	movsb
+    paint_mou_line_back:
+		sub 	di, [sizewx]
+      	add  	di, SCREEN_WIDTH
+		pop 	cx
+      	loop  	paint_mou_cols_back
+  pop 	es
+  popa
+ret
+
+erase_window_mouse:
+	cmp 	byte[right_pressed], 0
+	jz		no_right_pressed
+
+	mov 	dx, [savewy]
+	mov 	cx, [savewx]
+	mov 	al, 00h 			; AL = Cor do Pixel = vermelho
+	mov 	word[sizewx], 80
+	mov 	word[sizewy], 100
+	call 	paint_window_mouse
+	mov 	byte[right_pressed], 0
+	
+no_right_pressed:
+	ret
+
+erase_pointer_mouse:
+
+	mov 	word[sizewx], 16
+	mov 	word[sizewy], 9
+	call 	paint_mouse_back
+	
+ret
+
+save_background:
+	pusha
+	push 	ds
+	
+  	mov   	ax, 0xA000
+  	mov   	ds, ax
+  	mov   	ax, SCREEN_WIDTH
+  	mov   	bx, dx
+  	xor   	dx, dx
+  	mul   	bx
+  	mov   	si, ax
+  	add   	si, cx
+	mov 	di, background
+	mov  	cx, [es:sizewy]
+	save_back_cols:
+		push 	cx
+    	cld
+    	mov  	cx, [es:sizewx]
+		rep  	movsb
+    save_back_line:
+		sub 	si, [es:sizewx]
+      	add  	si, SCREEN_WIDTH
+		pop 	cx
+      	loop  	save_back_cols
+	pop 	ds
 	popa
 ret
+background times 16*9 db 0
+
+screenx_changed dw 0
+screeny_changed dw 0
+right_pressed 	db 0
+left_pressed 	db 0
+savewx dw 0
+savewy dw 0
+
+savex dw 0
+savey dw 0
+
+sizex dw 1
+sizey dw 1
+sizex_tmp dw 1
+sizey_tmp dw 1
+direction_screen dw 0
 
 wait_to_write:
     in al, 0x64
@@ -411,6 +632,12 @@ mouse_start:
 
 	mov 	dx, [screen_y]			; DX = Linha Inicial
 	mov 	cx, [screen_x]			; CX = Coluna Inicial
+	mov 	word[sizewx], 16
+	mov 	word[sizewy], 9
+	call 	save_background
+
+	mov 	dx, [screen_y]			; DX = Linha Inicial
+	mov 	cx, [screen_x]			; CX = Coluna Inicial
 	mov 	ah, 19h	 				; AH = Cor das Bordas
 	mov 	al, 1Fh					; AL = Cor do Fundo
 	mov 	bh, 16 					; BH = Número de pixels da linha
@@ -436,29 +663,27 @@ wait_packet:
     in al, 0x60
     mov [mouse_deltaY], al
 
-	call process_movement
+	;call process_movement
 
+check_button_left:
     mov al, [mouse_status]
     and al, 00000001b
     jnz ButtonLeft
 
-	mov 	dx, [savey]
-	mov 	cx, [savex]
-	mov 	al, 0x00
-	call 	mouse_selection
-	mov 	word[savex], 0
-	mov 	word[savey], 0
-	mov 	word[sizex], 1
-	mov 	word[sizey], 1
+	call 	erase_selection
 
+check_button_right:
     mov al, [mouse_status]
     and al, 00000010b
     jnz ButtonRight
 
+check_button_middle:
     mov al, [mouse_status]
     and al, 00000100b
     jnz ButtonMiddle
 
+check_process_movement:
+	call process_movement
     jmp wait_packet
 
 ButtonLeft:
@@ -470,44 +695,57 @@ ButtonLeft:
 	;mov 	al, 2 			; AL = Cor do Pixel = verde
 	;call paint_pixel
 
+	call 	erase_window_mouse
+	mov 	byte[left_pressed], 0
+
 	mov 	al, [mouse_deltaX]
 	or 		al, [mouse_deltaY]
 	jz 		wait_packet
 
+	mov 	byte[left_pressed], 1
 	call 	save_coord_selection
 
-	mov 	dx, [savey]
-	mov 	cx, [savex]
-	mov 	al, 0x00
-	call 	mouse_selection
+	;mov 	dx, [savey]
+	;mov 	cx, [savex]
+	;mov 	al, 0x00
+	;call 	mouse_selection
 
-	mov 	dx, [savey]
-	mov 	cx, [savex]
-	mov 	al, 0x01
-	mov 	bx, [mouse_deltaX_temp]
-	add 	[sizex], bx
-	mov 	bx, [mouse_deltaY_temp]
-	add 	[sizey], bx
-	call 	mouse_selection
-	jmp wait_packet
+	;mov 	dx, [savey]
+	;mov 	cx, [savex]
+	;mov 	al, 0x01
+	;mov 	bx, [mouse_deltaX_temp]
+	;add 	[sizex], bx
+	;mov 	bx, [mouse_deltaY_temp]
+	;add 	[sizey], bx
+	;call 	mouse_selection
+
+	jmp 	check_button_right
 ButtonRight:
    ;mov si, right_msg
    ;call Print_String
 
+    call 	erase_window_mouse
+	mov 	byte[right_pressed], 1
 	mov 	dx, [screen_y]	; DX = Linha Inicial
 	mov 	cx, [screen_x]	; CX = Coluna Inicial
-	mov 	al, 3 			; AL = Cor do Pixel = azul
-	call paint_pixel
-   	jmp wait_packet
+	mov 	[savewy], dx
+	mov 	[savewx], cx
+	mov 	al, 19h 			; AL = Cor do Pixel = vermelho
+	mov 	word[sizewx], 80
+	mov 	word[sizewy], 100
+	call 	paint_window_mouse
+
+	mov 	dx, [screen_y]			; DX = Linha Inicial
+	mov 	cx, [screen_x]			; CX = Coluna Inicial
+	mov 	word[sizewx], 16
+	mov 	word[sizewy], 9
+	call 	save_background
+   	jmp 	check_button_middle
 ButtonMiddle:
 	;mov si, middle_msg
 	;call Print_String
-	
-	mov 	dx, [screen_y]	; DX = Linha Inicial
-	mov 	cx, [screen_x]	; CX = Coluna Inicial
-	mov 	al, 4 			; AL = Cor do Pixel = vermelho
-	call paint_pixel
-   	jmp wait_packet
+
+   	jmp 	check_process_movement
 process_movement:
 	; Verifique os bits 4 e 5 de mouse_status
 	; Calcule as coordenadas
@@ -590,19 +828,51 @@ done_mouse_move:
 	;mov dh, [screen_y]
 	;mov dl, [screen_x]
 	;call Move_Cursor
-	
+
 	mov 	dx, [screeny_changed]			; DX = Linha Inicial
 	pop 	ax
 	sub 	dx, ax
 	mov 	cx, [screenx_changed]			; CX = Coluna Inicial
 	pop 	ax
 	sub 	cx, ax
-	mov 	ah, 00h	 				; AH = Cor das Bordas
-	mov 	al, 00h					; AL = Cor do Fundo
-	mov 	bh, 16 					; BH = Número de pixels da linha
-	mov 	bl, mouse_bitmap.size 	; BL = Número de linhas
-	mov 	si, mouse_bitmap		; SI = Bitmap
-	call 	draw_mouse				; Desenha o mouse
+	call 	erase_pointer_mouse
+
+	cmp 	byte[left_pressed], 1
+	jnz 	no_erase_selection
+
+	mov 	dx, [savey]
+	mov 	cx, [savex]
+	mov 	al, 0x00
+	call 	mouse_selection
+
+no_erase_selection:
+	mov 	dx, [screen_y]			; DX = Linha Inicial
+	mov 	cx, [screen_x]			; CX = Coluna Inicial
+	mov 	word[sizewx], 16
+	mov 	word[sizewy], 9
+	call 	save_background
+
+	cmp 	byte[left_pressed], 1
+	jnz 	no_repaint_selection
+
+	mov 	dx, [savey]
+	mov 	cx, [savex]
+	mov 	al, 0x01
+	mov 	bx, [mouse_deltaX_temp]
+	add 	[sizex], bx
+	mov 	bx, [mouse_deltaY_temp]
+	add 	[sizey], bx
+	call 	mouse_selection
+
+	mov 	byte[left_pressed], 0
+
+no_repaint_selection:
+	;mov 	ah, 00h	 				; AH = Cor das Bordas
+	;mov 	al, 00h					; AL = Cor do Fundo
+	;mov 	bh, 16 					; BH = Número de pixels da linha
+	;mov 	bl, mouse_bitmap.size 	; BL = Número de linhas
+	;mov 	si, mouse_bitmap		; SI = Bitmap
+	;call 	draw_mouse				; Desenha o mouse
 
 	mov 	dx, [screen_y]			; DX = Linha Inicial
 	mov 	cx, [screen_x]			; CX = Coluna Inicial
@@ -615,33 +885,12 @@ done_mouse_move:
 
 	ret
 
-save_coord_selection:
-	mov 	dx, [screen_x]
-	sub 	dx, 2
-	mov 	cx, [screen_y]
-	sub 	cx, 1
-	mov 	ax, [savex]
-	mov 	bx, [savey]
-	and 	ax, bx
-	jnz 	no_update_save
-	mov 	[savey], dx
-	mov 	[savex], cx
-	mov 	word[sizex], 1
-	mov 	word[sizey], 1
-no_update_save:
-	ret
-savex dw 0
-savey dw 0
-
 error_mouse:
      mov si, error_msg
      call Print_String
      xor ax, ax
 	 int 16h
 ret
-
-screenx_changed dw 0
-screeny_changed dw 0
 
 error_msg  db "Nao foi possivel configurar o mouse!",0
 left_msg  db "L",0
