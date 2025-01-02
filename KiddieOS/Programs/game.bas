@@ -26,6 +26,7 @@ REM LISTBOX $2 $3 $4 A
 
 SIZE $1
 $2 = "O programa '" + $1 + "' tem " + S + " bytes!"
+PRINT $2
 
 FINISH:
     END
