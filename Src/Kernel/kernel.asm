@@ -66,7 +66,7 @@ mikeapi 	db "MIKEOS  API",0
 
 screen_x dw SCREEN_WIDTH / 2
 screen_y dw SCREEN_HEIGHT / 2
-sample_rate db 200
+sample_rate db 100
 resolution db 0
 
 mouse_status db 0
@@ -170,7 +170,8 @@ is_last  db 0
 
 ; DX = Linha Inicial
 ; CX = Coluna Inicial
-; AL = Cor do Fundo
+; AH = Cor do fundo (Se 0, então transparente)
+; AL = Cor do Pixel do caractere
 ; BH = Número de pixels da linha
 ; BL = Número de linhas
 ; SI = Bitmap
@@ -212,8 +213,13 @@ draw_bitmap:
 			push 	cx
 			mov 	cx, [si]
 			and 	cx, bx
-			jz 		no_draw_bitpixel
+			jz 		no_draw_bitpixel0
 			mov 	[es:di], al
+			jmp 	no_draw_bitpixel
+		no_draw_bitpixel0:
+			cmp 	ah, 0x00
+			jz 		no_draw_bitpixel
+			mov 	[es:di], ah
 		no_draw_bitpixel:
 			shr 	bx, 1
 			inc 	di
@@ -237,21 +243,20 @@ write_font:
 	mov 	bx, 0x0808
 	mov 	di, bitmap_A
 	printfont:
-		mov 	ah, [si]
-		cmp 	ah, 0
+		cmp 	byte[si], 0
 		jz		ret_printfont
-		inc 	si
 		push 	si
 		push 	ax
-		xor 	al, al 	
+		xor 	ax, ax
+		mov 	al, [si]	
 		mov 	si, di
-		xchg 	ah, al
 		sub 	al, 0x41
 		shl 	ax, 3
 		add 	si, ax
 		pop 	ax
 		call 	draw_bitmap
 		pop 	si
+		inc 	si
 		add 	cx, 8
 		jmp 	printfont
 	ret_printfont:
@@ -262,6 +267,18 @@ open_menu_str db "ABRIR",0
 update_menu_str db "ATUALIZAR",0
 paste_menu_str db "COLAR",0
 create_menu_str db "CRIAR",0
+
+open_menu_y dw 0
+open_menu_x dw 0
+update_menu_y dw 0
+update_menu_x dw 0
+paste_menu_y dw 0
+paste_menu_x dw 0
+create_menu_y dw 0
+create_menu_x dw 0
+option_select_y dw 0
+option_select_x dw 0
+option_str_addr dw 0
 
 ; DX = Linha Inicial
 ; CX = Coluna Inicial
@@ -502,7 +519,7 @@ erase_window_mouse:
 
 	mov 	dx, [savewy]
 	mov 	cx, [savewx]
-	mov 	al, 00h 			; AL = Cor do Pixel = vermelho
+	mov 	al, 00h 			; AL = Cor do Pixel = preto
 	mov 	word[sizewx], 80
 	mov 	word[sizewy], 100
 	call 	paint_window_mouse
@@ -547,6 +564,155 @@ save_background:
 	popa
 ret
 background times 16*9 db 0
+
+menu_selection:
+	pusha
+	cmp 	byte[right_pressed], 0
+	jz 		ret_menu_selection
+	cmp 	dx, [open_menu_y]
+	jae 	check_update_y
+	jmp 	ret_menu_selection
+check_update_y:
+	cmp 	dx, [update_menu_y]
+	jae 	check_paste_y
+
+	add 	cx, 3
+	cmp 	cx, [open_menu_x]
+	jb 		ret_menu_selection
+	mov 	dx, [savewx]
+	add 	dx, 80 - 6
+	cmp 	cx, dx
+	ja 		ret_menu_selection
+
+	mov 	dx, [option_select_y]
+	mov 	cx, [option_select_x]
+	or 		dx, cx
+	jz 		no_erase_menu_selection1
+
+	mov 	dx, [option_select_y]
+	mov 	cx, [option_select_x]
+	mov 	si, [option_str_addr]
+	mov 	ah, 0x13
+	call 	write_font
+
+no_erase_menu_selection1:
+	mov 	dx, [open_menu_y]
+	mov 	cx, [open_menu_x]
+	mov 	si, open_menu_str
+	mov 	ah, 0x16
+	call 	write_font
+	mov 	[option_select_y], dx
+	mov 	[option_select_x], cx
+	mov 	word[option_str_addr], open_menu_str
+	jmp 	ret_menu_selection
+
+check_paste_y:
+	cmp 	dx, [paste_menu_y]
+	jae 	check_create_y
+
+	add 	cx, 3
+	cmp 	cx, [update_menu_x]
+	jb 		ret_menu_selection
+	mov 	dx, [savewx]
+	add 	dx, 80 - 6
+	cmp 	cx, dx
+	ja 		ret_menu_selection
+
+	mov 	dx, [option_select_y]
+	mov 	cx, [option_select_x]
+	or 		dx, cx
+	jz 		no_erase_menu_selection2
+
+	mov 	dx, [option_select_y]
+	mov 	cx, [option_select_x]
+	mov 	si, [option_str_addr]
+	mov 	ah, 0x13
+	call 	write_font
+
+no_erase_menu_selection2:
+	mov 	dx, [update_menu_y]
+	mov 	cx, [update_menu_x]
+	mov 	si, update_menu_str
+	mov 	ah, 0x16
+	call 	write_font
+	mov 	[option_select_y], dx
+	mov 	[option_select_x], cx
+	mov 	word[option_str_addr], update_menu_str
+	jmp 	ret_menu_selection
+
+check_create_y:
+	cmp 	dx, [create_menu_y]
+	jae 	check_after_create
+
+	add 	cx, 3
+	cmp 	cx, [paste_menu_x]
+	jb 		ret_menu_selection
+	mov 	dx, [savewx]
+	add 	dx, 80 - 6
+	cmp 	cx, dx
+	ja 		ret_menu_selection
+
+	mov 	dx, [option_select_y]
+	mov 	cx, [option_select_x]
+	or 		dx, cx
+	jz 		no_erase_menu_selection3
+
+	mov 	dx, [option_select_y]
+	mov 	cx, [option_select_x]
+	mov 	si, [option_str_addr]
+	mov 	ah, 0x13
+	call 	write_font
+
+no_erase_menu_selection3:
+	mov 	dx, [paste_menu_y]
+	mov 	cx, [paste_menu_x]
+	mov 	si, paste_menu_str
+	mov 	ah, 0x16
+	call 	write_font
+	mov 	[option_select_y], dx
+	mov 	[option_select_x], cx
+	mov 	word[option_str_addr], paste_menu_str
+	jmp 	ret_menu_selection
+
+check_after_create:
+	mov 	ax, [create_menu_y]
+	add 	ax, 9
+	cmp 	dx, ax
+	ja 		ret_menu_selection
+
+	add 	cx, 3
+	cmp 	cx, [create_menu_x]
+	jb 		ret_menu_selection
+	mov 	dx, [savewx]
+	add 	dx, 80 - 6
+	cmp 	cx, dx
+	ja 		ret_menu_selection
+
+	mov 	dx, [option_select_y]
+	mov 	cx, [option_select_x]
+	or 		dx, cx
+	jz 		no_erase_menu_selection4
+
+	mov 	dx, [option_select_y]
+	mov 	cx, [option_select_x]
+	mov 	si, [option_str_addr]
+	mov 	ah, 0x13
+	call 	write_font
+
+no_erase_menu_selection4:
+	mov 	dx, [create_menu_y]
+	mov 	cx, [create_menu_x]
+	mov 	si, create_menu_str
+	mov 	ah, 0x16
+	call 	write_font
+	mov 	[option_select_y], dx
+	mov 	[option_select_x], cx
+	mov 	word[option_str_addr], create_menu_str
+	jmp 	ret_menu_selection
+
+ret_menu_selection:
+	popa
+ret
 
 screenx_changed dw 0
 screeny_changed dw 0
@@ -700,6 +866,8 @@ check_process_movement:
     jmp wait_packet
 
 ButtonLeft:
+	mov 	word[option_select_y], 0
+	mov 	word[option_select_x], 0
 	;mov si, left_msg
 	;call Print_String
 	
@@ -736,14 +904,16 @@ ButtonLeft:
 ButtonRight:
    ;mov si, right_msg
    ;call Print_String
-
+	mov 	word[option_select_y], 0
+	mov 	word[option_select_x], 0
+	
     call 	erase_window_mouse
 	mov 	byte[right_pressed], 1
 	mov 	dx, [screen_y]	; DX = Linha Inicial
 	mov 	cx, [screen_x]	; CX = Coluna Inicial
 	mov 	[savewy], dx
 	mov 	[savewx], cx
-	mov 	al, 13h 			; AL = Cor do Pixel = vermelho
+	mov 	al, 13h 			; AL = Cor do Pixel = cinza
 	mov 	word[sizewx], 80
 	mov 	word[sizewy], 100
 	call 	paint_window_mouse
@@ -751,19 +921,31 @@ ButtonRight:
 	add 	dx, 2
 	add 	cx, 2
 	mov 	si, open_menu_str
+	xor 	ah, ah
 	call 	write_font
+	mov 	[open_menu_y], dx
+	mov 	[open_menu_x], cx
 
 	add 	dx, 9 + 3
 	mov 	si, update_menu_str
+	xor 	ah, ah
 	call 	write_font
+	mov 	[update_menu_y], dx
+	mov 	[update_menu_x], cx
 
 	add 	dx, 9 + 3
 	mov 	si, paste_menu_str
+	xor 	ah, ah
 	call 	write_font
+	mov 	[paste_menu_y], dx
+	mov 	[paste_menu_x], cx
 
 	add 	dx, 9 + 3
 	mov 	si, create_menu_str
+	xor 	ah, ah
 	call 	write_font
+	mov 	[create_menu_y], dx
+	mov 	[create_menu_x], cx
 
 	mov 	dx, [screen_y]			; DX = Linha Inicial
 	mov 	cx, [screen_x]			; CX = Coluna Inicial
@@ -878,6 +1060,9 @@ done_mouse_move:
 no_erase_selection:
 	mov 	dx, [screen_y]			; DX = Linha Inicial
 	mov 	cx, [screen_x]			; CX = Coluna Inicial
+
+	call 	menu_selection
+
 	mov 	word[sizewx], 16
 	mov 	word[sizewy], 9
 	call 	save_background
