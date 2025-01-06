@@ -87,6 +87,31 @@ mouse_bitmap 	dw 0001100000000000b
 
 mouse_bitmap.size EQU ($-mouse_bitmap) / 2
 
+text_font db "KIDDIEOS MOUSE",0
+open_menu_str db "ABRIR",0
+update_menu_str db "ATUALIZAR",0
+paste_menu_str db "COLAR",0
+create_menu_str db "CRIAR",0
+
+menu_list:	dw open_menu_str
+		  	dw update_menu_str
+		  	dw paste_menu_str
+		  	dw create_menu_str
+menu_list.size EQU ($ - menu_list) / 2
+
+open_menu_y dw 0
+open_menu_x dw 0
+update_menu_y dw 0
+update_menu_x dw 0
+paste_menu_y dw 0
+paste_menu_x dw 0
+create_menu_y dw 0
+create_menu_x dw 0
+other_menu_y  dw 0
+option_select_y dw 0
+option_select_x dw 0
+option_str_addr dw 0
+
 ; DX = Linha Inicial
 ; CX = Coluna Inicial
 ; AH = Cor das Bordas
@@ -262,44 +287,6 @@ write_font:
 	ret_printfont:
 		popa
 ret
-text_font db "KIDDIEOS MOUSE",0
-open_menu_str db "ABRIR",0
-update_menu_str db "ATUALIZAR",0
-paste_menu_str db "COLAR",0
-create_menu_str db "CRIAR",0
-
-open_menu_y dw 0
-open_menu_x dw 0
-update_menu_y dw 0
-update_menu_x dw 0
-paste_menu_y dw 0
-paste_menu_x dw 0
-create_menu_y dw 0
-create_menu_x dw 0
-option_select_y dw 0
-option_select_x dw 0
-option_str_addr dw 0
-
-; DX = Linha Inicial
-; CX = Coluna Inicial
-; AL = Cor do Pixel
-;paint_pixel:
-;  	pusha
-;  	push 	es
-;  	push 	ax
-;  	mov   	ax, 0xA000
-;  	mov   	es, ax
-;  	mov   	ax, 320
-;  	mov   	bx, dx
-;  	xor		dx, dx
-;  	mul   	bx
-;  	mov   	di, ax
-;  	add   	di, cx
-;	pop 	ax
-;	stosb
-;	pop	es
-;	popa
-;ret
 
 mouse_selection:
 	pusha
@@ -569,150 +556,68 @@ menu_selection:
 	pusha
 	cmp 	byte[right_pressed], 0
 	jz 		ret_menu_selection
-	cmp 	dx, [open_menu_y]
-	jae 	check_update_y
-	jmp 	ret_menu_selection
-check_update_y:
-	cmp 	dx, [update_menu_y]
-	jae 	check_paste_y
 
-	add 	cx, 3
-	cmp 	cx, [open_menu_x]
-	jb 		ret_menu_selection
-	mov 	dx, [savewx]
-	add 	dx, 80 - 6
-	cmp 	cx, dx
-	ja 		ret_menu_selection
-
-	mov 	dx, [option_select_y]
-	mov 	cx, [option_select_x]
-	or 		dx, cx
-	jz 		no_erase_menu_selection1
-
-	mov 	dx, [option_select_y]
-	mov 	cx, [option_select_x]
-	mov 	si, [option_str_addr]
-	mov 	ah, 0x13
-	call 	write_font
-
-no_erase_menu_selection1:
-	mov 	dx, [open_menu_y]
-	mov 	cx, [open_menu_x]
-	mov 	si, open_menu_str
-	mov 	ah, 0x16
-	call 	write_font
-	mov 	[option_select_y], dx
-	mov 	[option_select_x], cx
-	mov 	word[option_str_addr], open_menu_str
-	jmp 	ret_menu_selection
-
-check_paste_y:
-	cmp 	dx, [paste_menu_y]
-	jae 	check_create_y
-
-	add 	cx, 3
-	cmp 	cx, [update_menu_x]
-	jb 		ret_menu_selection
-	mov 	dx, [savewx]
-	add 	dx, 80 - 6
-	cmp 	cx, dx
-	ja 		ret_menu_selection
-
-	mov 	dx, [option_select_y]
-	mov 	cx, [option_select_x]
-	or 		dx, cx
-	jz 		no_erase_menu_selection2
-
-	mov 	dx, [option_select_y]
-	mov 	cx, [option_select_x]
-	mov 	si, [option_str_addr]
-	mov 	ah, 0x13
-	call 	write_font
-
-no_erase_menu_selection2:
-	mov 	dx, [update_menu_y]
-	mov 	cx, [update_menu_x]
-	mov 	si, update_menu_str
-	mov 	ah, 0x16
-	call 	write_font
-	mov 	[option_select_y], dx
-	mov 	[option_select_x], cx
-	mov 	word[option_str_addr], update_menu_str
-	jmp 	ret_menu_selection
-
-check_create_y:
-	cmp 	dx, [create_menu_y]
-	jae 	check_after_create
-
-	add 	cx, 3
-	cmp 	cx, [paste_menu_x]
-	jb 		ret_menu_selection
-	mov 	dx, [savewx]
-	add 	dx, 80 - 6
-	cmp 	cx, dx
-	ja 		ret_menu_selection
-
-	mov 	dx, [option_select_y]
-	mov 	cx, [option_select_x]
-	or 		dx, cx
-	jz 		no_erase_menu_selection3
-
-	mov 	dx, [option_select_y]
-	mov 	cx, [option_select_x]
-	mov 	si, [option_str_addr]
-	mov 	ah, 0x13
-	call 	write_font
-
-no_erase_menu_selection3:
-	mov 	dx, [paste_menu_y]
-	mov 	cx, [paste_menu_x]
-	mov 	si, paste_menu_str
-	mov 	ah, 0x16
-	call 	write_font
-	mov 	[option_select_y], dx
-	mov 	[option_select_x], cx
-	mov 	word[option_str_addr], paste_menu_str
-	jmp 	ret_menu_selection
-
-check_after_create:
-	mov 	ax, [create_menu_y]
-	add 	ax, 9
-	cmp 	dx, ax
-	ja 		ret_menu_selection
-
-	add 	cx, 3
-	cmp 	cx, [create_menu_x]
-	jb 		ret_menu_selection
-	mov 	dx, [savewx]
-	add 	dx, 80 - 6
-	cmp 	cx, dx
-	ja 		ret_menu_selection
-
-	mov 	dx, [option_select_y]
-	mov 	cx, [option_select_x]
-	or 		dx, cx
-	jz 		no_erase_menu_selection4
-
-	mov 	dx, [option_select_y]
-	mov 	cx, [option_select_x]
-	mov 	si, [option_str_addr]
-	mov 	ah, 0x13
-	call 	write_font
-
-no_erase_menu_selection4:
-	mov 	dx, [create_menu_y]
-	mov 	cx, [create_menu_x]
-	mov 	si, create_menu_str
-	mov 	ah, 0x16
-	call 	write_font
-	mov 	[option_select_y], dx
-	mov 	[option_select_x], cx
-	mov 	word[option_str_addr], create_menu_str
-	jmp 	ret_menu_selection
+	mov 	si, menu_list
+	mov 	bx, open_menu_y
+	mov 	ax, menu_list.size	; 4
+	call 	mouse_loop_select
 
 ret_menu_selection:
 	popa
 ret
+
+mouse_loop_select:
+	cmp 	dx, [bx]		; open_menu_y
+	jae 	check_begin_y
+	jmp 	ret_loop_select
+check_begin_y:
+	cmp 	dx, [bx + 4]	; update_menu_y
+	jae 	check_next_y
+
+	mov 	si, [si]
+	call 	select_mouse_option
+	jmp 	ret_loop_select
+
+check_next_y:
+	add 	si, 2
+	add 	bx, 4			; update_menu_y
+	dec 	ax
+	jnz 	check_begin_y
+ret_loop_select:
+	ret
+
+select_mouse_option:
+	add 	cx, 3
+	cmp 	cx, [bx + 2]
+	jb 		ret_select_mouse
+	mov 	dx, [savewx]
+	add 	dx, 80 - 6
+	cmp 	cx, dx
+	ja 		ret_select_mouse
+
+	push 	si
+	mov 	dx, [option_select_y]
+	mov 	cx, [option_select_x]
+	or 		dx, cx
+	jz 		no_erase_menu_selection
+
+	mov 	dx, [option_select_y]
+	mov 	cx, [option_select_x]
+	mov 	si, [option_str_addr]
+	mov 	ah, 0x13
+	call 	write_font
+
+no_erase_menu_selection:
+	mov 	dx, [bx]
+	mov 	cx, [bx + 2]
+	mov 	ah, 0x16
+	pop 	si
+	call 	write_font
+	mov 	[option_select_y], dx
+	mov 	[option_select_x], cx
+	mov 	word[option_str_addr], si
+ret_select_mouse:
+	ret
 
 screenx_changed dw 0
 screeny_changed dw 0
@@ -946,6 +851,8 @@ ButtonRight:
 	call 	write_font
 	mov 	[create_menu_y], dx
 	mov 	[create_menu_x], cx
+	add 	dx, 9
+	mov 	[other_menu_y], dx
 
 	mov 	dx, [screen_y]			; DX = Linha Inicial
 	mov 	cx, [screen_x]			; CX = Coluna Inicial
