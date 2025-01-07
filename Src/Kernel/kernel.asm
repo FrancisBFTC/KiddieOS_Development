@@ -60,20 +60,31 @@ OS_VECTOR_JMP:
 
 mikeapi 	db "MIKEOS  API",0
 
-; Resolução do monitor
-%DEFINE SCREEN_WIDTH 320
-%DEFINE SCREEN_HEIGHT 200
-
-screen_x dw SCREEN_WIDTH / 2
-screen_y dw SCREEN_HEIGHT / 2
+; ----------------------------------------------
+; VARIÁVEIS DO DRIVER DE MOUSE
 sample_rate db 100
-resolution db 0
+resolution 	db 0
 
 mouse_status db 0
 mouse_deltaX db 0
 mouse_deltaY db 0
 mouse_deltaX_temp dw 0
 mouse_deltaY_temp dw 0
+right_pressed 	db 0
+left_pressed 	db 0
+; ----------------------------------------------
+
+; ----------------------------------------------
+; VARIÁVEIS DE COORDENADAS GRÁFICAS & PONTEIRO
+; Resolução do monitor
+%DEFINE SCREEN_WIDTH 320
+%DEFINE SCREEN_HEIGHT 200
+
+screen_x dw SCREEN_WIDTH / 2
+screen_y dw SCREEN_HEIGHT / 2
+screenx_changed dw 0
+screeny_changed dw 0
+direction_screen dw 0
 
 mouse_bitmap 	dw 0001100000000000b
 				dw 0001111000000000b
@@ -86,32 +97,55 @@ mouse_bitmap 	dw 0001100000000000b
 				dw 0000000000110000b
 
 mouse_bitmap.size EQU ($-mouse_bitmap) / 2
+; ----------------------------------------------
+
+; ----------------------------------------------
+; VARIÁVEIS DE COORDENADAS E TAMANHOS AUXILIARES
+; PARA JANELAS DO MOUSE 
+savewx dw 0
+savewy dw 0
+savex dw 0
+savey dw 0
+
+sizewx dw 0
+sizewy dw 0
+sizex dw 1
+sizey dw 1
+sizex_tmp dw 1
+sizey_tmp dw 1
+; ----------------------------------------------
+
+; ----------------------------------------------
+; VARIÁVEIS E LISTAS DE ITENS DO MENU DO MOUSE
+
+open_menu_y 	dw 0, 0
+update_menu_y 	dw 0, 0
+paste_menu_y 	dw 0, 0
+create_menu_y 	dw 0, 0
+new_menu_y 		dw 0, 0
+other_menu_y  	dw 0
+
+option_select_y dw 0
+option_select_x dw 0
+option_str_addr dw 0
+
+menu_list:	dw open_menu_str
+		  	dw update_menu_str
+		  	dw paste_menu_str
+		  	dw create_menu_str
+			dw new_menu_str
+menu_list.size EQU ($ - menu_list) / 2
 
 text_font db "KIDDIEOS MOUSE",0
 open_menu_str db "ABRIR",0
 update_menu_str db "ATUALIZAR",0
 paste_menu_str db "COLAR",0
 create_menu_str db "CRIAR",0
+new_menu_str 	db "NOVO",0
+; ----------------------------------------------
 
-menu_list:	dw open_menu_str
-		  	dw update_menu_str
-		  	dw paste_menu_str
-		  	dw create_menu_str
-menu_list.size EQU ($ - menu_list) / 2
 
-open_menu_y dw 0
-open_menu_x dw 0
-update_menu_y dw 0
-update_menu_x dw 0
-paste_menu_y dw 0
-paste_menu_x dw 0
-create_menu_y dw 0
-create_menu_x dw 0
-other_menu_y  dw 0
-option_select_y dw 0
-option_select_x dw 0
-option_str_addr dw 0
-
+; Função: Pinta o bitmap do ponteiro do mouse
 ; DX = Linha Inicial
 ; CX = Coluna Inicial
 ; AH = Cor das Bordas
@@ -193,6 +227,7 @@ ret
 is_first db 0
 is_last  db 0
 
+; Função: Pinta um desenho dado o Bitmap
 ; DX = Linha Inicial
 ; CX = Coluna Inicial
 ; AH = Cor do fundo (Se 0, então transparente)
@@ -262,6 +297,11 @@ draw_bitmap:
 ret
 bitbase dw 0
 
+; Função: Escreve um texto na tela
+; SI = String para Imprimir
+; AH = Fundo - 0 : Transparente, non-zero: Cor
+; DX = Coordenada Y
+; CX = Coordenada X
 write_font:
 	pusha
 	mov 	al, 1fh
@@ -288,6 +328,12 @@ write_font:
 		popa
 ret
 
+; Função: Desenha um retângulo de seleção
+; DX = Coordenada Y
+; CX = Coordenada X
+; AL = Cor de seleção
+; sizex = Comprimento
+; sizey = Altura
 mouse_selection:
 	pusha
 	push 	es
@@ -402,6 +448,10 @@ conv_direction:
 ret_conv_dir:
 	ret
 
+; Função: Apaga um retângulo de seleção
+; savey = Coordenada Y salva anteriormente
+; savex = Coordenada X salva anteriormente
+; Nota: Entradas automáticas
 erase_selection:
 	mov 	dx, [savey]
 	mov 	cx, [savex]
@@ -413,6 +463,10 @@ erase_selection:
 	mov 	word[sizey], 0
 ret
 
+; Função: Salva as coordenadas de seleção
+; screen_y = Coordenada Y do mouse
+; screen_x = Coordenada X do mouse
+; Nota: Entradas automáticas
 save_coord_selection:
 	mov 	dx, [screen_y]
 	sub 	dx, 5
@@ -429,6 +483,25 @@ save_coord_selection:
 no_update_save:
 	ret
 
+; Função: Verifica se precisa apagar retângulo de seleção
+check_to_mouse_selection:
+	cmp 	byte[left_pressed], 1
+	jnz 	no_erase_selection
+
+	mov 	dx, [savey]
+	mov 	cx, [savex]
+	mov 	al, 0x00
+	call 	mouse_selection
+
+no_erase_selection:
+	ret
+
+; Função: Desenha a janela do menu do mouse
+; DX = Coordenada Y do mouse
+; CX = Coordenada X do mouse
+; AL = Cor de Fundo da janela
+; sizewx = Comprimento da janela
+; sizewy = Altura da janela
 paint_window_mouse:
 	pusha
 	push 	es
@@ -470,9 +543,31 @@ paint_window_mouse:
   pop 	es
   popa
 ret
-sizewx dw 0
-sizewy dw 0
 
+; Função: Apaga a janela do menu do mouse
+; savewy = Coordenada Y salva
+; savewx = Coordenada X salva
+; Nota: Entradas automáticas
+erase_window_mouse:
+	cmp 	byte[right_pressed], 0
+	jz		no_right_pressed
+
+	mov 	dx, [savewy]
+	mov 	cx, [savewx]
+	mov 	al, 00h 			; AL = Cor do Pixel = preto
+	mov 	word[sizewx], 80
+	mov 	word[sizewy], 100
+	call 	paint_window_mouse
+	mov 	byte[right_pressed], 0
+	
+no_right_pressed:
+	ret
+
+; Função: Apaga o mouse pelo buffer de fundo
+; DX = Coordenada Y anterior do mouse
+; CX = Coordenada X anterior do mouse
+; sizewx = Quantidade de colunas de pixels
+; sizewy = Quantidade de linhas de pixels
 paint_mouse_back:
 	pusha
 	push 	es
@@ -500,30 +595,21 @@ paint_mouse_back:
   popa
 ret
 
-erase_window_mouse:
-	cmp 	byte[right_pressed], 0
-	jz		no_right_pressed
-
-	mov 	dx, [savewy]
-	mov 	cx, [savewx]
-	mov 	al, 00h 			; AL = Cor do Pixel = preto
-	mov 	word[sizewx], 80
-	mov 	word[sizewy], 100
-	call 	paint_window_mouse
-	mov 	byte[right_pressed], 0
-	
-no_right_pressed:
-	ret
-
+; Função: Apaga o ponteiro do mouse
+; DX = Coordenada Y anterior do mouse
+; CX = Coordenada X anterior do mouse
 erase_pointer_mouse:
-
 	mov 	word[sizewx], 16
 	mov 	word[sizewy], 9
 	call 	paint_mouse_back
-	
 ret
 
-save_background:
+; Função: Salva o fundo detrás do mouse no buffer
+; DX = Coordenada Y do mouse
+; CX = Coordenada X do mouse
+; sizewx = Quantidade de pixels em colunas
+; sizewy = Quantidade de pixels em linhas
+save_mouse_back:
 	pusha
 	push 	ds
 	
@@ -552,6 +638,9 @@ save_background:
 ret
 background times 16*9 db 0
 
+; Função: Selecionar itens do menu do mouse
+; DX = Coordenada Y do mouse
+; CX = Coordenada X do mouse
 menu_selection:
 	pusha
 	cmp 	byte[right_pressed], 0
@@ -566,6 +655,12 @@ ret_menu_selection:
 	popa
 ret
 
+; Função: Varredura de Itens sobre a lista de menu
+; DX = Coordenada Y do mouse
+; CX = Coordenada X do mouse
+; SI = Ponteiro da lista de itens
+; BX = Coordenada do item inicial
+; AX = Quantidade de itens
 mouse_loop_select:
 	cmp 	dx, [bx]		; open_menu_y
 	jae 	check_begin_y
@@ -586,6 +681,15 @@ check_next_y:
 ret_loop_select:
 	ret
 
+; Função: Seleciona um item de menu
+; CX = Coordenada X do mouse
+; SI = String do item
+; BX = Coordenada do item atual
+; ENTRADAS/SAÍDAS AUTOMÁTICAS ->
+; savewx = Coordenada X salva
+; option_select_y = Coordenada Y do item selecionado
+; option_select_x = Coordenada X do item selecionado
+; option_str_addr = String do item selecionado
 select_mouse_option:
 	add 	cx, 3
 	cmp 	cx, [bx + 2]
@@ -619,21 +723,119 @@ no_erase_menu_selection:
 ret_select_mouse:
 	ret
 
-screenx_changed dw 0
-screeny_changed dw 0
-right_pressed 	db 0
-left_pressed 	db 0
-savewx dw 0
-savewy dw 0
+; Função: Movimento do ponteiro do mouse
+; AX = DeltaY calculado
+; BX = DeltaX calculado
+; screeny_changed: screen_y antes da possível mudança de limites
+; screenx_changed: screen_x antes da possível mudança de limites
+; screen_y: Nova coordenada Y (após possível mudança)
+; screen_x: Nova coordenada X (após possível mudança)
+mouse_pointer_move:
+	mov 	dx, [screeny_changed]			; DX = Linha Inicial
+	mov 	cx, [screenx_changed]			; CX = Coluna Inicial
+	sub 	dx, ax
+	sub 	cx, bx
+	call 	erase_pointer_mouse
 
-savex dw 0
-savey dw 0
+	call 	check_to_mouse_selection
 
-sizex dw 1
-sizey dw 1
-sizex_tmp dw 1
-sizey_tmp dw 1
-direction_screen dw 0
+	mov 	dx, [screen_y]			; DX = Linha Inicial
+	mov 	cx, [screen_x]			; CX = Coluna Inicial
+	call 	menu_selection
+
+	mov 	word[sizewx], 16
+	mov 	word[sizewy], 9
+	call 	save_mouse_back
+
+	cmp 	byte[left_pressed], 1
+	jnz 	no_repaint_selection
+
+	mov 	dx, [savey]
+	mov 	cx, [savex]
+	mov 	al, 0x01
+	mov 	bx, [mouse_deltaX_temp]
+	add 	[sizex], bx
+	mov 	bx, [mouse_deltaY_temp]
+	add 	[sizey], bx
+	call 	mouse_selection
+
+	mov 	byte[left_pressed], 0
+
+no_repaint_selection:
+	mov 	dx, [screen_y]			; DX = Linha Inicial
+	mov 	cx, [screen_x]			; CX = Coluna Inicial
+	mov 	ah, 19h	 				; AH = Cor das Bordas
+	mov 	al, 1Fh					; AL = Cor do Fundo
+	mov 	bh, 16 					; BH = Número de pixels da linha
+	mov 	bl, mouse_bitmap.size 	; BL = Número de linhas
+	mov 	si, mouse_bitmap		; SI = Bitmap
+	call 	draw_mouse				; Desenha o mouse
+ret
+
+; Função: Abre menu do mouse com seus itens
+; Nota: Entradas internas descritas em outras funções
+open_mouse_menu:
+	mov 	word[option_select_y], 0
+	mov 	word[option_select_x], 0
+	
+    call 	erase_window_mouse
+	mov 	byte[right_pressed], 1
+	mov 	dx, [screen_y]	; DX = Linha Inicial
+	mov 	cx, [screen_x]	; CX = Coluna Inicial
+	mov 	[savewy], dx
+	mov 	[savewx], cx
+	mov 	al, 13h 			; AL = Cor do Pixel = cinza
+	mov 	word[sizewx], 80
+	mov 	word[sizewy], 100
+	call 	paint_window_mouse
+
+	mov 	di, open_menu_y
+	mov 	si, menu_list
+	mov 	bl, menu_list.size
+	add 	dx, 2
+	add 	cx, 2
+write_menu_options:
+	push 	si
+	mov 	si, [si]
+	xor 	ah, ah
+	call 	write_font
+	mov 	[di], dx
+	mov 	[di + 2], cx
+	add 	dx, 9 + 3
+	pop 	si
+	add 	si, 2
+	add 	di, 4
+	dec 	bl
+	jnz 	write_menu_options
+
+	sub 	dx, 3
+	mov 	[di], dx
+
+	mov 	dx, [screen_y]			; DX = Linha Inicial
+	mov 	cx, [screen_x]			; CX = Coluna Inicial
+	mov 	word[sizewx], 16
+	mov 	word[sizewy], 9
+	call 	save_mouse_back
+ret
+
+; Função: Inicia o desenho inicial do ponteiro do mouse
+; Nota: Entradas internas descritas em outras funções
+init_mouse_pointer:
+	mov 	dx, [screen_y]			; DX = Linha Inicial
+	mov 	cx, [screen_x]			; CX = Coluna Inicial
+	mov 	word[sizewx], 16
+	mov 	word[sizewy], 9
+	call 	save_mouse_back
+
+	mov 	dx, [screen_y]			; DX = Linha Inicial
+	mov 	cx, [screen_x]			; CX = Coluna Inicial
+	mov 	ah, 19h	 				; AH = Cor das Bordas
+	mov 	al, 1Fh					; AL = Cor do Fundo
+	mov 	bh, 16 					; BH = Número de pixels da linha
+	mov 	bl, mouse_bitmap.size 	; BL = Número de linhas
+	mov 	si, mouse_bitmap		; SI = Bitmap
+	call 	draw_mouse				; Desenha o mouse
+ret
 
 wait_to_write:
     in al, 0x64
@@ -703,36 +905,11 @@ mouse_start:
     call send_command
     jc error_mouse
 
-	mov si, mouse_msg
-	call Print_String
-
-	;mov dh, [screen_y]
-	;mov dl, [screen_x]
-	;call Move_Cursor
-	;call Show_Cursor
-	;mov 	ah, 01h
-	;mov 	ch, 06h
-	;mov 	cl, 07h
-	;int 	10h
-
 	mov 	ah, 00h
 	mov 	al, 13h
 	int 	0x10
 
-	mov 	dx, [screen_y]			; DX = Linha Inicial
-	mov 	cx, [screen_x]			; CX = Coluna Inicial
-	mov 	word[sizewx], 16
-	mov 	word[sizewy], 9
-	call 	save_background
-
-	mov 	dx, [screen_y]			; DX = Linha Inicial
-	mov 	cx, [screen_x]			; CX = Coluna Inicial
-	mov 	ah, 19h	 				; AH = Cor das Bordas
-	mov 	al, 1Fh					; AL = Cor do Fundo
-	mov 	bh, 16 					; BH = Número de pixels da linha
-	mov 	bl, mouse_bitmap.size 	; BL = Número de linhas
-	mov 	si, mouse_bitmap		; SI = Bitmap
-	call 	draw_mouse				; Desenha o mouse
+	call 	init_mouse_pointer
 
 wait_packet:
     call wait_to_read
@@ -746,8 +923,6 @@ wait_packet:
     call wait_to_read
     in al, 0x60
     mov [mouse_deltaY], al
-
-	;call process_movement
 
 check_button_left:
     mov al, [mouse_status]
@@ -767,121 +942,34 @@ check_button_middle:
     jnz ButtonMiddle
 
 check_process_movement:
-	call process_movement
-    jmp wait_packet
+	mov 	al, [mouse_deltaX]
+	mov 	bl, [mouse_deltaY]
+	or 		al, bl
+	jz 		wait_packet
+
+	call 	process_movement
+    jmp 	wait_packet
 
 ButtonLeft:
 	mov 	word[option_select_y], 0
 	mov 	word[option_select_x], 0
-	;mov si, left_msg
-	;call Print_String
-	
-	;mov 	dx, [screen_y]	; DX = Linha Inicial
-	;mov 	cx, [screen_x]	; CX = Coluna Inicial
-	;mov 	al, 2 			; AL = Cor do Pixel = verde
-	;call paint_pixel
 
 	call 	erase_window_mouse
-	mov 	byte[left_pressed], 0
-
-	mov 	al, [mouse_deltaX]
-	or 		al, [mouse_deltaY]
-	jz 		wait_packet
 
 	mov 	byte[left_pressed], 1
 	call 	save_coord_selection
 
-	;mov 	dx, [savey]
-	;mov 	cx, [savex]
-	;mov 	al, 0x00
-	;call 	mouse_selection
-
-	;mov 	dx, [savey]
-	;mov 	cx, [savex]
-	;mov 	al, 0x01
-	;mov 	bx, [mouse_deltaX_temp]
-	;add 	[sizex], bx
-	;mov 	bx, [mouse_deltaY_temp]
-	;add 	[sizey], bx
-	;call 	mouse_selection
-
 	jmp 	check_button_right
+
 ButtonRight:
-   ;mov si, right_msg
-   ;call Print_String
-	mov 	word[option_select_y], 0
-	mov 	word[option_select_x], 0
-	
-    call 	erase_window_mouse
-	mov 	byte[right_pressed], 1
-	mov 	dx, [screen_y]	; DX = Linha Inicial
-	mov 	cx, [screen_x]	; CX = Coluna Inicial
-	mov 	[savewy], dx
-	mov 	[savewx], cx
-	mov 	al, 13h 			; AL = Cor do Pixel = cinza
-	mov 	word[sizewx], 80
-	mov 	word[sizewy], 100
-	call 	paint_window_mouse
-
-	add 	dx, 2
-	add 	cx, 2
-	mov 	si, open_menu_str
-	xor 	ah, ah
-	call 	write_font
-	mov 	[open_menu_y], dx
-	mov 	[open_menu_x], cx
-
-	add 	dx, 9 + 3
-	mov 	si, update_menu_str
-	xor 	ah, ah
-	call 	write_font
-	mov 	[update_menu_y], dx
-	mov 	[update_menu_x], cx
-
-	add 	dx, 9 + 3
-	mov 	si, paste_menu_str
-	xor 	ah, ah
-	call 	write_font
-	mov 	[paste_menu_y], dx
-	mov 	[paste_menu_x], cx
-
-	add 	dx, 9 + 3
-	mov 	si, create_menu_str
-	xor 	ah, ah
-	call 	write_font
-	mov 	[create_menu_y], dx
-	mov 	[create_menu_x], cx
-	add 	dx, 9
-	mov 	[other_menu_y], dx
-
-	mov 	dx, [screen_y]			; DX = Linha Inicial
-	mov 	cx, [screen_x]			; CX = Coluna Inicial
-	mov 	word[sizewx], 16
-	mov 	word[sizewy], 9
-	call 	save_background
+	call 	open_mouse_menu
    	jmp 	check_button_middle
+
 ButtonMiddle:
-	;mov si, middle_msg
-	;call Print_String
 
    	jmp 	check_process_movement
-process_movement:
-	; Verifique os bits 4 e 5 de mouse_status
-	; Calcule as coordenadas
-	
-	;xor eax, eax
-	;mov si, msg_deltaX
-	;call Print_String
-	;mov al, [mouse_deltaX]
-	;call Print_Dec_Value32
-	;call Break_Line
-	;xor eax, eax
-	;mov si, msg_deltaY
-	;call Print_String
-	;mov al, [mouse_deltaY]
-	;call Print_Dec_Value32
-	;call Break_Line
 
+process_movement:
 	movzx 	ax, byte[mouse_deltaX]
 	mov 	bl, [mouse_status]
 	and 	bl, 00010000b
@@ -931,81 +1019,10 @@ set_screeny:
 	mov word[screen_y], SCREEN_HEIGHT - 5
 
 done_mouse_move:
-	;xor eax, eax
-	;mov si, msg_mouseX
-	;call Print_String
-	;mov ax, [screen_x]
-	;call Print_Dec_Value32
-	;call Break_Line
-	;xor eax, eax
-	;mov si, msg_mouseY
-	;call Print_String
-	;mov ax, [screen_y]
-	;call Print_Dec_Value32
-	;call Break_Line
-	
-	;mov dh, [screen_y]
-	;mov dl, [screen_x]
-	;call Move_Cursor
-
-	mov 	dx, [screeny_changed]			; DX = Linha Inicial
 	pop 	ax
-	sub 	dx, ax
-	mov 	cx, [screenx_changed]			; CX = Coluna Inicial
-	pop 	ax
-	sub 	cx, ax
-	call 	erase_pointer_mouse
-
-	cmp 	byte[left_pressed], 1
-	jnz 	no_erase_selection
-
-	mov 	dx, [savey]
-	mov 	cx, [savex]
-	mov 	al, 0x00
-	call 	mouse_selection
-
-no_erase_selection:
-	mov 	dx, [screen_y]			; DX = Linha Inicial
-	mov 	cx, [screen_x]			; CX = Coluna Inicial
-
-	call 	menu_selection
-
-	mov 	word[sizewx], 16
-	mov 	word[sizewy], 9
-	call 	save_background
-
-	cmp 	byte[left_pressed], 1
-	jnz 	no_repaint_selection
-
-	mov 	dx, [savey]
-	mov 	cx, [savex]
-	mov 	al, 0x01
-	mov 	bx, [mouse_deltaX_temp]
-	add 	[sizex], bx
-	mov 	bx, [mouse_deltaY_temp]
-	add 	[sizey], bx
-	call 	mouse_selection
-
-	mov 	byte[left_pressed], 0
-
-no_repaint_selection:
-	;mov 	ah, 00h	 				; AH = Cor das Bordas
-	;mov 	al, 00h					; AL = Cor do Fundo
-	;mov 	bh, 16 					; BH = Número de pixels da linha
-	;mov 	bl, mouse_bitmap.size 	; BL = Número de linhas
-	;mov 	si, mouse_bitmap		; SI = Bitmap
-	;call 	draw_mouse				; Desenha o mouse
-
-	mov 	dx, [screen_y]			; DX = Linha Inicial
-	mov 	cx, [screen_x]			; CX = Coluna Inicial
-	mov 	ah, 19h	 				; AH = Cor das Bordas
-	mov 	al, 1Fh					; AL = Cor do Fundo
-	mov 	bh, 16 					; BH = Número de pixels da linha
-	mov 	bl, mouse_bitmap.size 	; BL = Número de linhas
-	mov 	si, mouse_bitmap		; SI = Bitmap
-	call 	draw_mouse				; Desenha o mouse
-
-	ret
+	pop 	bx
+	call 	mouse_pointer_move
+ret
 
 error_mouse:
      mov si, error_msg
