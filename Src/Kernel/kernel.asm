@@ -38,7 +38,9 @@ OS_VECTOR_JMP:
 	jmp Free                  ; 0042h
 	jmp Parse_Dec_Value		  ; 0045h
 	jmp Reboot_System         ; 0048h
-	
+  jmp queue_push    ; 0057h - Envia mensagem/comando para a Fila do IPC
+  jmp queue_pop     ; 005Ah - Remove/Recebe mensagem da Fila do IPC
+  jmp parser        ; 005Dh - Decodifica e executa o serviço referente
 ; --------------------------------------------------
 ; Saltos para serem chamados por CALL FAR
 ; Por programas em outros segmentos, Ex.: DOS
@@ -56,8 +58,16 @@ OS_VECTOR_JMP:
 %INCLUDE "Hardware/speaker.lib"
 %INCLUDE "Includes/kerneldat.inc"
 %INCLUDE "Src/Kernel/font.asm"
+; Subsystem Directives / Sub-sistemas IPC
+%INCLUDE "ipc.asm"
+%INCLUDE "queue.asm"
 ; --------------------------------------------------
+; Importações e Exportações de IPC
+EXTERN queue_push
+EXTERN parser
+EXTERN table_services
 
+  
 mikeapi 	db "MIKEOS  API",0
 
 ; ----------------------------------------------
@@ -1055,6 +1065,11 @@ Kernel_Entry:
 	mov 	ss, ax
 	mov 	sp, 0x1990		;0xFFFF
 
+  ; Reset/Inicialização das estruturas do IPC
+	mov 	dword [queue_ctrl.head], 0
+	mov 	dword [queue_ctrl.tail], 0
+	mov 	dword [queue_ctrl.Count], 0
+  
 	jmp 	mouse_start
 	; Uncomment only for debugging of the kernel
 	;mov 	ah, 00h

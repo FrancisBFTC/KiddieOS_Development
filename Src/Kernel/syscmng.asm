@@ -387,7 +387,30 @@ MonitorRoutines:
 	
 	; Rotinas de serviços de IRQs
 	dd IRQ_Handler_Register 	; Função 35 (0x23)
-	
+
+  ; Uma Pequena Função que seta os Bits 0-31 (1 Registrador) 
+  ; como 0 e os Bits 32-64 (2 Registrador) 
+  ; como 1 (0x24)
+  dd Set_Bit
+
+  
+Set_Bit:
+  ; Começa já resetando o Registrador Alvo 
+  mov [edi], 0x00000000 ; 1° Argumento dessa Função em EDI
+  ; se formos olhar a System V ABI de 32-bit 
+  ; Por enquanto, o "define 1"
+  ; será 0x1FF0 (Valor Fixo)
+  mov [esi], 0x1FF0
+  ; Retorna 
+  ret ; A CPU não executa mais Código 
+  ; dessa Função agora
+  ; Notas:
+  ; Em ESI e EDI, a 
+  ; Função poderá receber uma 
+  ; String. Provavelmente tem bugs,
+  ; mas futuramente iremos discutir
+  ; sobre isso para corrigir
+  
 Print_String32:
 	pop 	ebx
 	pushad

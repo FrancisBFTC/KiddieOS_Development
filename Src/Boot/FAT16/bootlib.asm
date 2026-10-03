@@ -91,9 +91,9 @@ ret
 Print_String:
 	mov		ah, 0x0e	; função TTY da BIOS imprime caracter na tela
 Print:
-	lodsb			    ; a cada loop carrega si p --> al, actualizando si
+	lodsb			    ; a cada loop carrega si p --> al, atualizando si
 	int 	0x10		; interrupção de vídeo
-	cmp 	al, 0		; compara al com o 0
+	cmp 	al, 0		; compara al com  0
 	jne 	Print		; se al for 0 pula para o final do programa
 ret
 ; ----------------------------------------------------
